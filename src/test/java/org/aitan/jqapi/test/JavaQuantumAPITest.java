@@ -19,6 +19,7 @@ import org.aitan.jqapi.quantum.gates.Hadamard;
 import org.aitan.jqapi.quantum.gates.Measurement;
 import org.aitan.jqapi.quantum.gates.Oracle;
 import org.aitan.jqapi.quantum.gates.PauliX;
+import org.aitan.jqapi.quantum.gates.Swap;
 import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 import org.aitan.jqapi.quantum.simulator.QuantumSimulator;
 import org.aitan.jqapi.utils.Constants;
@@ -67,10 +68,12 @@ public class JavaQuantumAPITest {
         testThreeQubitProbabilities();
         testThreeQubitRegister();*/
         testHadamardGate();
+        testSwapGate();
+        testCoinLaunch();
         //testCircuitSimulator();
         testCNotControlQubitZero();
         testCNotControlQubitOne();
-        testCoinLaunch();
+        
         testBellState();
         testQuantumTeleportation();
         testOracle();
@@ -177,15 +180,17 @@ public class JavaQuantumAPITest {
 
     private void testHadamardGate() throws JQApiException {
         System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testHadamardGate()");
-        ComplexMatrix hadamardMatrix = new Hadamard(0).getMatrix();
+        final int COUNT = 10000;
+        Circuit circuit = new Circuit(1);
+        CircuitLevel level = new CircuitLevel();
+        level.addGate(new Hadamard(0));
+        circuit.addLevel(level);
         int cntZero = 0;
         int cntOne = 0;
-        for (int j = 0; j < 10000; j++) {
-            QuantumRegister qreg = new QuantumRegister(1);
-            for (int i = 0; i < qreg.getSize(); i++) {
-                //qreg.updateRegisterState(new Qubit(hadamardMatrix.operate(qreg.getResult()[i].getValue()).getEntry(0)), i);
-            }
-
+        for (int j = 0; j < COUNT; j++) {
+            QuantumSimulator simulator = new LocalSimulator(circuit);
+            simulator.execute();
+            QuantumRegister qreg = simulator.getQuantumRegister();
             qreg.measure();
             if (qreg.getRegisterState().getData()[0] == Complex.ONE) {
                 cntZero++;
@@ -193,12 +198,27 @@ public class JavaQuantumAPITest {
                 cntOne++;
             }
         }
-        System.out.println("Executed 10000 times hadamard gate on single qubit: " + cntZero + " of them were 0 and " + cntOne + " were 1.");
+        System.out.println("Executed " + COUNT + " times hadamard gate on single qubit: " + cntZero + " of them were 0 and " + cntOne + " were 1.");
+        assertEquals(50.0, Precision.round((double) cntZero * 100 / COUNT, 2), 1);
+        assertEquals(50.0, Precision.round((double) cntOne * 100 / COUNT, 2), 1);
+    }
 
+    private void testSwapGate() {
+        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testSwapGate()");
+        Circuit circuit = new Circuit(2);
+        CircuitLevel level = new CircuitLevel();
+        level.addGate(new Swap(0, 1));
+        circuit.addLevel(level);
+        QuantumSimulator simulator = new LocalSimulator(circuit,0,1);
+        simulator.execute();
+        QuantumRegister qreg = simulator.getQuantumRegister();
+        qreg.measure();
+        assertEquals(new Qubit(), qreg.getResult()[0]);
+        assertEquals(new Qubit(0), qreg.getResult()[1]);
     }
 
     private void testCircuitSimulator() {
-        final int COUNT = 1000;
+        final int COUNT = 10000;
         Circuit circuit = new Circuit(1);
         CircuitLevel level1 = new CircuitLevel();
         CircuitLevel level2 = new CircuitLevel();
@@ -261,6 +281,10 @@ public class JavaQuantumAPITest {
         System.out.println("0 1 occurred " + results[1] + " times.");
         System.out.println("1 0 occurred " + results[2] + " times.");
         System.out.println("1 1 occurred " + results[3] + " times.");
+        assertEquals(25.0, Precision.round((double) results[0] * 100 / COUNT, 2), 1);
+        assertEquals(25.0, Precision.round((double) results[1] * 100 / COUNT, 2), 1);
+        assertEquals(25.0, Precision.round((double) results[2] * 100 / COUNT, 2), 1);
+        assertEquals(25.0, Precision.round((double) results[3] * 100 / COUNT, 2), 1);
     }
 
     private void testCNotControlQubitZero() {
@@ -295,7 +319,7 @@ public class JavaQuantumAPITest {
         System.out.println("QuantumRegister output target qubit: " + qreg.getResult()[1]);
         assertEquals(new Qubit(0), qreg.getResult()[1]);
     }
-    
+
     private void testRegisterStateAfterQubitCollapsed() {
         System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testRegisterStateAfterQubitCollapsed()");
         Complex[] complex = new Complex[8];
@@ -363,7 +387,7 @@ public class JavaQuantumAPITest {
         assertEquals(50.0, Precision.round((double) results[0] * 100 / COUNT, 2), 1.5);
         assertEquals(50.0, Precision.round((double) results[3] * 100 / COUNT, 2), 1.5);
     }
-    
+
     private void testOracle() {
         System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testOracle()");
         final int COUNT = 10000;
@@ -372,8 +396,8 @@ public class JavaQuantumAPITest {
         CircuitLevel level1 = new CircuitLevel();
         CircuitLevel level2 = new CircuitLevel();
         level1.addGate(new Hadamard(0));
-        ComplexMatrix matrix=createOracle();
-        level2.addGate(new Oracle(matrix,0,1));
+        ComplexMatrix matrix = createOracle();
+        level2.addGate(new Oracle(matrix, 0, 1));
         circuit.addLevel(level1, level2);
         for (int i = 0; i < COUNT; i++) {
             QuantumSimulator simulator = new LocalSimulator(circuit);
@@ -431,7 +455,7 @@ public class JavaQuantumAPITest {
         level7.addGate(new ControlledZ(q, b));
         circuit.addLevel(level1, level2, level3, level4, level5, level6, level7);
         for (int i = 0; i < COUNT; i++) {
-            QuantumSimulator simulator = new LocalSimulator(circuit, 0.8,1,1);
+            QuantumSimulator simulator = new LocalSimulator(circuit, 0.8, 1, 1);
             simulator.execute();
             QuantumRegister qreg = simulator.getQuantumRegister();
             //qreg.measure();
@@ -444,6 +468,6 @@ public class JavaQuantumAPITest {
     }
 
     private ComplexMatrix createOracle() {
-       return new ControlledNot(0, 1).getMatrix();
+        return new ControlledNot(0, 1).getMatrix();
     }
 }

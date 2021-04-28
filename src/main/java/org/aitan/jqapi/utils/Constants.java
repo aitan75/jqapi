@@ -46,6 +46,13 @@ public class Constants {
         {Complex.ZERO, Complex.ONE, Complex.ZERO, Complex.ZERO},
         {Complex.ZERO, Complex.ZERO, Complex.ONE, Complex.ZERO},
         {Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ONE.multiply(-1)}});
+    
+    public static final ComplexMatrix SWAP_MATRIX
+            = ComplexMatrix.createMatrixWithData(new Complex[][]{
+        {Complex.ONE, Complex.ZERO, Complex.ZERO, Complex.ZERO},
+        {Complex.ZERO, Complex.ZERO, Complex.ONE, Complex.ZERO},
+        {Complex.ZERO, Complex.ONE, Complex.ZERO, Complex.ZERO},
+        {Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ONE}});
 
     public static final ComplexMatrix HADAMARD_MATRIX = ComplexMatrix.createMatrixWithData(new Complex[][]{
         {Constants.HALF_COMPLEX, Constants.HALF_COMPLEX},
