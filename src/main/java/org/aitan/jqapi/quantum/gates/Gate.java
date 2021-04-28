@@ -23,8 +23,7 @@ public abstract class Gate {
 
     public Gate(int numberQubits, ComplexMatrix matrix, String type, Integer... idxs) {
         if (!verify(idxs)) {
-            System.out.println("ERROR");
-            //throw new JQApiException(""); 
+            throw new IllegalArgumentException("Creating gate that affects 2 or more qubits with the same index"); 
         }
         this.numberQubits = numberQubits;
         this.matrix = matrix;
@@ -52,14 +51,6 @@ public abstract class Gate {
     public int getSize() {
         return size;
     }
-    
-    /*public Qubit[] applyGate(Qubit[] qubits) {
-        indexes.parallelStream().forEach(index -> {
-            qubits[index]=new Qubit(matrix.operate(qubits[index].getValue()).getEntry(0));
-        });
-        return qubits;
-    }*/
-    
    
 
     private boolean verify(Integer... idxs) {

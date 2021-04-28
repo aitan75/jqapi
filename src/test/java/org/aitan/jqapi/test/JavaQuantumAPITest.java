@@ -23,7 +23,6 @@ import org.aitan.jqapi.quantum.gates.Swap;
 import org.aitan.jqapi.quantum.gates.Toffoli;
 import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 import org.aitan.jqapi.quantum.simulator.QuantumSimulator;
-import org.aitan.jqapi.utils.Constants;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.junit.jupiter.api.AfterEach;
@@ -135,15 +134,6 @@ public class JavaQuantumAPITest {
         double resultZeroProbability = qubit.zeroProbability() * 100;
         assertEquals(84.00, resultOneProbability);
         assertEquals(16.00, resultZeroProbability);
-    }
-
-    private void testPauliMatrix() {
-        Qubit input = new Qubit(Math.sqrt(0.49));
-        ComplexMatrix pauliXMatrix = new PauliX(0).getMatrix();
-        Qubit output = new Qubit(pauliXMatrix.operate(input.getValue()).toArray()[0].getReal());
-        Qubit expResult = new Qubit(Math.sqrt(0.51));
-        assertEquals(expResult, output);
-
     }
 
     private void testHadamardGate() throws JQApiException {
