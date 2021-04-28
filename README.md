@@ -25,6 +25,7 @@ jqapi is a Java api to test quantum computing concepts. You can simulate your qu
             }
         }
         System.out.println("Executed " + COUNT + " times hadamard gate on single qubit: " + cntZero + " of them were 0 and " + cntOne + " were 1.");
+```
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
