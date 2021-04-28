@@ -145,12 +145,13 @@ public class JavaQuantumAPITest {
         circuit.addLevel(level);
         int cntZero = 0;
         int cntOne = 0;
+        Qubit qubitZero=new Qubit();
         for (int j = 0; j < COUNT; j++) {
             QuantumSimulator simulator = new LocalSimulator(circuit);
             simulator.execute();
             QuantumRegister qreg = simulator.getQuantumRegister();
             qreg.measure();
-            if (qreg.getRegisterState().getData()[0] == Complex.ONE) {
+            if (qreg.getResult()[0].equals(qubitZero)) {
                 cntZero++;
             } else {
                 cntOne++;

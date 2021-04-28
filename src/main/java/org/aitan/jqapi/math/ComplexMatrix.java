@@ -38,11 +38,6 @@ public class ComplexMatrix extends BlockFieldMatrix<Complex> {
     public static ComplexMatrix createGateMatrix(Gate g) {
         return g.getMatrix();
     }
-
-    @Override
-    public String toString() {
-        return "ComplexMatrix{" + super.toString()+'}';
-    }
     
     public static ComplexMatrix kroneckerProduct(List<ComplexMatrix> matrixList) {
         if (matrixList == null || matrixList.size() <= 0)
@@ -104,10 +99,14 @@ public class ComplexMatrix extends BlockFieldMatrix<Complex> {
                 }
             }
         }
-
         // return a new matrix containing the Kronecker product
         return new ComplexMatrix(productData);
     
+    }
+    
+    @Override
+    public String toString() {
+        return "ComplexMatrix{" + super.toString()+'}';
     }
 
 }
