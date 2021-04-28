@@ -5,7 +5,7 @@
  */
 package org.aitan.jqapi.quantum.gates;
 
-import static org.aitan.jqapi.utils.Constants.CNot;
+import static org.aitan.jqapi.utils.Constants.SWAP;
 import static org.aitan.jqapi.utils.Constants.SWAP_MATRIX;
 
 /**
@@ -13,7 +13,7 @@ import static org.aitan.jqapi.utils.Constants.SWAP_MATRIX;
  * @author Gaetano Ferrara
  */
 public class Swap extends Gate{
-    public Swap(Integer firstQubit, Integer targetQubit) {
-        super(2, SWAP_MATRIX, CNot, firstQubit, targetQubit);
+    public Swap(Integer firstQubit, Integer secondQubit) {
+        super(2, SWAP_MATRIX, SWAP, firstQubit, secondQubit);
     }
 }

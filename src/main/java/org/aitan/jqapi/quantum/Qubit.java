@@ -9,6 +9,8 @@ import java.util.Objects;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.utils.Constants;
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.complex.ComplexUtils;
+import org.apache.commons.math3.util.MathUtils;
 import org.apache.commons.math3.util.Precision;
 
 /**
@@ -28,9 +30,11 @@ public class Qubit {
     }
 
     public Qubit(double alpha) {
-        Complex a = new Complex(alpha, 0);
-        Complex b = a.sqrt1z();
-        this.vector = new ComplexVector(new Complex[]{a,b});
+        double beta=Math.sqrt(1-Math.pow(alpha, 2));
+        this.vector=new ComplexVector(ComplexUtils.convertToComplex(new double[]{alpha,beta}));
+//        Complex a = new Complex(alpha, 0);
+//        Complex b = a.sqrt1z();
+//        this.vector = new ComplexVector(new Complex[]{a,b});
     }
     
     public Qubit(Complex a) {
@@ -85,7 +89,7 @@ public class Qubit {
         if(vector.getDimension()!=2) {
             throw new IllegalArgumentException("Qubit must have 2 complex value");
         }
-        double totalProbability=Math.pow(vector.getEntry(0).abs(),2)+Math.pow(vector.getEntry(1).abs(),2);
+        double totalProbability=Precision.round(Math.pow(vector.getEntry(0).abs(),2)+Math.pow(vector.getEntry(1).abs(),2),2);
         if(totalProbability!=1.0) {
             throw new IllegalArgumentException("Qubit must have total probability of 1");
         }

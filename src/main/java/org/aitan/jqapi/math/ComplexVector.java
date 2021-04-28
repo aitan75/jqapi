@@ -57,7 +57,7 @@ public class ComplexVector extends ArrayFieldVector<Complex> {
             int i = 0;
             for (Complex complex : toArray) {
                 int bitAtIndex =  Utils.bitAtIndex(j, i, size);
-                Complex newValue = output[j].getEntry(bitAtIndex).add(Precision.round(Math.pow(complex.abs(), 2),4));
+                Complex newValue = output[j].getEntry(bitAtIndex).add(Math.pow(complex.abs(), 2));
                 output[j].setEntry(bitAtIndex, newValue);
                 i++;
             }
