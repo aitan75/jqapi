@@ -1,7 +1,10 @@
 # Java Quantum API
 
-First Example:
+jqapi is a Java api to test quantum computing concepts. You can simulate your quantum circuit with local simulator.
 
+## Getting Started
+
+```java
         final int COUNT = 10000;
         Circuit circuit = new Circuit(1);
         CircuitLevel level = new CircuitLevel();
