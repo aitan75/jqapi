@@ -1,6 +1,8 @@
 # Java Quantum API
 
-jqapi is a Java api to test quantum computing concepts. You can simulate your quantum circuit with local simulator.
+_**jqapi**_ is a Java Api to test quantum computing concepts. You can simulate your quantum circuit with local simulator.
+
+***
 
 ## Getting Started
 
@@ -25,10 +27,10 @@ jqapi is a Java api to test quantum computing concepts. You can simulate your qu
             }
         }
         System.out.println("Executed " + COUNT + " times hadamard gate on single qubit: " + cntZero + " of them were 0 and " + cntOne + " were 1.");
+```
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
 Please make sure to update tests as appropriate.
 
 ## License
