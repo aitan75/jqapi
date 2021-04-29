@@ -6,7 +6,6 @@
 package org.aitan.jqapi.test;
 
 import java.util.Arrays;
-import org.aitan.jqapi.exceptions.JQApiException;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
@@ -59,7 +58,7 @@ public class JavaQuantumAPITest {
     }
 
     @Test
-    public void testQubit() throws JQApiException {
+    public void testQubit() {
         testQubitProbabilities();
         testTwoQubitTensor();
         testThreeQubitProbabilities();
@@ -138,7 +137,7 @@ public class JavaQuantumAPITest {
         assertEquals(16.00, resultZeroProbability);
     }
 
-    private void testHadamardGate() throws JQApiException {
+    private void testHadamardGate() {
         System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testHadamardGate()");
         final int COUNT = 10000;
         Circuit circuit = new Circuit(1);
@@ -192,7 +191,7 @@ public class JavaQuantumAPITest {
         ComplexVector[] factorize = ComplexVector.factorize(qreg.getRegisterState());
         assertEquals(new Qubit(0), new Qubit(factorize[0]));
         assertEquals(new Qubit(0), new Qubit(factorize[1]));
-        assertEquals(new Qubit(0.8).getValue().getEntry(0), factorize[2].getEntry(0));
+        assertEquals(new Qubit(0.8), new Qubit(factorize[2]));
     }
     
     private void testControlledSwapGate() {
@@ -456,7 +455,7 @@ public class JavaQuantumAPITest {
             //System.out.println("result: " + qreg.getRegisterState());
             Qubit[] factorizeInput = qreg.getInput();
             ComplexVector[] factorizeOutput = ComplexVector.factorize(qreg.getRegisterState());
-            assertEquals(factorizeInput[q].getValue().getEntry(0), factorizeOutput[b].getEntry(0));
+            assertEquals(factorizeInput[q], new Qubit(factorizeOutput[b]));
         }
 
     }

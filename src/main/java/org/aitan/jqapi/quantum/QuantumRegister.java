@@ -19,28 +19,32 @@ public class QuantumRegister {
 
     private final Qubit[] result;
     private final int size;
-    private final ComplexVector input;
+    private final Qubit[] input;
     private ComplexVector registerState;
 
     public QuantumRegister(int size) {
         this.result = new Qubit[size];
+        this.input = new Qubit[size];
         this.size = size;
         this.initializeRegisterState();
-        this.input = this.registerState;
+        this.initializeInput();
+        
     }
 
     public QuantumRegister(int size, Qubit[] qubits) {
         this.result = new Qubit[size];
+        this.input = new Qubit[size];
         this.size = size;
         this.initializeRegisterState(qubits);
-        this.input = this.registerState;
+        this.initializeInput();
     }
 
     public QuantumRegister(int size, double... alphas) {
         this.result = new Qubit[size];
+        this.input = new Qubit[size];
         this.size = size;
         this.initializeRegisterState(alphas);
-        this.input = this.registerState;
+        this.initializeInput();
     }
 
     public int getSize() {
@@ -114,14 +118,7 @@ public class QuantumRegister {
     }
     
     public Qubit[] getInput() {
-        Qubit[] qubitsInput=new Qubit[size];
-        ComplexVector[] factorize = ComplexVector.factorize(input);
-        int i=0;
-        for (ComplexVector complexVector : factorize) {
-            qubitsInput[i]=new Qubit(complexVector);
-            i++;
-        }
-        return qubitsInput;
+        return input;
     }
 
     public Qubit[] getResult() {
@@ -173,6 +170,15 @@ public class QuantumRegister {
             
         Complex[] toArray = Arrays.asList(this.registerState.toArray()).stream().map(complex->complex.multiply(Math.sqrt(d))).toArray(Complex[]::new);
         this.registerState=new ComplexVector(toArray);
+    }
+
+    private void initializeInput() {
+        ComplexVector[] factorize = ComplexVector.factorize(this.registerState);
+        for (int i = 0; i < size; i++) {
+            this.input[i]=new Qubit(factorize[i].getEntry(0));
+        }
+        
+        
     }
 
 }
