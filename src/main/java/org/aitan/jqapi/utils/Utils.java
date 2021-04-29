@@ -10,22 +10,22 @@ package org.aitan.jqapi.utils;
  * @author Gaetano Ferrara
  */
 public class Utils {
-    public static String toBinary(int x, int len)
+    public static String toBinary(int number, int length)
     {
         StringBuilder result = new StringBuilder();
  
-        for (int i = len - 1; i >= 0 ; i--)
+        for (int i = length - 1; i >= 0 ; i--)
         {
             int mask = 1 << i;
-            result.append((x & mask) != 0 ? 1 : 0);
+            result.append((number & mask) != 0 ? 1 : 0);
         }
  
         return result.toString();
     }
     
-    public static int bitAtIndex(int index,int x, int len)
+    public static int bitAtIndex(int index,int number, int length)
     {
-        String toBinary=toBinary(x, len);
+        String toBinary=toBinary(number, length);
  
         return Integer.parseInt(toBinary.substring(index, index + 1));
     }

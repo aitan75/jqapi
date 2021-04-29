@@ -21,9 +21,10 @@ public class Constants {
     public static String ONE_QUANTUM = "|1>";
     public static String PSI_QUANTUM = "|ψ>";
     public static String MEASUREMENT = "M";
-    public static String PROABABILITIES = "P";
+    public static String PROBABILITIES = "P";
     public static String ORACLE = "Oracle";
     public static String CZ = "Cz";
+    public static String CY = "Cy";
     public static String CNot = "CNot";
     public static String PAULI_X = "X";
     public static String PAULI_S = "S";
@@ -33,6 +34,7 @@ public class Constants {
     public static String HADAMARD = "H";
     public static String IDENTITY = "I";
     public static String SWAP = "Swap";
+    public static String CONTROLLED_SWAP = "CSwap";
     public static String TOFFOLI = "TOFF";
 
     public static final ComplexMatrix CONTROLLED_NOT_MATRIX
@@ -48,6 +50,13 @@ public class Constants {
         {Complex.ZERO, Complex.ONE, Complex.ZERO, Complex.ZERO},
         {Complex.ZERO, Complex.ZERO, Complex.ONE, Complex.ZERO},
         {Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ONE.multiply(-1)}});
+
+    public static final ComplexMatrix CONTROLLED_Y_MATRIX
+            = ComplexMatrix.createMatrixWithData(new Complex[][]{
+        {Complex.ONE, Complex.ZERO, Complex.ZERO, Complex.ZERO},
+        {Complex.ZERO, Complex.ONE, Complex.ZERO, Complex.ZERO},
+        {Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.I.multiply(-1)},
+        {Complex.ZERO, Complex.ZERO, Complex.I, Complex.ZERO}});
 
     public static final ComplexMatrix SWAP_MATRIX
             = ComplexMatrix.createMatrixWithData(new Complex[][]{
@@ -67,6 +76,16 @@ public class Constants {
         {Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ONE},
         {Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ONE, Complex.ZERO}});
 
+    public static final ComplexMatrix CONTROLLED_SWAP_MATRIX
+            = ComplexMatrix.createMatrixWithData(new Complex[][]{
+        {Complex.ONE, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO},
+        {Complex.ZERO, Complex.ONE, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO},
+        {Complex.ZERO, Complex.ZERO, Complex.ONE, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO},
+        {Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ONE, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO},
+        {Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ONE, Complex.ZERO, Complex.ZERO, Complex.ZERO},
+        {Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ONE, Complex.ZERO},
+        {Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ONE, Complex.ZERO, Complex.ZERO},
+        {Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ZERO, Complex.ONE}});
 
     public static final ComplexMatrix HADAMARD_MATRIX = ComplexMatrix.createMatrixWithData(new Complex[][]{
         {Constants.HALF_COMPLEX, Constants.HALF_COMPLEX},
