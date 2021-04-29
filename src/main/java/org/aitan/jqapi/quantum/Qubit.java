@@ -82,7 +82,16 @@ public class Qubit {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        return Objects.equals(this.vector, ((Qubit) obj).vector);
+        double real0 = Precision.round(this.vector.getEntry(0).getReal(),4);
+        double imaginary0 = Precision.round(this.vector.getEntry(0).getImaginary(),4);
+        double real1 = Precision.round(this.vector.getEntry(1).getReal(),4);
+        double imaginary1 = Precision.round(this.vector.getEntry(1).getImaginary(),4);
+        double realObj0 = Precision.round(((Qubit) obj).vector.getEntry(0).getReal(),4);
+        double imaginarObj0 = Precision.round(((Qubit) obj).vector.getEntry(0).getImaginary(),4);
+        double realObj1 = Precision.round(((Qubit) obj).vector.getEntry(1).getReal(),4);
+        double imaginaryObj1 = Precision.round(((Qubit) obj).vector.getEntry(1).getImaginary(),4);
+        return real0==realObj0&&imaginary0==imaginarObj0&&real1==realObj1&&imaginary1==imaginaryObj1;
+        
     }
 
     private void verify(ComplexVector vector) {
