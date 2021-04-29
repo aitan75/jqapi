@@ -14,6 +14,7 @@ import org.aitan.jqapi.quantum.CircuitLevel;
 import org.aitan.jqapi.quantum.QuantumRegister;
 import org.aitan.jqapi.quantum.Qubit;
 import org.aitan.jqapi.quantum.gates.ControlledNot;
+import org.aitan.jqapi.quantum.gates.ControlledSwap;
 import org.aitan.jqapi.quantum.gates.ControlledZ;
 import org.aitan.jqapi.quantum.gates.Hadamard;
 import org.aitan.jqapi.quantum.gates.Measurement;
@@ -66,6 +67,7 @@ public class JavaQuantumAPITest {
         testSwapGate();
         testCoinLaunch();
         testToffoliGate();
+        testControlledSwapGate();
         testCircuitSimulator();
         testCNotControlQubitZero();
         testCNotControlQubitOne();
@@ -191,6 +193,22 @@ public class JavaQuantumAPITest {
         assertEquals(new Qubit(0), new Qubit(factorize[0]));
         assertEquals(new Qubit(0), new Qubit(factorize[1]));
         assertEquals(new Qubit(0.8).getValue().getEntry(0), factorize[2].getEntry(0));
+    }
+    
+    private void testControlledSwapGate() {
+        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testControlledSwapGate()");
+        Circuit circuit = new Circuit(3);
+        CircuitLevel level = new CircuitLevel();
+        level.addGate(new ControlledSwap(0, 1, 2));
+        circuit.addLevel(level);
+        QuantumSimulator simulator = new LocalSimulator(circuit,0,1,0);
+        simulator.execute();
+        QuantumRegister qreg = simulator.getQuantumRegister();
+        //qreg.measure();
+        ComplexVector[] factorize = ComplexVector.factorize(qreg.getRegisterState());
+        assertEquals(new Qubit(0), new Qubit(factorize[0]));
+        assertEquals(new Qubit(0), new Qubit(factorize[1]));
+        assertEquals(new Qubit(1), new Qubit(factorize[2]));
     }
 
     private void testCircuitSimulator() {
