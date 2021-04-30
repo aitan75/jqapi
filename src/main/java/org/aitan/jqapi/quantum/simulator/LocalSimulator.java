@@ -61,9 +61,7 @@ public class LocalSimulator implements QuantumSimulator {
                         }
                         ComplexMatrix matrix = gate.getMatrix();
                         if (gate.getNumberQubits() == 1) {
-                            gate.getIndexes().forEach(index -> {
-                                matrices.add(matrix);
-                            });
+                            gate.getIndexes().forEach(index -> matrices.add(matrix));
                         } else {
                             matrices.add(matrix);
                         }

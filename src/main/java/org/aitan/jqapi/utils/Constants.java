@@ -14,28 +14,32 @@ import org.apache.commons.math3.complex.Complex;
  */
 public class Constants {
 
+    private Constants() {
+    }
+
+    
     private static final double HALF_VALUE = 1. / Math.sqrt(2.);
     public static final Complex HALF_COMPLEX = new Complex(HALF_VALUE, 0.d);
     public static final Complex HALF_NEGATIVE_COMPLEX = new Complex(-HALF_VALUE, 0.d);
-    public static String ZERO_QUANTUM = "|0>";
-    public static String ONE_QUANTUM = "|1>";
-    public static String PSI_QUANTUM = "|ψ>";
-    public static String MEASUREMENT = "M";
-    public static String PROBABILITIES = "P";
-    public static String ORACLE = "Oracle";
-    public static String CZ = "Cz";
-    public static String CY = "Cy";
-    public static String CNot = "CNot";
-    public static String PAULI_X = "X";
-    public static String PAULI_S = "S";
-    public static String PAULI_T = "T";
-    public static String PAULI_Y = "Y";
-    public static String PAULI_Z = "Z";
-    public static String HADAMARD = "H";
-    public static String IDENTITY = "I";
-    public static String SWAP = "Swap";
-    public static String CONTROLLED_SWAP = "CSwap";
-    public static String TOFFOLI = "TOFF";
+    public static final String ZERO_QUANTUM = "|0>";
+    public static final String ONE_QUANTUM = "|1>";
+    public static final String PSI_QUANTUM = "|ψ>";
+    public static final String MEASUREMENT = "M";
+    public static final String PROBABILITIES = "P";
+    public static final String ORACLE = "Oracle";
+    public static final String CZ = "Cz";
+    public static final String CY = "Cy";
+    public static final String CNot = "CNot";
+    public static final String PAULI_X = "X";
+    public static final String PAULI_S = "S";
+    public static final String PAULI_T = "T";
+    public static final String PAULI_Y = "Y";
+    public static final String PAULI_Z = "Z";
+    public static final String HADAMARD = "H";
+    public static final String IDENTITY = "I";
+    public static final String SWAP = "Swap";
+    public static final String CONTROLLED_SWAP = "CSwap";
+    public static final String TOFFOLI = "TOFF";
 
     public static final ComplexMatrix CONTROLLED_NOT_MATRIX
             = ComplexMatrix.createMatrixWithData(new Complex[][]{

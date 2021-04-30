@@ -5,6 +5,7 @@
  */
 package org.aitan.jqapi.test;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -61,7 +62,7 @@ public class QuantumAlgorithmTest {
 
     private void testDeutschJoszaAlgorithm() {
         final int N_INPUT = 3;
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         for (int i = 0; i < 10; i++) {
             Circuit circuit = new Circuit(N_INPUT + 1);
             CircuitLevel level1 = new CircuitLevel();

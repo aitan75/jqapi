@@ -10,6 +10,10 @@ package org.aitan.jqapi.utils;
  * @author Gaetano Ferrara
  */
 public class Utils {
+
+    private Utils() {
+    }
+    
     public static String toBinary(int number, int length)
     {
         StringBuilder result = new StringBuilder();

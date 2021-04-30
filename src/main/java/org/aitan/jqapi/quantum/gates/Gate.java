@@ -21,7 +21,7 @@ public abstract class Gate {
     private final int size;
     private final String type;
 
-    public Gate(int numberQubits, ComplexMatrix matrix, String type, Integer... idxs) {
+    protected Gate(int numberQubits, ComplexMatrix matrix, String type, Integer... idxs) {
         if (!verify(idxs)) {
             throw new IllegalArgumentException("Creating gate that affects 2 or more qubits with the same index"); 
         }

@@ -6,14 +6,12 @@
 package org.aitan.jqapi.math;
 
 import java.util.Arrays;
-import java.util.List;
 import org.aitan.jqapi.utils.Utils;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexField;
 import org.apache.commons.math3.linear.ArrayFieldVector;
 import org.apache.commons.math3.linear.FieldMatrix;
 import org.apache.commons.math3.linear.FieldVector;
-import org.apache.commons.math3.util.Precision;
 
 /**
  *

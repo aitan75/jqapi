@@ -53,10 +53,7 @@ public class Circuit {
         }
 
         List<Integer> indexes = IntStream.range(0, inputSize).filter(index -> level.getGates().stream().allMatch(gate -> !gate.getIndexes().contains(index))).boxed().collect(Collectors.toList());
-        indexes.forEach(index -> {
-            level.addGate(index, new Identity(index));
-        });
-
+        indexes.forEach(index -> level.addGate(index, new Identity(index)));
         return level;
     }
 
