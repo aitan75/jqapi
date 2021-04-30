@@ -28,7 +28,7 @@ public class LocalSimulator implements QuantumSimulator {
         this.quantumRegister = new QuantumRegister(circuit.getInputSize());
     }
 
-    public LocalSimulator(Circuit circuit, Qubit...qubits) {
+    public LocalSimulator(Circuit circuit, Qubit... qubits) {
 
         if (circuit.getInputSize() != qubits.length) {
             throw new IllegalArgumentException("Number of input qubits are different from circuit size");
@@ -36,8 +36,8 @@ public class LocalSimulator implements QuantumSimulator {
         this.circuit = circuit;
         this.quantumRegister = new QuantumRegister(circuit.getInputSize(), qubits);
     }
-    
-    public LocalSimulator(Circuit circuit, double...alphas) {
+
+    public LocalSimulator(Circuit circuit, double... alphas) {
 
         if (circuit.getInputSize() != alphas.length) {
             throw new IllegalArgumentException("Number of input qubits are different from circuit size");
@@ -57,7 +57,7 @@ public class LocalSimulator implements QuantumSimulator {
                             quantumRegister.measureQubitAtIndexes(gate.getIndexes());
                         }
                         if (gate.getType().equals(Constants.PROBABILITIES)) {
-                            
+
                         }
                         ComplexMatrix matrix = gate.getMatrix();
                         if (gate.getNumberQubits() == 1) {

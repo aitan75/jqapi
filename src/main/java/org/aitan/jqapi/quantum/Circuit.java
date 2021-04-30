@@ -42,21 +42,21 @@ public class Circuit {
         for (CircuitLevel level : levels) {
             this.levels.add(this.initializeLevels(level));
         }
-        
+
     }
 
     private CircuitLevel initializeLevels(CircuitLevel level) {
-        
+
         boolean errorGate = level.getGates().stream().anyMatch(g -> g.getIndexes().size() > inputSize || !g.getIndexes().stream().allMatch(index -> index >= 0 && index < inputSize));
         if (errorGate) {
             throw new IllegalArgumentException("Adding gate that affect more qubits than circuit size or qubits out of register indexes");
         }
-        
-        List<Integer> indexes = IntStream.range(0, inputSize).filter(index->level.getGates().stream().allMatch(gate->!gate.getIndexes().contains(index))).boxed().collect(Collectors.toList());
+
+        List<Integer> indexes = IntStream.range(0, inputSize).filter(index -> level.getGates().stream().allMatch(gate -> !gate.getIndexes().contains(index))).boxed().collect(Collectors.toList());
         indexes.forEach(index -> {
-            level.addGate(index,new Identity(index));
+            level.addGate(index, new Identity(index));
         });
-        
+
         return level;
     }
 
