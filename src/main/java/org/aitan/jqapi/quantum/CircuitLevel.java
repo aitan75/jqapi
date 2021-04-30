@@ -8,9 +8,7 @@ package org.aitan.jqapi.quantum;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.aitan.jqapi.quantum.gates.Gate;
-import org.aitan.jqapi.quantum.gates.Identity;
 
 /**
  *

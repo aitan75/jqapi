@@ -5,6 +5,7 @@
  */
 package org.aitan.jqapi.quantum;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 import org.aitan.jqapi.math.ComplexVector;
@@ -141,7 +142,8 @@ public class QuantumRegister {
     }
 
     private int calculateCollapsedIndex() {
-        double random = Math.random();
+        double random =new SecureRandom().nextDouble();
+        //double random = Math.random();
         double p;
 
         int j = -1;
@@ -155,7 +157,8 @@ public class QuantumRegister {
     }
 
     private int calculateCollapsedIndex(int qubitIndex) {
-        double random = Math.random();
+        //double random = Math.random();
+        double random =new SecureRandom().nextDouble();
         double zeroProbability = 0;
         double oneProbability = 0;
 
@@ -182,7 +185,7 @@ public class QuantumRegister {
                 this.registerState.setEntry(i, Complex.ZERO);
             }
         }
-        double d = registerNotZero / count;
+        double d = count != 0 ? registerNotZero / Double.valueOf(count) : 0.0;
 
         Complex[] toArray = Arrays.asList(this.registerState.toArray()).stream().map(complex -> complex.multiply(Math.sqrt(d))).toArray(Complex[]::new);
         this.registerState = new ComplexVector(toArray);
