@@ -70,11 +70,11 @@ public class QuantumAlgorithmTest {
             CircuitLevel level4 = new CircuitLevel();
             level1.addGate(new PauliX(N_INPUT));
             Integer[] qubitIndexes = IntStream.range(0, N_INPUT + 1).boxed().toArray(Integer[]::new);
-            Integer[] qubitIndexesExceptLast = IntStream.range(0, N_INPUT).boxed().toArray(Integer[]::new);
+            Integer[] qubitIndexesExceptAncilla = IntStream.range(0, N_INPUT).boxed().toArray(Integer[]::new);
             level2.addGate(new Hadamard(qubitIndexes));
             int function = random.nextInt(4);
             level3.addGate(new Oracle(createDeutschJoszaOracle(function, N_INPUT + 1), qubitIndexes));
-            level4.addGate(new Hadamard(qubitIndexesExceptLast));
+            level4.addGate(new Hadamard(qubitIndexesExceptAncilla));
             circuit.addLevel(level1, level2, level3, level4);
             QuantumSimulator simulator = new LocalSimulator(circuit);
             simulator.execute();
