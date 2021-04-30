@@ -5,7 +5,6 @@
  */
 package org.aitan.jqapi.quantum.simulator;
 
-import org.aitan.jqapi.quantum.Circuit;
 import org.aitan.jqapi.quantum.QuantumRegister;
 
 /**

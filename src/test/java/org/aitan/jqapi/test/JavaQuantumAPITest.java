@@ -5,7 +5,6 @@
  */
 package org.aitan.jqapi.test;
 
-import java.util.Arrays;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
@@ -173,9 +172,9 @@ public class JavaQuantumAPITest {
         simulator.execute();
         QuantumRegister qreg = simulator.getQuantumRegister();
         //qreg.measure();
-        ComplexVector[] factorize = ComplexVector.factorize(qreg.getRegisterState());
-        assertEquals(qreg.getInput()[0], new Qubit(factorize[1]));
-        assertEquals(qreg.getInput()[1], new Qubit(factorize[0]));
+        Qubit[] factorize = qreg.getQubitRegisterState();
+        assertEquals(qreg.getInput()[0], factorize[1]);
+        assertEquals(qreg.getInput()[1], factorize[0]);
     }
 
     private void testToffoliGate() {
@@ -188,10 +187,10 @@ public class JavaQuantumAPITest {
         simulator.execute();
         QuantumRegister qreg = simulator.getQuantumRegister();
         //qreg.measure();
-        ComplexVector[] factorize = ComplexVector.factorize(qreg.getRegisterState());
-        assertEquals(new Qubit(0), new Qubit(factorize[0]));
-        assertEquals(new Qubit(0), new Qubit(factorize[1]));
-        assertEquals(new Qubit(0.8), new Qubit(factorize[2]));
+        Qubit[] factorize = qreg.getQubitRegisterState();
+        assertEquals(new Qubit(0), factorize[0]);
+        assertEquals(new Qubit(0), factorize[1]);
+        assertEquals(new Qubit(0.8), factorize[2]);
     }
     
     private void testControlledSwapGate() {
@@ -204,10 +203,10 @@ public class JavaQuantumAPITest {
         simulator.execute();
         QuantumRegister qreg = simulator.getQuantumRegister();
         //qreg.measure();
-        ComplexVector[] factorize = ComplexVector.factorize(qreg.getRegisterState());
-        assertEquals(new Qubit(0), new Qubit(factorize[0]));
-        assertEquals(new Qubit(0), new Qubit(factorize[1]));
-        assertEquals(new Qubit(1), new Qubit(factorize[2]));
+        Qubit[] factorize = qreg.getQubitRegisterState();
+        assertEquals(new Qubit(0), factorize[0]);
+        assertEquals(new Qubit(0), factorize[1]);
+        assertEquals(new Qubit(1), factorize[2]);
     }
 
     private void testCircuitSimulator() {
@@ -311,30 +310,6 @@ public class JavaQuantumAPITest {
         System.out.println("QuantumRegister input target qubit: " + qreg.getInput()[1]);
         System.out.println("QuantumRegister output target qubit: " + qreg.getResult()[1]);
         assertEquals(new Qubit(0), qreg.getResult()[1]);
-    }
-
-    private void testRegisterStateAfterQubitCollapsed() {
-        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testRegisterStateAfterQubitCollapsed()");
-        Complex[] complex = new Complex[8];
-
-        for (int i = 0; i < 1000; i++) {
-            //Initial register state
-            complex[0] = new Complex(0.5); //000
-            complex[1] = new Complex(0); //001
-            complex[2] = new Complex(0); //010
-            complex[3] = new Complex(0.5); //011
-            complex[4] = new Complex(0.5); //100
-            complex[5] = new Complex(0); //101
-            complex[6] = new Complex(0); //110
-            complex[7] = new Complex(0.5); //111
-            ComplexVector registerState = new ComplexVector(complex);
-            QuantumRegister qreg = new QuantumRegister(3);
-            qreg.setRegisterState(registerState);
-            //Qubit collapsed at index 0 of qubit register
-            qreg.measureQubitAtIndexes(Arrays.asList(0, 2));
-            System.out.println("result: " + Arrays.toString(qreg.getResult()));
-            System.out.println("register: " + qreg.getRegisterState());
-        }
     }
 
     private void testBellState() {
@@ -454,8 +429,8 @@ public class JavaQuantumAPITest {
             //qreg.measure();
             //System.out.println("result: " + qreg.getRegisterState());
             Qubit[] factorizeInput = qreg.getInput();
-            ComplexVector[] factorizeOutput = ComplexVector.factorize(qreg.getRegisterState());
-            assertEquals(factorizeInput[q], new Qubit(factorizeOutput[b]));
+            Qubit[] factorizeOutput = qreg.getQubitRegisterState();
+            assertEquals(factorizeInput[q], factorizeOutput[b]);
         }
 
     }

@@ -5,12 +5,10 @@
  */
 package org.aitan.jqapi.quantum;
 
-import java.util.Objects;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.utils.Constants;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexUtils;
-import org.apache.commons.math3.util.MathUtils;
 import org.apache.commons.math3.util.Precision;
 
 /**
@@ -32,9 +30,6 @@ public class Qubit {
     public Qubit(double alpha) {
         double beta=Math.sqrt(1-Math.pow(alpha, 2));
         this.vector=new ComplexVector(ComplexUtils.convertToComplex(new double[]{alpha,beta}));
-//        Complex a = new Complex(alpha, 0);
-//        Complex b = a.sqrt1z();
-//        this.vector = new ComplexVector(new Complex[]{a,b});
     }
     
     public Qubit(Complex a) {
@@ -90,6 +85,7 @@ public class Qubit {
         double imaginarObj0 = Precision.round(((Qubit) obj).vector.getEntry(0).getImaginary(),4);
         double realObj1 = Precision.round(((Qubit) obj).vector.getEntry(1).getReal(),4);
         double imaginaryObj1 = Precision.round(((Qubit) obj).vector.getEntry(1).getImaginary(),4);
+        
         return real0==realObj0&&imaginary0==imaginarObj0&&real1==realObj1&&imaginary1==imaginaryObj1;
         
     }

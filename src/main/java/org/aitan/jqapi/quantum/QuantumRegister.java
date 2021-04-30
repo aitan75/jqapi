@@ -26,57 +26,40 @@ public class QuantumRegister {
         this.result = new Qubit[size];
         this.input = new Qubit[size];
         this.size = size;
-        this.initializeRegisterState();
-        this.initializeInput();
-        
+        this.initializeQuantumRegister();
+
     }
 
     public QuantumRegister(int size, Qubit[] qubits) {
         this.result = new Qubit[size];
         this.input = new Qubit[size];
         this.size = size;
-        this.initializeRegisterState(qubits);
-        this.initializeInput();
+        this.initializeQuantumRegister(qubits);
     }
 
     public QuantumRegister(int size, double... alphas) {
         this.result = new Qubit[size];
         this.input = new Qubit[size];
         this.size = size;
-        this.initializeRegisterState(alphas);
-        this.initializeInput();
+        this.initializeQuantumRegister(alphas);
+
     }
 
     public int getSize() {
         return size;
     }
 
-    private void initializeRegisterState() {
-        ComplexVector registerStateToUpdate = new Qubit(1).getValue();
-        for (int i = 1; i < size; i++) {
-            registerStateToUpdate = new Qubit(1).getValue().tensorProduct(registerStateToUpdate);
-        }
-        this.registerState = registerStateToUpdate;
-    }
-
-    private void initializeRegisterState(Qubit[] qubits) {
-        ComplexVector registerStateToUpdate = qubits[0].getValue();
-        for (int i = 1; i < size; i++) {
-            registerStateToUpdate = qubits[i].getValue().tensorProduct(registerStateToUpdate);
-        }
-        this.registerState = registerStateToUpdate;
-    }
-    
-    private void initializeRegisterState(double ... alphas) {
-        ComplexVector registerStateToUpdate = new Qubit(alphas[0]).getValue();
-        for (int i = 1; i < size; i++) {
-            registerStateToUpdate = new Qubit(alphas[i]).getValue().tensorProduct(registerStateToUpdate);
-        }
-        this.registerState = registerStateToUpdate;
-    }
-
     public ComplexVector getRegisterState() {
         return registerState;
+    }
+
+    public Qubit[] getQubitRegisterState() {
+        ComplexVector[] factorize = ComplexVector.factorize(this.registerState);
+        Qubit[] qubits = new Qubit[size];
+        for (int i = 0; i < factorize.length; i++) {
+            qubits[i] = new Qubit(factorize[i]);
+        }
+        return qubits;
     }
 
     public void setRegisterState(ComplexVector registerState) {
@@ -116,13 +99,45 @@ public class QuantumRegister {
         }
 
     }
-    
+
     public Qubit[] getInput() {
         return input;
     }
 
     public Qubit[] getResult() {
         return result;
+    }
+
+    private void initializeQuantumRegister() {
+        ComplexVector registerStateToUpdate = new Qubit(1).getValue();
+        this.input[0] = new Qubit(1);
+        for (int i = 1; i < size; i++) {
+            registerStateToUpdate = new Qubit(1).getValue().tensorProduct(registerStateToUpdate);
+            this.input[i] = new Qubit(1);
+        }
+        this.registerState = registerStateToUpdate;
+    }
+
+    private void initializeQuantumRegister(Qubit[] qubits) {
+        ComplexVector registerStateToUpdate = qubits[0].getValue();
+        this.input[0] = qubits[0];
+        for (int i = 1; i < size; i++) {
+            Qubit qubit = qubits[i];
+            registerStateToUpdate = qubit.getValue().tensorProduct(registerStateToUpdate);
+            this.input[i] = qubit;
+        }
+        this.registerState = registerStateToUpdate;
+    }
+
+    private void initializeQuantumRegister(double... alphas) {
+        ComplexVector registerStateToUpdate = new Qubit(alphas[0]).getValue();
+        this.input[0] = new Qubit(alphas[0]);
+        for (int i = 1; i < size; i++) {
+            Qubit qubit = new Qubit(alphas[i]);
+            registerStateToUpdate = qubit.getValue().tensorProduct(registerStateToUpdate);
+            this.input[i] = qubit;
+        }
+        this.registerState = registerStateToUpdate;
     }
 
     private int calculateCollapsedIndex() {
@@ -152,13 +167,14 @@ public class QuantumRegister {
         }
         return zeroProbability >= random ? 0 : 1;
     }
+
     private void updateRegisterStateAfterQubitCollapsed(int qubitPos, int indexCollapsed) {
         long count = 0;
         List<Complex> register = Arrays.asList(this.registerState.toArray());
         long registerNotZero = register.stream().filter(complex -> !complex.equals(Complex.ZERO)).count();
         for (int i = 0; i < this.registerState.getDimension(); i++) {
             int bitAtIndex = Utils.bitAtIndex(qubitPos, i, size);
-            if (bitAtIndex == indexCollapsed&&!this.registerState.getEntry(i).equals(Complex.ZERO)) {
+            if (bitAtIndex == indexCollapsed && !this.registerState.getEntry(i).equals(Complex.ZERO)) {
                 double newProbability = Math.pow(this.registerState.getEntry(i).abs(), 2);
                 this.registerState.setEntry(i, new Complex(Math.sqrt(newProbability)));
                 count++;
@@ -166,19 +182,10 @@ public class QuantumRegister {
                 this.registerState.setEntry(i, Complex.ZERO);
             }
         }
-        double d=registerNotZero/count;
-            
-        Complex[] toArray = Arrays.asList(this.registerState.toArray()).stream().map(complex->complex.multiply(Math.sqrt(d))).toArray(Complex[]::new);
-        this.registerState=new ComplexVector(toArray);
-    }
+        double d = registerNotZero / count;
 
-    private void initializeInput() {
-        ComplexVector[] factorize = ComplexVector.factorize(this.registerState);
-        for (int i = 0; i < size; i++) {
-            this.input[i]=new Qubit(factorize[i].getEntry(0));
-        }
-        
-        
+        Complex[] toArray = Arrays.asList(this.registerState.toArray()).stream().map(complex -> complex.multiply(Math.sqrt(d))).toArray(Complex[]::new);
+        this.registerState = new ComplexVector(toArray);
     }
 
 }
