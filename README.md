@@ -1,6 +1,6 @@
 # Java Quantum API
 
-_**jqapi**_ is a Java Api to test quantum computing concepts. You can simulate your quantum circuit with local simulator.
+_**jqapi**_ is a Java Api to test quantum computing concepts. At the moment you can simulate your quantum circuit with a local simulator.
 
 ***
 
