@@ -11,6 +11,9 @@ import org.aitan.jqapi.quantum.Circuit;
 import org.aitan.jqapi.quantum.CircuitLevel;
 import org.aitan.jqapi.quantum.QuantumRegister;
 import org.aitan.jqapi.quantum.Qubit;
+import org.aitan.jqapi.quantum.QubitOne;
+import org.aitan.jqapi.quantum.QubitSuperposition;
+import org.aitan.jqapi.quantum.QubitZero;
 import org.aitan.jqapi.quantum.gates.ControlledNot;
 import org.aitan.jqapi.quantum.gates.ControlledSwap;
 import org.aitan.jqapi.quantum.gates.ControlledZ;
@@ -78,13 +81,13 @@ public class JavaQuantumAPITest {
 
     private void testTwoQubitTensor() {
         System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testTwoQubitTensor()");
-        Qubit firstQubit = new Qubit(0);
-        Qubit secondQubit = new Qubit(1);
+        Qubit firstQubit = new QubitOne();
+        Qubit secondQubit = new QubitZero();
         ComplexVector tensorProduct = secondQubit.getValue().tensorProduct(firstQubit.getValue());
         ComplexVector expResult11 = new ComplexVector(new Complex[]{Complex.ZERO, Complex.ZERO, Complex.ONE, Complex.ZERO});
         assertEquals(expResult11, tensorProduct);
-        firstQubit = new Qubit(1);
-        secondQubit = new Qubit(0);
+        firstQubit = new QubitZero();
+        secondQubit = new QubitOne();
         tensorProduct = secondQubit.getValue().tensorProduct(firstQubit.getValue());
         ComplexVector expResult00 = new ComplexVector(new Complex[]{Complex.ZERO, Complex.ONE, Complex.ZERO, Complex.ZERO});
         assertEquals(expResult00, tensorProduct);
@@ -92,18 +95,18 @@ public class JavaQuantumAPITest {
 
     private void testThreeQubitProbabilities() {
         System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testThreeQubitProbabilities()");
-        Qubit firstQubit = new Qubit(Math.sqrt(0.30));
-        Qubit secondQubit = new Qubit(Math.sqrt(0.25));
-        Qubit thirdQubit = new Qubit(Math.sqrt(0.80));
+        Qubit firstQubit = new QubitSuperposition(Math.sqrt(0.30));
+        Qubit secondQubit = new QubitSuperposition(Math.sqrt(0.25));
+        Qubit thirdQubit = new QubitSuperposition(Math.sqrt(0.80));
         ComplexVector tensorProduct123 = firstQubit.getValue().tensorProduct(secondQubit.getValue()).tensorProduct(thirdQubit.getValue());
-        ComplexVector output000 = new Qubit(1).getValue().tensorProduct(new Qubit(1).getValue()).tensorProduct(new Qubit(1).getValue());
-        ComplexVector output001 = new Qubit(0).getValue().tensorProduct(new Qubit(1).getValue()).tensorProduct(new Qubit(1).getValue());
-        ComplexVector output010 = new Qubit(1).getValue().tensorProduct(new Qubit(0).getValue()).tensorProduct(new Qubit(1).getValue());
-        ComplexVector output011 = new Qubit(0).getValue().tensorProduct(new Qubit(0).getValue()).tensorProduct(new Qubit(1).getValue());
-        ComplexVector output100 = new Qubit(1).getValue().tensorProduct(new Qubit(1).getValue()).tensorProduct(new Qubit(0).getValue());
-        ComplexVector output101 = new Qubit(0).getValue().tensorProduct(new Qubit(1).getValue()).tensorProduct(new Qubit(0).getValue());
-        ComplexVector output110 = new Qubit(1).getValue().tensorProduct(new Qubit(0).getValue()).tensorProduct(new Qubit(0).getValue());
-        ComplexVector output111 = new Qubit(0).getValue().tensorProduct(new Qubit(0).getValue()).tensorProduct(new Qubit(0).getValue());
+        ComplexVector output000 = new QubitZero().getValue().tensorProduct(new QubitZero().getValue()).tensorProduct(new QubitZero().getValue());
+        ComplexVector output001 = new QubitOne().getValue().tensorProduct(new QubitZero().getValue()).tensorProduct(new QubitZero().getValue());
+        ComplexVector output010 = new QubitZero().getValue().tensorProduct(new QubitOne().getValue()).tensorProduct(new QubitZero().getValue());
+        ComplexVector output011 = new QubitOne().getValue().tensorProduct(new QubitOne().getValue()).tensorProduct(new QubitZero().getValue());
+        ComplexVector output100 = new QubitZero().getValue().tensorProduct(new QubitZero().getValue()).tensorProduct(new QubitOne().getValue());
+        ComplexVector output101 = new QubitOne().getValue().tensorProduct(new QubitZero().getValue()).tensorProduct(new QubitOne().getValue());
+        ComplexVector output110 = new QubitZero().getValue().tensorProduct(new QubitOne().getValue()).tensorProduct(new QubitOne().getValue());
+        ComplexVector output111 = new QubitOne().getValue().tensorProduct(new QubitOne().getValue()).tensorProduct(new QubitOne().getValue());
         System.out.println("tensorProduct: " + tensorProduct123);
         Double probabilities000 = Math.pow(output000.dotProduct(tensorProduct123).abs(), 2);
         Double probabilities001 = Math.pow(output001.dotProduct(tensorProduct123).abs(), 2);
@@ -129,7 +132,7 @@ public class JavaQuantumAPITest {
     }
 
     private void testQubitProbabilities() {
-        Qubit qubit = new Qubit(0.4);
+        Qubit qubit = new QubitSuperposition(0.4);
         double resultOneProbability = qubit.oneProbability() * 100;
         double resultZeroProbability = qubit.zeroProbability() * 100;
         assertEquals(84.00, resultOneProbability);
@@ -145,13 +148,13 @@ public class JavaQuantumAPITest {
         circuit.addLevel(level);
         int cntZero = 0;
         int cntOne = 0;
-        Qubit qubitZero=new Qubit();
+        Qubit qubitZero=new QubitZero();
         for (int j = 0; j < COUNT; j++) {
             QuantumSimulator simulator = new LocalSimulator(circuit);
             simulator.execute();
             QuantumRegister qreg = simulator.getQuantumRegister();
             qreg.measure();
-            if (qreg.getResult()[0].equals(qubitZero)) {
+            if (qreg.getResult()[0].getValue().equals(qubitZero.getValue())) {
                 cntZero++;
             } else {
                 cntOne++;
@@ -188,9 +191,9 @@ public class JavaQuantumAPITest {
         QuantumRegister qreg = simulator.getQuantumRegister();
         //qreg.measure();
         Qubit[] factorize = qreg.getQubitRegisterState();
-        assertEquals(new Qubit(0), factorize[0]);
-        assertEquals(new Qubit(0), factorize[1]);
-        assertEquals(new Qubit(0.8), factorize[2]);
+        assertEquals(new QubitOne(), factorize[0]);
+        assertEquals(new QubitOne(), factorize[1]);
+        assertEquals(new QubitSuperposition(0.8), factorize[2]);
     }
     
     private void testControlledSwapGate() {
@@ -203,10 +206,10 @@ public class JavaQuantumAPITest {
         simulator.execute();
         QuantumRegister qreg = simulator.getQuantumRegister();
         //qreg.measure();
-        Qubit[] factorize = qreg.getQubitRegisterState();
-        assertEquals(new Qubit(0), factorize[0]);
-        assertEquals(new Qubit(0), factorize[1]);
-        assertEquals(new Qubit(1), factorize[2]);
+        Qubit[] qubits = qreg.getQubitRegisterState();
+        assertEquals(new QubitOne(), qubits[0]);
+        assertEquals(new QubitOne(), qubits[1]);
+        assertEquals(new QubitZero(), qubits[2]);
     }
 
     private void testCircuitSimulator() {
@@ -292,7 +295,7 @@ public class JavaQuantumAPITest {
         qreg.measure();
         System.out.println("QuantumRegister input target qubit: " + qreg.getInput()[1]);
         System.out.println("QuantumRegister output target qubit: " + qreg.getResult()[1]);
-        assertEquals(new Qubit(1), qreg.getResult()[1]);
+        assertEquals(new QubitZero(), qreg.getResult()[1]);
     }
 
     private void testCNotControlQubitOne() {
@@ -309,7 +312,7 @@ public class JavaQuantumAPITest {
         qreg.measure();
         System.out.println("QuantumRegister input target qubit: " + qreg.getInput()[1]);
         System.out.println("QuantumRegister output target qubit: " + qreg.getResult()[1]);
-        assertEquals(new Qubit(0), qreg.getResult()[1]);
+        assertEquals(new QubitOne(), qreg.getResult()[1]);
     }
 
     private void testBellState() {
@@ -327,8 +330,8 @@ public class JavaQuantumAPITest {
             simulator.execute();
             QuantumRegister qreg = simulator.getQuantumRegister();
             qreg.measure();
-            boolean firstCoin = qreg.getResult()[0].equals(new Qubit());
-            boolean secondCoin = qreg.getResult()[1].equals(new Qubit());
+            boolean firstCoin = qreg.getResult()[0].equals(new QubitZero());
+            boolean secondCoin = qreg.getResult()[1].equals(new QubitZero());
             if (firstCoin && secondCoin) {
                 results[0]++;
             }
@@ -372,8 +375,8 @@ public class JavaQuantumAPITest {
             simulator.execute();
             QuantumRegister qreg = simulator.getQuantumRegister();
             qreg.measure();
-            boolean firstCoin = qreg.getResult()[0].equals(new Qubit());
-            boolean secondCoin = qreg.getResult()[1].equals(new Qubit());
+            boolean firstCoin = qreg.getResult()[0].equals(new QubitZero());
+            boolean secondCoin = qreg.getResult()[1].equals(new QubitZero());
             if (firstCoin && secondCoin) {
                 results[0]++;
             }
