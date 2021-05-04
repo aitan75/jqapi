@@ -14,7 +14,7 @@ _**jqapi**_ is a Java Api library to test quantum computing concepts. At the mom
         circuit.addLevel(level);
         int cntZero = 0;
         int cntOne = 0;
-        Qubit qubitZero=new Qubit();
+        Qubit qubitZero=new QubitZero();
         for (int j = 0; j < COUNT; j++) {
             QuantumSimulator simulator = new LocalSimulator(circuit);
             simulator.execute();
