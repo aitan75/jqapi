@@ -15,9 +15,9 @@ import org.apache.commons.math3.util.Precision;
  *
  * @author Gaetano Ferrara
  */
-public class Qubit {
+public abstract class Qubit {
 
-    private final ComplexVector vector;
+    protected ComplexVector vector;
 
     private double theta = 0;
     private double phi = 0;
@@ -36,19 +36,10 @@ public class Qubit {
         Complex b = a.sqrt1z();
         this.vector = new ComplexVector(new Complex[]{a,b});
     }
-    
-    public Qubit(ComplexVector vector) {
-        this.verify(vector);
-        this.vector=vector;
-    }
 
-    public double zeroProbability() {
-        return Precision.round(Math.pow(vector.getEntry(0).abs(),2),4);
-    }
+    public abstract double zeroProbability();
 
-    public double oneProbability() {
-        return Precision.round(Math.pow(vector.getEntry(1).abs(),2),4);
-    }
+    public abstract double oneProbability();
 
     @Override
     public String toString() {
@@ -90,15 +81,6 @@ public class Qubit {
         
     }
 
-    private void verify(ComplexVector vector) {
-        if(vector.getDimension()!=2) {
-            throw new IllegalArgumentException("Qubit must have 2 complex value");
-        }
-        double totalProbability=Precision.round(Math.pow(vector.getEntry(0).abs(),2)+Math.pow(vector.getEntry(1).abs(),2),2);
-        if(totalProbability!=1.0) {
-            throw new IllegalArgumentException("Qubit must have total probability of 1");
-        }
-    }
     
     
 
