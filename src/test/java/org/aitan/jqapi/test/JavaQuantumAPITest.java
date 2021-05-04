@@ -154,7 +154,7 @@ public class JavaQuantumAPITest {
             simulator.execute();
             QuantumRegister qreg = simulator.getQuantumRegister();
             qreg.measure();
-            if (qreg.getResult()[0].getValue().equals(qubitZero.getValue())) {
+            if (qreg.getResult()[0].equals(qubitZero)) {
                 cntZero++;
             } else {
                 cntOne++;
@@ -276,10 +276,10 @@ public class JavaQuantumAPITest {
         System.out.println("0 1 occurred " + results[1] + " times.");
         System.out.println("1 0 occurred " + results[2] + " times.");
         System.out.println("1 1 occurred " + results[3] + " times.");
-        assertEquals(25.0, Precision.round((double) results[0] * 100 / COUNT, 2), 1);
-        assertEquals(25.0, Precision.round((double) results[1] * 100 / COUNT, 2), 1);
-        assertEquals(25.0, Precision.round((double) results[2] * 100 / COUNT, 2), 1);
-        assertEquals(25.0, Precision.round((double) results[3] * 100 / COUNT, 2), 1);
+        assertEquals(25.0, Precision.round((double) results[0] * 100 / COUNT, 2), 1.5);
+        assertEquals(25.0, Precision.round((double) results[1] * 100 / COUNT, 2), 1.5);
+        assertEquals(25.0, Precision.round((double) results[2] * 100 / COUNT, 2), 1.5);
+        assertEquals(25.0, Precision.round((double) results[3] * 100 / COUNT, 2), 1.5);
     }
 
     private void testCNotControlQubitZero() {
