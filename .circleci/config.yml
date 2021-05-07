@@ -5,10 +5,17 @@ jobs:
       - image: 'circleci/openjdk:14-jdk-buster'
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "pom.xml" }} # appends cache key with a hash of pom.xml file
+            - v1-dependencies-                         # fallback in case previous cache key is not found
       - run:
           name: Analyze on SonarCloud
           command: mvn verify sonar:sonar
-
+      - save_cache:
+            paths:
+              - ~/.m2
+            key: v1-dependencies-{{ checksum "pom.xml" }}
 workflows:
   main:
     jobs:
