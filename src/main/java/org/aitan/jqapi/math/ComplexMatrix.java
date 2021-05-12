@@ -41,7 +41,7 @@ public class ComplexMatrix extends BlockFieldMatrix<Complex> {
     
     public static ComplexMatrix kroneckerProduct(List<ComplexMatrix> matrixList) {
         if (matrixList == null || matrixList.size() <= 0)
-            throw new IllegalArgumentException("no input matrices");
+            throw new IllegalArgumentException("No input matrices");
         if (matrixList.size() == 1)
             return matrixList.get(0); // nothing to do, only one matrix
 

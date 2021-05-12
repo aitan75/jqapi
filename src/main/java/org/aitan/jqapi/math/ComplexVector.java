@@ -44,7 +44,7 @@ public class ComplexVector extends ArrayFieldVector<Complex> {
 
     public static ComplexVector[] factorize(FieldVector<Complex> vector) {
         int vectorSize = vector.getDimension();
-        int size = (int) (Math.log(vectorSize) / Math.log(2));
+        int size = (int) Math.ceil((Math.log(vectorSize) / Math.log(2)));
         Complex[] toArray = vector.toArray();
         ComplexVector[] output = new ComplexVector[size];
         for (int i = 0; i < output.length; i++) {

@@ -143,7 +143,6 @@ public class QuantumRegister {
 
     private int calculateCollapsedIndex() {
         double random =new SecureRandom().nextDouble();
-        //double random = Math.random();
         double p;
 
         int j = -1;
@@ -157,7 +156,6 @@ public class QuantumRegister {
     }
 
     private int calculateCollapsedIndex(int qubitIndex) {
-        //double random = Math.random();
         double random =new SecureRandom().nextDouble();
         double zeroProbability = 0;
         double oneProbability = 0;
