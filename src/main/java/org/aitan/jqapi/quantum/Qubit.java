@@ -22,17 +22,17 @@ public abstract class Qubit {
     private double theta = 0;
     private double phi = 0;
 
-    public Qubit() {
+    protected Qubit() {
         this.vector = new ComplexVector(new Complex[]{Complex.ONE,Complex.ZERO});
 
     }
 
-    public Qubit(double alpha) {
+    protected Qubit(double alpha) {
         double beta=Math.sqrt(1-Math.pow(alpha, 2));
         this.vector=new ComplexVector(ComplexUtils.convertToComplex(new double[]{alpha,beta}));
     }
     
-    public Qubit(Complex a) {
+    protected Qubit(Complex a) {
         Complex b = a.sqrt1z();
         this.vector = new ComplexVector(new Complex[]{a,b});
     }
