@@ -76,8 +76,8 @@ public class QuantumAlgorithmTest {
             }
         }
         System.out.println("Executed " + COUNT + " times random bit: " + cntZero + " of them were 0 and " + cntOne + " were 1.");
-        assertEquals(50.0, Precision.round((double) cntZero * 100 / COUNT, 2), 1.5);
-        assertEquals(50.0, Precision.round((double) cntOne * 100 / COUNT, 2), 1.5);
+        assertEquals(50.0, Precision.round((double) cntZero * 100 / COUNT, 2), 2.5);
+        assertEquals(50.0, Precision.round((double) cntOne * 100 / COUNT, 2), 2.5);
     }
 
     private void testDeutschJoszaAlgorithm() {

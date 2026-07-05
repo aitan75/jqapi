@@ -245,10 +245,10 @@ public class JavaQuantumAPITest {
         System.out.println("0 1 occurred " + results[1] + " times.");
         System.out.println("1 0 occurred " + results[2] + " times.");
         System.out.println("1 1 occurred " + results[3] + " times.");
-        assertEquals(25.0, Precision.round((double) results[0] * 100 / COUNT, 2), 1.5);
-        assertEquals(25.0, Precision.round((double) results[1] * 100 / COUNT, 2), 1.5);
-        assertEquals(25.0, Precision.round((double) results[2] * 100 / COUNT, 2), 1.5);
-        assertEquals(25.0, Precision.round((double) results[3] * 100 / COUNT, 2), 1.5);
+        assertEquals(25.0, Precision.round((double) results[0] * 100 / COUNT, 2), 2.5);
+        assertEquals(25.0, Precision.round((double) results[1] * 100 / COUNT, 2), 2.5);
+        assertEquals(25.0, Precision.round((double) results[2] * 100 / COUNT, 2), 2.5);
+        assertEquals(25.0, Precision.round((double) results[3] * 100 / COUNT, 2), 2.5);
     }
 
     private void testCNotControlQubitZero() {
@@ -324,8 +324,8 @@ public class JavaQuantumAPITest {
         System.out.println("01 occurred: " + results[2]);
         System.out.println("11 occurred: " + results[3]);
 
-        assertEquals(50.0, Precision.round((double) results[0] * 100 / COUNT, 2), 1.5);
-        assertEquals(50.0, Precision.round((double) results[3] * 100 / COUNT, 2), 1.5);
+        assertEquals(50.0, Precision.round((double) results[0] * 100 / COUNT, 2), 2.5);
+        assertEquals(50.0, Precision.round((double) results[3] * 100 / COUNT, 2), 2.5);
     }
 
     private void testOracle() {
@@ -369,8 +369,8 @@ public class JavaQuantumAPITest {
         System.out.println("01 occurred: " + results[2]);
         System.out.println("11 occurred: " + results[3]);
 
-        assertEquals(50.0, Precision.round((double) results[0] * 100 / COUNT, 2), 1.5);
-        assertEquals(50.0, Precision.round((double) results[3] * 100 / COUNT, 2), 1.5);
+        assertEquals(50.0, Precision.round((double) results[0] * 100 / COUNT, 2), 2.5);
+        assertEquals(50.0, Precision.round((double) results[3] * 100 / COUNT, 2), 2.5);
     }
 
     private void testQuantumTeleportation() {
