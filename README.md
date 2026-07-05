@@ -34,4 +34,4 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 Please make sure to update tests as appropriate.
 
 ## License
-Not available yet
+[MIT](LICENSE)
