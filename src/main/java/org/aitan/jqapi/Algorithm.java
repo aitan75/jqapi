@@ -65,16 +65,26 @@ public class Algorithm {
             levelS6.addGate(new Hadamard(qubitIndexes));
             circuit.addLevel(levelS1, levelS2, levelS3, levelS4, levelS5, levelS6);
         }
-        QuantumSimulator simulator = new LocalSimulator(circuit);
-        simulator.execute();
-        QuantumRegister qreg = simulator.getQuantumRegister();
-        qreg.measure();
-        String binaryString="";
-        Qubit qubitZero=new QubitZero();
-        for (int i = 0; i < N_QUBIT; i++) {
-            binaryString+=qreg.getResult()[i].equals(qubitZero)?"0":"1";
+        //Grover is probabilistic: the amplified solution is measured with high
+        //but not unit probability. Verify the measured candidate classically
+        //and retry the simulation on an unlucky outcome.
+        final int MAX_ATTEMPTS = 10;
+        Qubit qubitZero = new QubitZero();
+        for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+            QuantumSimulator simulator = new LocalSimulator(circuit);
+            simulator.execute();
+            QuantumRegister qreg = simulator.getQuantumRegister();
+            qreg.measure();
+            StringBuilder binaryString = new StringBuilder();
+            for (int i = 0; i < N_QUBIT; i++) {
+                binaryString.append(qreg.getResult()[i].equals(qubitZero) ? "0" : "1");
+            }
+            int candidate = Integer.parseInt(binaryString.toString(), 2);
+            if (candidate < size && function.apply(list.get(candidate))) {
+                return list.get(candidate);
+            }
         }
-        return list.get(Integer.parseInt(binaryString, 2));
+        throw new JQApiException("Grover search did not converge after " + MAX_ATTEMPTS + " attempts");
     }
 
     private static <T> Oracle createGroverOracle(int N, List<T> list, Function<T, Boolean> function, Integer[] qubitIndexes) throws JQApiException {
