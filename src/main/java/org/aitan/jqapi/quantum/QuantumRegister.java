@@ -1,7 +1,6 @@
 package org.aitan.jqapi.quantum;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.List;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.utils.Utils;
@@ -12,6 +11,8 @@ import org.apache.commons.math3.complex.Complex;
  * @author Gaetano Ferrara
  */
 public class QuantumRegister {
+
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final Qubit[] result;
     private final int size;
@@ -49,8 +50,21 @@ public class QuantumRegister {
         return registerState;
     }
 
+    /**
+     * Factorizes the register state into single qubits.
+     * <p>
+     * This is only meaningful for separable (non-entangled) states: for
+     * entangled states no such factorization exists and this method throws
+     * {@link IllegalStateException}. Note that the factorization is derived
+     * from the marginal probabilities of each qubit, so relative phases of
+     * the individual qubits are not recovered.
+     *
+     * @return one qubit per register position
+     * @throws IllegalStateException if the register state is entangled
+     */
     public Qubit[] getQubitRegisterState() {
         ComplexVector[] factorize = ComplexVector.factorize(this.registerState);
+        this.verifySeparable(factorize);
         Qubit[] qubits = new Qubit[size];
         for (int i = 0; i < factorize.length; i++) {
             qubits[i] = factorize[i].getEntry(0).equals(Complex.ONE)?new QubitZero():factorize[i].getEntry(0).equals(Complex.ZERO)?new QubitOne():new QubitSuperposition(factorize[i]);
@@ -70,24 +84,21 @@ public class QuantumRegister {
         //Initialize all register state to 0
         for (int i = 0; i < registerState.getDimension(); i++) {
             registerState.setEntry(i, Complex.ZERO);
-
         }
         //Set indexCollapsed element of register state to 1
         registerState.setEntry(indexCollapsed, Complex.ONE);
-        ComplexVector[] factorize = ComplexVector.factorize(registerState);
+        //The collapsed state is a computational basis state: read each qubit directly from its bit
         for (int i = 0; i < size; i++) {
-            result[i] = factorize[i].getEntry(0).equals(Complex.ONE)?new QubitZero():factorize[i].getEntry(0).equals(Complex.ZERO)?new QubitOne():new QubitSuperposition(factorize[i]);
+            result[i] = Utils.bitAtIndex(i, indexCollapsed, size) == 0 ? new QubitZero() : new QubitOne();
         }
     }
 
     public void measureQubitAtIndexes(List<Integer> indexes) {
         if (indexes.size() < size) {
             indexes.forEach(index -> {
-                int indexCollapsed = this.calculateCollapsedIndex(index);
-                ComplexVector qubitToMeasure = new ComplexVector(new Complex[]{Complex.ZERO, Complex.ZERO});
-                qubitToMeasure.setEntry(indexCollapsed, Complex.ONE);
-                this.result[index] = qubitToMeasure.getEntry(0).equals(Complex.ONE)?new QubitZero():qubitToMeasure.getEntry(0).equals(Complex.ZERO)?new QubitOne():new QubitSuperposition(qubitToMeasure);
-                this.updateRegisterStateAfterQubitCollapsed(index, indexCollapsed);
+                int collapsedValue = this.calculateCollapsedIndex(index);
+                this.result[index] = collapsedValue == 0 ? new QubitZero() : new QubitOne();
+                this.updateRegisterStateAfterQubitCollapsed(index, collapsedValue);
             });
 
         } else {
@@ -137,21 +148,18 @@ public class QuantumRegister {
     }
 
     private int calculateCollapsedIndex() {
-        double random =new SecureRandom().nextDouble();
-        double p;
-
+        double random = RANDOM.nextDouble();
+        int lastIndex = this.registerState.getDimension() - 1;
         int j = -1;
-        while (random >= 0) {
+        while (random >= 0 && j < lastIndex) {
             j++;
-            p = Math.pow(this.registerState.getEntry(j).abs(), 2);
-            random -= p;
+            random -= Math.pow(this.registerState.getEntry(j).abs(), 2);
         }
-
         return j;
     }
 
     private int calculateCollapsedIndex(int qubitIndex) {
-        double random =new SecureRandom().nextDouble();
+        double random = RANDOM.nextDouble();
         double zeroProbability = 0;
         double oneProbability = 0;
 
@@ -164,24 +172,47 @@ public class QuantumRegister {
         return zeroProbability >= random ? 0 : 1;
     }
 
-    private void updateRegisterStateAfterQubitCollapsed(int qubitPos, int indexCollapsed) {
-        long count = 0;
-        List<Complex> register = Arrays.asList(this.registerState.toArray());
-        long registerNotZero = register.stream().filter(complex -> !complex.equals(Complex.ZERO)).count();
+    private void updateRegisterStateAfterQubitCollapsed(int qubitPos, int collapsedValue) {
+        //Probability of the branch we collapsed into: sum of |amplitude|^2 over
+        //all basis states whose bit at qubitPos equals the measured value
+        double branchProbability = 0;
         for (int i = 0; i < this.registerState.getDimension(); i++) {
-            int bitAtIndex = Utils.bitAtIndex(qubitPos, i, size);
-            if (bitAtIndex == indexCollapsed && !this.registerState.getEntry(i).equals(Complex.ZERO)) {
-                double newProbability = Math.pow(this.registerState.getEntry(i).abs(), 2);
-                this.registerState.setEntry(i, new Complex(Math.sqrt(newProbability)));
-                count++;
+            if (Utils.bitAtIndex(qubitPos, i, size) == collapsedValue) {
+                branchProbability += Math.pow(this.registerState.getEntry(i).abs(), 2);
+            }
+        }
+        if (branchProbability == 0) {
+            throw new IllegalStateException("Qubit " + qubitPos + " collapsed to a zero-probability branch");
+        }
+        //Zero out the discarded branch and renormalize the surviving amplitudes,
+        //dividing by sqrt(p): this preserves the relative phases
+        double norm = Math.sqrt(branchProbability);
+        for (int i = 0; i < this.registerState.getDimension(); i++) {
+            if (Utils.bitAtIndex(qubitPos, i, size) == collapsedValue) {
+                this.registerState.setEntry(i, this.registerState.getEntry(i).divide(norm));
             } else {
                 this.registerState.setEntry(i, Complex.ZERO);
             }
         }
-        double d = count != 0 ? registerNotZero / Double.valueOf(count) : 0.0;
+    }
 
-        Complex[] toArray = Arrays.asList(this.registerState.toArray()).stream().map(complex -> complex.multiply(Math.sqrt(d))).toArray(Complex[]::new);
-        this.registerState = new ComplexVector(toArray);
+    /**
+     * Verifies that the joint probabilities of the register state match the
+     * product of the per-qubit marginal probabilities, i.e. that the state is
+     * (probabilistically) separable.
+     */
+    private void verifySeparable(ComplexVector[] qubitMarginals) {
+        for (int i = 0; i < this.registerState.getDimension(); i++) {
+            double product = 1;
+            for (int q = 0; q < size; q++) {
+                int bit = Utils.bitAtIndex(q, i, size);
+                product *= Math.pow(qubitMarginals[q].getEntry(bit).abs(), 2);
+            }
+            double actual = Math.pow(this.registerState.getEntry(i).abs(), 2);
+            if (Math.abs(product - actual) > 1e-9) {
+                throw new IllegalStateException("Register state is entangled and cannot be factorized into independent qubits: use measure() or read the full register state instead");
+            }
+        }
     }
 
 }
