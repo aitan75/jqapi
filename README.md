@@ -29,6 +29,19 @@ _**jqapi**_ is a Java Api library to test quantum computing concepts. At the mom
         System.out.println("Executed " + COUNT + " times hadamard gate on single qubit: " + cntZero + " of them were 0 and " + cntOne + " were 1.");
 ```
 
+## Simulator notes
+
+The local simulator applies each gate directly to the state vector, so the full 2^n x 2^n operator of a circuit level is never built. This allows simulating circuits with many qubits (e.g. a 20-qubit GHZ circuit runs in a few seconds) and gates can act on arbitrary, non adjacent qubits:
+
+```
+Circuit circuit = new Circuit(3);
+CircuitLevel level = new CircuitLevel();
+level.addGate(new ControlledNot(0, 2)); // control on qubit 0, target on qubit 2
+circuit.addLevel(level);
+```
+
+Conventions: qubit 0 is the most significant bit of the state index; in multi-qubit gates the first declared qubit is the most significant one (e.g. the control in `ControlledNot(control, target)`).
+
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 Please make sure to update tests as appropriate.
