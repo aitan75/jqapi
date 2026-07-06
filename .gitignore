@@ -2,3 +2,4 @@
 *.properties
 .DS_Store
 /target/
+nbactions.xml
