@@ -1,9 +1,11 @@
 package org.aitan.jqapi;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.aitan.jqapi.exceptions.JQApiException;
+import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
@@ -39,11 +41,35 @@ public class Algorithm {
     }
     
     public static <T> T search(List<T> list, Function<T, Boolean> function) throws JQApiException {
+        return search(list, function, JQAPIConfig.getDefault());
+    }
+
+    /**
+     * Runs Grover's search over {@code list}, returning the first element for
+     * which {@code function} evaluates to {@code true}, using the supplied
+     * configuration to bound the required number of qubits.
+     *
+     * @param <T> the element type
+     * @param list the list to search (must contain at least 2 elements)
+     * @param function the predicate identifying the searched element
+     * @param config the configuration bounding the search size
+     * @return the matching element
+     * @throws JQApiException if no element matches or the search does not converge
+     * @throws JQApiLimitException if the list is too small or too large for the configured limits
+     */
+    public static <T> T search(List<T> list, Function<T, Boolean> function, JQAPIConfig config) throws JQApiException {
+        Objects.requireNonNull(list, "list");
         int size = list.size();
-        final int N_QUBIT = (int) Math.ceil((Math.log(size) / Math.log(2)));
+        if (size < 2) {
+            throw new JQApiLimitException("Search list must contain at least 2 elements, was: " + size);
+        }
+        final int N_QUBIT = 32 - Integer.numberOfLeadingZeros(size - 1); //exact ceil(log2(size)), no floating point
+        if (N_QUBIT > config.maxSearchQubits()) {
+            throw new JQApiLimitException("Search requires " + N_QUBIT + " qubits, exceeds maximum allowed search qubits (" + config.maxSearchQubits() + ")");
+        }
         int N = 1 << N_QUBIT;
         final double count = Math.PI * Math.sqrt(N) / 4;
-        Circuit circuit = new Circuit(N_QUBIT);
+        Circuit circuit = new Circuit(N_QUBIT, config);
         CircuitLevel level1 = new CircuitLevel();
         Integer[] qubitIndexes = IntStream.range(0, N_QUBIT).boxed().toArray(Integer[]::new);
         level1.addGate(new Hadamard(qubitIndexes));
@@ -105,7 +131,7 @@ public class Algorithm {
                 }
             }
         }
-        if(!found) throw new JQApiException("No element found in the list "+list+" with applied filter");
+        if(!found) throw new JQApiException("No element found in the list of "+size+" elements with applied filter");
         return new Oracle(ComplexMatrix.createMatrixWithData(matrix), qubitIndexes);
     }
 
