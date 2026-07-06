@@ -24,7 +24,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -55,15 +55,7 @@ public class QuantumAlgorithmTest {
     }
 
     @Test
-    public void testAlgorithm() {
-        testDeutschJoszaAlgorithm();
-        testFunctionSearchAlgorithm();
-        testRandomBit();
-        testGroverSearchAlgorithm();
-    }
-
-    private void testRandomBit() {
-        System.out.println("org.aitan.jqapi.test.QuantumAlgorithmTest.testRandomBit()");
+    public void testRandomBit() {
         final int COUNT = 10000;
         int cntZero = 0;
         int cntOne = 0;
@@ -75,13 +67,12 @@ public class QuantumAlgorithmTest {
                 cntOne++;
             }
         }
-        System.out.println("Executed " + COUNT + " times random bit: " + cntZero + " of them were 0 and " + cntOne + " were 1.");
         assertEquals(50.0, Precision.round((double) cntZero * 100 / COUNT, 2), 2.5);
         assertEquals(50.0, Precision.round((double) cntOne * 100 / COUNT, 2), 2.5);
     }
 
-    private void testDeutschJoszaAlgorithm() {
-        System.out.println("org.aitan.jqapi.test.QuantumAlgorithmTest.testDeutschJoszaAlgorithm()");
+    @Test
+    public void testDeutschJoszaAlgorithm() {
         final int N_INPUT = 3;
         SecureRandom random = new SecureRandom();
         for (int i = 0; i < 10; i++) {
@@ -104,13 +95,14 @@ public class QuantumAlgorithmTest {
             qreg.measure();
             Qubit[] input = qreg.getInput();
             String message = qreg.getResult()[0].equals(input[0]) ? "constant" : "balanced";
-            System.out.println("f" + function + " is " + message);
+            String expected = (function == 0 || function == 3) ? "constant" : "balanced";
+            assertEquals(expected, message, "function " + function);
         }
 
     }
 
-    private void testFunctionSearchAlgorithm() {
-        System.out.println("org.aitan.jqapi.test.QuantumAlgorithmTest.testFunctionSearchAlgorithm()");
+    @Test
+    public void testFunctionSearchAlgorithm() {
         boolean found = false;
         List<Person> persons = createListPersons();
         Function<Person, Boolean> function = search();
@@ -120,19 +112,20 @@ public class QuantumAlgorithmTest {
             found = function.apply(target);
 
         }
-        System.out.println("Got result after " + index + " tries: " + persons.get(index - 1));
+        assertTrue(found, "expected to find a matching person");
+        Person result = persons.get(index - 1);
+        assertEquals("Pippo", result.name());
+        assertEquals(45, result.age());
     }
 
-    private void testGroverSearchAlgorithm() {
-        System.out.println("org.aitan.jqapi.test.QuantumAlgorithmTest.testGroverSearchAlgorithm()");
-        try {
-            List<Person> persons = createListPersons();
-            Collections.shuffle(persons);
-            Person found = Algorithm.search(persons, search());
-            System.out.println("Person found: " + found);
-        } catch (JQApiException ex) {
-            System.out.println(ex.getMessage());
-        }
+    @Test
+    public void testGroverSearchAlgorithm() throws JQApiException {
+        List<Person> persons = createListPersons();
+        Collections.shuffle(persons);
+        Person found = Algorithm.search(persons, search());
+        assertNotNull(found);
+        assertEquals("Pippo", found.name());
+        assertEquals(45, found.age());
     }
 
     private Oracle createDeutschJoszaOracle(int function, int numberOfInputs, Integer[] qubitIndexes) {
