@@ -62,7 +62,6 @@ public class LocalSimulator implements QuantumSimulator {
     /** {@inheritDoc} */
     @Override
     public void execute() {
-        int numQubits = circuit.getInputSize();
         circuit.getLevels().forEach(level ->
                 level.getGates().forEach(gate -> {
                     if (gate.getType().equals(Constants.MEASUREMENT)) {
@@ -74,63 +73,12 @@ public class LocalSimulator implements QuantumSimulator {
                     }
                     if (gate.getNumberQubits() == 1) {
                         //single-qubit gate, possibly replicated on several qubits
-                        gate.getIndexes().forEach(index -> applyGate(gate.getMatrix(), Collections.singletonList(index), numQubits));
+                        gate.getIndexes().forEach(index -> quantumRegister.applyOperator(gate.getMatrix(), Collections.singletonList(index)));
                     } else {
-                        applyGate(gate.getMatrix(), gate.getIndexes(), numQubits);
+                        quantumRegister.applyOperator(gate.getMatrix(), gate.getIndexes());
                     }
                 })
         );
-    }
-
-    /**
-     * Applies a 2^k x 2^k gate matrix to the k target qubits of the register
-     * state, in place. For every group of 2^k amplitudes that differ only in
-     * the target-qubit bits, the group is multiplied by the gate matrix.
-     */
-    private void applyGate(ComplexMatrix gateMatrix, List<Integer> targetQubits, int numQubits) {
-        int k = targetQubits.size();
-        int localDimension = 1 << k;
-        if (gateMatrix.getRowDimension() != localDimension) {
-            throw new IllegalArgumentException("Gate matrix of dimension " + gateMatrix.getRowDimension()
-                    + " cannot be applied to " + k + " qubit(s)");
-        }
-        ComplexVector state = quantumRegister.getRegisterState();
-        int dimension = state.getDimension();
-
-        //offsets[t] = bits to set in the base index to select the local state t.
-        //Qubit q lives at integer bit position (numQubits - 1 - q) because qubit 0
-        //is the most significant; local bit j of the gate maps to targetQubits[j].
-        int[] offsets = new int[localDimension];
-        for (int t = 0; t < localDimension; t++) {
-            int offset = 0;
-            for (int j = 0; j < k; j++) {
-                if (((t >> (k - 1 - j)) & 1) != 0) {
-                    offset |= 1 << (numQubits - 1 - targetQubits.get(j));
-                }
-            }
-            offsets[t] = offset;
-        }
-        int targetMask = offsets[localDimension - 1];
-
-        Complex[] local = new Complex[localDimension];
-        for (int base = 0; base < dimension; base++) {
-            if ((base & targetMask) != 0) {
-                continue; //visit each amplitude group once, starting from the index with all target bits at 0
-            }
-            for (int t = 0; t < localDimension; t++) {
-                local[t] = state.getEntry(base | offsets[t]);
-            }
-            for (int r = 0; r < localDimension; r++) {
-                Complex sum = Complex.ZERO;
-                for (int c = 0; c < localDimension; c++) {
-                    Complex entry = gateMatrix.getEntry(r, c);
-                    if (!entry.equals(Complex.ZERO)) {
-                        sum = sum.add(entry.multiply(local[c]));
-                    }
-                }
-                state.setEntry(base | offsets[r], sum);
-            }
-        }
     }
 
     /** {@inheritDoc} */
