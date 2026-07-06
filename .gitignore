@@ -4,3 +4,8 @@
 /target/
 nbactions.xml
 .tokensave
+.aider*
+
+# agent-generated review artifacts
+review_report.md
+security_audit_report.md
