@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 import org.aitan.jqapi.quantum.gates.Gate;
 
 /**
+ * A single time-step of a {@link Circuit}: a set of gates applied in parallel
+ * to distinct qubits. Add gates with {@link #addGate(org.aitan.jqapi.quantum.gates.Gate)}.
  *
  * @author Gaetano Ferrara
  */
@@ -17,11 +19,13 @@ public class CircuitLevel {
         this.gates = new ArrayList<>();
     }
 
+    /** Adds a gate to this level.
+     *  @param gate the gate to apply during this time-step */
     public void addGate(Gate gate) {
         this.verify(gate);
         this.gates.add(gate);
     }
-    
+
     void addGate(Integer index, Gate gate) {
         this.verify(gate);
         if(index>=this.gates.size()) {
@@ -29,13 +33,15 @@ public class CircuitLevel {
         } else {
             this.gates.add(index,gate);
         }
-        
+
     }
 
+    /** @return the gates applied during this level */
     public List<Gate> getGates() {
         return gates;
     }
 
+    /** @param gates the gates applied during this level */
     public void setGates(List<Gate> gates) {
         this.gates = gates;
     }

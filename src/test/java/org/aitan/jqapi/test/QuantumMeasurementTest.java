@@ -29,19 +29,12 @@ public class QuantumMeasurementTest {
 
     private static final double EPS = 1e-9;
 
-    @Test
-    public void testMeasurement() {
-        testPartialMeasurementRenormalizationNonUniform();
-        testPartialMeasurementPreservesPhase();
-        testEntangledStateFactorizationRejected();
-        testSeparableStateFactorizationStillWorks();
-    }
-
     /**
      * State sqrt(0.8)|00> + sqrt(0.2)|11>. After measuring qubit 0 the register
      * must be a properly normalized basis state (|00> or |11>).
      */
-    private void testPartialMeasurementRenormalizationNonUniform() {
+    @Test
+    public void testPartialMeasurementRenormalizationNonUniform() {
         Circuit circuit = new Circuit(2);
         CircuitLevel level = new CircuitLevel();
         level.addGate(new ControlledNot(0, 1));
@@ -70,7 +63,8 @@ public class QuantumMeasurementTest {
      * State (|00> - |11>)/sqrt(2). When qubit 0 collapses to 1, the surviving
      * amplitude must be exactly -1: the relative phase must not be discarded.
      */
-    private void testPartialMeasurementPreservesPhase() {
+    @Test
+    public void testPartialMeasurementPreservesPhase() {
         boolean sawOne = false;
         boolean sawZero = false;
         for (int i = 0; i < 200 && !(sawOne && sawZero); i++) {
@@ -109,7 +103,8 @@ public class QuantumMeasurementTest {
      * getQubitRegisterState() must fail loudly instead of returning a
      * misleading product state.
      */
-    private void testEntangledStateFactorizationRejected() {
+    @Test
+    public void testEntangledStateFactorizationRejected() {
         Circuit circuit = new Circuit(2);
         CircuitLevel level1 = new CircuitLevel();
         CircuitLevel level2 = new CircuitLevel();
@@ -125,7 +120,8 @@ public class QuantumMeasurementTest {
     /**
      * Factorization must keep working for separable states.
      */
-    private void testSeparableStateFactorizationStillWorks() {
+    @Test
+    public void testSeparableStateFactorizationStillWorks() {
         Circuit circuit = new Circuit(2);
         CircuitLevel level = new CircuitLevel();
         level.addGate(new PauliZ(0));

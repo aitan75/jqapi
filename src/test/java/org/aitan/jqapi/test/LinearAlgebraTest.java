@@ -41,18 +41,14 @@ public class LinearAlgebraTest {
     }
 
     @Test
-    public void testLinearAlgebra() {
-        testIdentityMatrix();
-        testKroneckerProduct();
-    }
-
-    private void testIdentityMatrix() {
+    public void testIdentityMatrix() {
         ComplexMatrix result = ComplexMatrix.createIdentityMatrix(2);
         ComplexMatrix expResult = new Identity().getMatrix();
         assertEquals(expResult, result);
     }
 
-    private void testKroneckerProduct() {
+    @Test
+    public void testKroneckerProduct() {
         ComplexMatrix matrix1 = ComplexMatrix.createGateMatrix(new Identity());
         ComplexMatrix matrix2 = ComplexMatrix.createGateMatrix(new PauliX(0));
         List<ComplexMatrix> matrixList = new ArrayList<>();

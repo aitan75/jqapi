@@ -1,8 +1,21 @@
-# Java Quantum API [![aitan75](https://circleci.com/gh/aitan75/jqapi.svg?style=svg)](https://app.circleci.com/pipelines/github/aitan75/jqapi)
+# Java Quantum API [![Build](https://github.com/aitan75/jqapi/actions/workflows/build.yml/badge.svg)](https://github.com/aitan75/jqapi/actions/workflows/build.yml)
 
 _**jqapi**_ is a Java Api library to test quantum computing concepts. At the moment you can simulate your quantum circuit with a local simulator.
 
 ***
+
+## Requirements
+
+- Java 21+
+- Maven 3.9+
+
+## Build
+
+```bash
+mvn clean package
+```
+
+The build produces `target/jqapi-1.0.0.jar`.
 
 ## Getting Started
 
@@ -41,6 +54,17 @@ circuit.addLevel(level);
 ```
 
 Conventions: qubit 0 is the most significant bit of the state index; in multi-qubit gates the first declared qubit is the most significant one (e.g. the control in `ControlledNot(control, target)`).
+
+## Supported gates
+
+Identity, Pauli X/Y/Z, Pauli S, Pauli T, Hadamard, Swap, Controlled-NOT,
+Controlled-Y, Controlled-Z, Controlled-Swap, Toffoli, Oracle, Measurement.
+
+## Supported algorithms & examples
+
+Bell state, quantum teleportation, Deutsch-Jozsa, Grover search, function
+search, random bit generation. See the tests under
+`src/test/java/org/aitan/jqapi/test/` for runnable examples.
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
