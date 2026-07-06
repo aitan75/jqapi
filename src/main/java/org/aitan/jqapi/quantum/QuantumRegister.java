@@ -2,6 +2,9 @@ package org.aitan.jqapi.quantum;
 
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Objects;
+import org.aitan.jqapi.JQAPIConfig;
+import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.utils.Utils;
@@ -26,32 +29,92 @@ public class QuantumRegister {
     /** Creates a register of the given size initialised to |0...0>.
      *  @param size number of qubits */
     public QuantumRegister(int size) {
-        this.result = new Qubit[size];
-        this.input = new Qubit[size];
-        this.size = size;
-        this.initializeQuantumRegister();
-
+        this(size, JQAPIConfig.getDefault().maxQubits());
     }
 
     /** Creates a register from explicit per-qubit initial states.
      *  @param size number of qubits
      *  @param qubits the initial state of each qubit */
     public QuantumRegister(int size, Qubit[] qubits) {
-        this.result = new Qubit[size];
-        this.input = new Qubit[size];
-        this.size = size;
-        this.initializeQuantumRegister(qubits);
+        this(size, JQAPIConfig.getDefault().maxQubits(), qubits);
     }
 
     /** Creates a register from amplitude coefficients.
      *  @param size number of qubits
      *  @param alphas amplitude coefficients of the state vector */
     public QuantumRegister(int size, double... alphas) {
+        this(size, JQAPIConfig.getDefault().maxQubits(), alphas);
+    }
+
+    private QuantumRegister(int size, int maxQubits) {
+        validateSize(size, maxQubits);
+        this.result = new Qubit[size];
+        this.input = new Qubit[size];
+        this.size = size;
+        this.initializeQuantumRegister();
+    }
+
+    private QuantumRegister(int size, int maxQubits, Qubit[] qubits) {
+        validateSize(size, maxQubits);
+        this.result = new Qubit[size];
+        this.input = new Qubit[size];
+        this.size = size;
+        this.initializeQuantumRegister(qubits);
+    }
+
+    private QuantumRegister(int size, int maxQubits, double[] alphas) {
+        validateSize(size, maxQubits);
         this.result = new Qubit[size];
         this.input = new Qubit[size];
         this.size = size;
         this.initializeQuantumRegister(alphas);
+    }
 
+    /**
+     * Creates a register of the given size initialised to |0...0>, bounded by
+     * the supplied configuration.
+     *
+     * @param size number of qubits
+     * @param config the configuration bounding the register size
+     * @return a new register initialised to |0...0>
+     */
+    public static QuantumRegister forSimulation(int size, JQAPIConfig config) {
+        return new QuantumRegister(size, config.maxQubits());
+    }
+
+    /**
+     * Creates a register from explicit per-qubit initial states, bounded by the
+     * supplied configuration.
+     *
+     * @param size number of qubits
+     * @param config the configuration bounding the register size
+     * @param qubits the initial state of each qubit
+     * @return a new register initialised from the given qubits
+     */
+    public static QuantumRegister forSimulation(int size, JQAPIConfig config, Qubit[] qubits) {
+        return new QuantumRegister(size, config.maxQubits(), qubits);
+    }
+
+    /**
+     * Creates a register from amplitude coefficients, bounded by the supplied
+     * configuration.
+     *
+     * @param size number of qubits
+     * @param config the configuration bounding the register size
+     * @param alphas amplitude coefficients of the state vector
+     * @return a new register initialised from the given amplitudes
+     */
+    public static QuantumRegister forSimulation(int size, JQAPIConfig config, double... alphas) {
+        return new QuantumRegister(size, config.maxQubits(), alphas);
+    }
+
+    private static void validateSize(int size, int maxQubits) {
+        if (size <= 0) {
+            throw new JQApiLimitException("Register size must be positive, was: " + size);
+        }
+        if (size > maxQubits) {
+            throw new JQApiLimitException("Register size " + size + " exceeds maximum allowed qubits (" + maxQubits + ")");
+        }
     }
 
     /** @return the number of qubits in the register */
@@ -169,6 +232,12 @@ public class QuantumRegister {
      *  state.
      *  @param indexes the qubit indexes to measure */
     public void measureQubitAtIndexes(List<Integer> indexes) {
+        Objects.requireNonNull(indexes);
+        indexes.forEach(index -> {
+            if (index == null || index < 0 || index >= size) {
+                throw new JQApiLimitException("Measurement index " + index + " out of range [0, " + size + ")");
+            }
+        });
         if (indexes.size() < size) {
             indexes.forEach(index -> {
                 int collapsedValue = this.calculateCollapsedIndex(index);
