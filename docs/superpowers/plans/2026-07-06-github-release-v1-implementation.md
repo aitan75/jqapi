@@ -54,9 +54,9 @@ Totale atteso dopo il refactor: **29 `@Test`** (il conteggio non cambia: gli ass
 
 **Asserzioni da aggiungere** (i valori sono deterministici, verificati sul codice):
 
-- `QuantumAlgorithmTest.testDeutschJoszaAlgorithm`: dentro il ciclo, dopo aver calcolato `message`, la funzione `case 0` è l'identità (costante) mentre `case 1/2/3` sono bilanciate. Sostituire la `System.out.println` finale con:
+- `QuantumAlgorithmTest.testDeutschJoszaAlgorithm`: dentro il ciclo, dopo aver calcolato `message`. Verificato sul codice di `createDeutschJoszaOracle`: `case 0` è l'identità (costante, f(x)=0) e `case 3` è `kronecker(I,…,PAULI_X)` = flip incondizionato dell'ancilla (costante, f(x)=1); `case 1` e `case 2` sono bilanciate. Deutsch-Jozsa misura entrambe le costanti come `"constant"`. Sostituire la `System.out.println` finale con:
   ```java
-  String expected = (function == 0) ? "constant" : "balanced";
+  String expected = (function == 0 || function == 3) ? "constant" : "balanced";
   assertEquals(expected, message, "function " + function);
   ```
 - `QuantumAlgorithmTest.testFunctionSearchAlgorithm`: il predicato `search()` è `age()==45 && name().startsWith("P")`; nella lista l'unico match è `Pippo (45)`. Dopo il ciclo, sostituire la print con:
