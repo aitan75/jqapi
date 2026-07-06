@@ -70,5 +70,21 @@ search, random bit generation. See the tests under
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 Please make sure to update tests as appropriate.
 
+### Opening issues
+
+We accept issues that are **properly documented**: state the issue type and use the matching **title prefix** and **label**.
+
+| Type | Title prefix | Label | Use for |
+|------|--------------|-------|---------|
+| Feature | `[FEATURE] - ` | `enhancement` | New functionality or capability |
+| Bug | `[BUG] - ` | `bug` | Defects and robustness/edge-case fixes |
+| Security | `[SECURITY] - ` | `security` | Security hardening / DevSecOps |
+
+A good issue includes: a short **Summary**, the **Motivation** (or the findings/steps to reproduce), a **Proposed solution**, **Acceptance criteria** (checklist), and **References** to affected code (`file:line`). See the open issues for ready-to-follow templates:
+
+- Feature — [#2 initial size-limit configuration](https://github.com/aitan75/jqapi/issues/2)
+- Bug — [#3 harden input handling](https://github.com/aitan75/jqapi/issues/3)
+- Security — [#4 non-blocking CI/supply-chain hardening](https://github.com/aitan75/jqapi/issues/4)
+
 ## License
 [MIT](LICENSE)
