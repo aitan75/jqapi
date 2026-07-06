@@ -60,6 +60,33 @@ circuit.addLevel(level);
 
 Conventions: qubit 0 is the most significant bit of the state index; in multi-qubit gates the first declared qubit is the most significant one (e.g. the control in `ControlledNot(control, target)`).
 
+## Size limits
+
+State vectors grow as 2^n, so registers, circuits and searches are bounded by `JQAPIConfig` to protect against resource exhaustion:
+
+- defaults: `maxQubits` = 24, `maxSearchQubits` = 12; both hard-capped at 30 (`ABSOLUTE_MAX_QUBITS`, where `1 << n` would overflow `int`)
+- override at JVM startup with `-Djqapi.max.qubits=N` / `-Djqapi.max.search.qubits=N` (read once at class initialization; invalid or out-of-range values fall back to the defaults, and later `System.setProperty` calls have no effect)
+- per-instance: build a config with `JQAPIConfig.of(maxQubits, maxSearchQubits)` and pass it to `new Circuit(size, config)`, `QuantumRegister.forSimulation(size, config)` or `Algorithm.search(list, filter, config)`
+- exceeding a limit throws the unchecked `JQApiLimitException`
+
+### Measured ceilings (benchmark)
+
+The defaults are conservative theoretical values; the real ceiling depends on the machine. Values measured with `MemoryLimitBenchmark` on a MacBook Pro (Apple M2, 8 cores, 24 GB RAM), macOS/aarch64, OpenJDK 25, default JVM max heap 6144 MB:
+
+| Metric | Measured |
+|--------|----------|
+| Max register qubits completed | **26** (2^26 amplitudes; n=27 → `OutOfMemoryError`) |
+| 3-level circuit at the default (24 qubits) | ~20 s |
+| Max search qubits completed | **14** (list of 16384, ~146 s — over the 120 s/step budget) |
+| Search at the default (12 qubits) | list of 4096 in ~5.4 s |
+
+Search memory is dominated by the dense 2^n x 2^n Grover oracle, not by the state vector (tracked in [#15](https://github.com/aitan75/jqapi/issues/15)). The benchmark is excluded from `mvn test` on purpose; re-run it on your machine with:
+
+```bash
+mvn test-compile
+mvn -q exec:java -Dexec.classpathScope=test -Dexec.mainClass=org.aitan.jqapi.benchmark.MemoryLimitBenchmark
+```
+
 ## Supported gates
 
 Identity, Pauli X/Y/Z, Pauli S, Pauli T, Hadamard, Swap, Controlled-NOT,

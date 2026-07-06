@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.aitan.jqapi.JQAPIConfig;
+import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.quantum.gates.*;
 
 /**
@@ -16,13 +18,23 @@ import org.aitan.jqapi.quantum.gates.*;
 public class Circuit {
 
     private final List<CircuitLevel> levels;
+    private final JQAPIConfig config;
     private int inputSize;
 
-    /** @param inputSize number of qubits the circuit operates on */
+    /** Creates a circuit using the default configuration.
+     *  @param inputSize number of qubits the circuit operates on */
     public Circuit(int inputSize) {
+        this(inputSize, JQAPIConfig.getDefault());
+    }
+
+    /** Creates a circuit constrained by the given configuration.
+     *  @param inputSize number of qubits the circuit operates on
+     *  @param config the configuration bounding the circuit size */
+    public Circuit(int inputSize, JQAPIConfig config) {
+        this.config = config;
+        this.validateInputSize(inputSize);
         this.inputSize = inputSize;
         this.levels = new ArrayList<>();
-
     }
 
     /** @return the number of qubits the circuit operates on */
@@ -30,9 +42,24 @@ public class Circuit {
         return inputSize;
     }
 
+    /** @return the configuration bounding this circuit */
+    public JQAPIConfig getConfig() {
+        return config;
+    }
+
     /** @param inputSize the number of qubits the circuit operates on */
     public void setInputSize(int inputSize) {
+        this.validateInputSize(inputSize);
         this.inputSize = inputSize;
+    }
+
+    private void validateInputSize(int inputSize) {
+        if (inputSize <= 0) {
+            throw new JQApiLimitException("Circuit size must be positive, was: " + inputSize);
+        }
+        if (inputSize > this.config.maxQubits()) {
+            throw new JQApiLimitException("Circuit size " + inputSize + " exceeds maximum allowed qubits (" + this.config.maxQubits() + ")");
+        }
     }
 
     /** @return the ordered list of levels composing this circuit */
