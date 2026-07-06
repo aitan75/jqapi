@@ -1,4 +1,4 @@
-# Java Quantum API [![Build](https://github.com/aitan75/jqapi/actions/workflows/build.yml/badge.svg)](https://github.com/aitan75/jqapi/actions/workflows/build.yml)
+# Java Quantum API [![Build](https://github.com/aitan75/jqapi/actions/workflows/build.yml/badge.svg)](https://github.com/aitan75/jqapi/actions/workflows/build.yml) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=aitan75_jqapi&metric=coverage)](https://sonarcloud.io/summary/new_code?id=aitan75_jqapi)
 
 _**jqapi**_ is a Java Api library to test quantum computing concepts. At the moment you can simulate your quantum circuit with a local simulator.
 
@@ -21,6 +21,15 @@ mvn clean package
 ```
 
 The build produces `target/jqapi-1.0.0.jar`.
+
+## Test coverage
+
+`mvn verify` runs the test suite instrumented with [JaCoCo](https://www.jacoco.org/jacoco/), producing:
+
+- `target/site/jacoco/index.html` — human-readable line/branch coverage report
+- `target/site/jacoco/jacoco.xml` — machine-readable report, ingested by SonarCloud
+
+CI runs `mvn -B verify` before the SonarCloud scan (`.github/workflows/build.yml`), so every build on `main` and every pull request updates the coverage badge above and the [SonarCloud dashboard](https://sonarcloud.io/summary/new_code?id=aitan75_jqapi). There is currently no enforced coverage threshold — coverage is tracked and visible, not gating.
 
 ## Getting Started
 
