@@ -7,6 +7,8 @@ import org.apache.commons.math3.complex.ComplexUtils;
 import org.apache.commons.math3.util.Precision;
 
 /**
+ * Abstract single-qubit state. Concrete subclasses are {@code QubitZero},
+ * {@code QubitOne} and {@code QubitSuperposition}.
  *
  * @author Gaetano Ferrara
  */
@@ -32,8 +34,10 @@ public abstract class Qubit {
         this.vector = new ComplexVector(new Complex[]{a,b});
     }
 
+    /** @return the probability of measuring |0> */
     public abstract double zeroProbability();
 
+    /** @return the probability of measuring |1> */
     public abstract double oneProbability();
 
     @Override
@@ -42,6 +46,7 @@ public abstract class Qubit {
         return Constants.PSI_QUANTUM + "=" + toString;
     }
     
+    /** @return the two-component complex amplitude vector of this qubit */
     public ComplexVector getValue() {
         return this.vector;
     }

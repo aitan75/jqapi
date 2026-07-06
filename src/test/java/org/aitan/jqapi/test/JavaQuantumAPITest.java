@@ -55,26 +55,7 @@ public class JavaQuantumAPITest {
     }
 
     @Test
-    public void testQubit() {
-        testQubitProbabilities();
-        testTwoQubitTensor();
-        testThreeQubitProbabilities();
-        testSwapGate();
-        testCoinLaunch();
-        testToffoliGate();
-        testControlledSwapGate();
-        testCircuitSimulator();
-        testCNotControlQubitZero();
-        testCNotControlQubitOne();
-
-        testBellState();
-        testQuantumTeleportation();
-        testOracle();
-
-    }
-
-    private void testTwoQubitTensor() {
-        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testTwoQubitTensor()");
+    public void testTwoQubitTensor() {
         Qubit firstQubit = new QubitOne();
         Qubit secondQubit = new QubitZero();
         ComplexVector tensorProduct = secondQubit.getValue().tensorProduct(firstQubit.getValue());
@@ -87,8 +68,8 @@ public class JavaQuantumAPITest {
         assertEquals(expResult00, tensorProduct);
     }
 
-    private void testThreeQubitProbabilities() {
-        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testThreeQubitProbabilities()");
+    @Test
+    public void testThreeQubitProbabilities() {
         Qubit firstQubit = new QubitSuperposition(Math.sqrt(0.30));
         Qubit secondQubit = new QubitSuperposition(Math.sqrt(0.25));
         Qubit thirdQubit = new QubitSuperposition(Math.sqrt(0.80));
@@ -101,7 +82,6 @@ public class JavaQuantumAPITest {
         ComplexVector output101 = new QubitOne().getValue().tensorProduct(new QubitZero().getValue()).tensorProduct(new QubitOne().getValue());
         ComplexVector output110 = new QubitZero().getValue().tensorProduct(new QubitOne().getValue()).tensorProduct(new QubitOne().getValue());
         ComplexVector output111 = new QubitOne().getValue().tensorProduct(new QubitOne().getValue()).tensorProduct(new QubitOne().getValue());
-        System.out.println("tensorProduct: " + tensorProduct123);
         Double probabilities000 = Math.pow(output000.dotProduct(tensorProduct123).abs(), 2);
         Double probabilities001 = Math.pow(output001.dotProduct(tensorProduct123).abs(), 2);
         Double probabilities010 = Math.pow(output010.dotProduct(tensorProduct123).abs(), 2);
@@ -111,21 +91,13 @@ public class JavaQuantumAPITest {
         Double probabilities110 = Math.pow(output110.dotProduct(tensorProduct123).abs(), 2);
         Double probabilities111 = Math.pow(output111.dotProduct(tensorProduct123).abs(), 2);
         double total = probabilities111 + probabilities000 + probabilities001 + probabilities010 + probabilities011 + probabilities100 + probabilities101 + probabilities110;
-        System.out.println("probabilities000: " + probabilities000);
-        System.out.println("probabilities001: " + probabilities001);
-        System.out.println("probabilities010: " + probabilities010);
-        System.out.println("probabilities011: " + probabilities011);
-        System.out.println("probabilities100: " + probabilities100);
-        System.out.println("probabilities101: " + probabilities101);
-        System.out.println("probabilities110: " + probabilities110);
-        System.out.println("probabilities111: " + probabilities111);
-        System.out.println("total: " + total);
 
         //ComplexVector expResult11=new ComplexVector(new Complex[]{Complex.ZERO,Complex.ZERO,Complex.ZERO,Complex.ONE});
         //assertEquals(expectedOutput, probabilities100);
     }
 
-    private void testQubitProbabilities() {
+    @Test
+    public void testQubitProbabilities() {
         Qubit qubit = new QubitSuperposition(0.4);
         double resultOneProbability = qubit.oneProbability() * 100;
         double resultZeroProbability = qubit.zeroProbability() * 100;
@@ -134,8 +106,8 @@ public class JavaQuantumAPITest {
     }
 
 
-    private void testSwapGate() {
-        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testSwapGate()");
+    @Test
+    public void testSwapGate() {
         Circuit circuit = new Circuit(2);
         CircuitLevel level = new CircuitLevel();
         level.addGate(new Swap(0, 1));
@@ -149,8 +121,8 @@ public class JavaQuantumAPITest {
         assertEquals(qreg.getInput()[1], factorize[0]);
     }
 
-    private void testToffoliGate() {
-        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testToffoliGate()");
+    @Test
+    public void testToffoliGate() {
         Circuit circuit = new Circuit(3);
         CircuitLevel level = new CircuitLevel();
         level.addGate(new Toffoli(0, 1, 2));
@@ -165,8 +137,8 @@ public class JavaQuantumAPITest {
         assertEquals(new QubitSuperposition(0.8), factorize[2]);
     }
     
-    private void testControlledSwapGate() {
-        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testControlledSwapGate()");
+    @Test
+    public void testControlledSwapGate() {
         Circuit circuit = new Circuit(3);
         CircuitLevel level = new CircuitLevel();
         level.addGate(new ControlledSwap(0, 1, 2));
@@ -181,7 +153,8 @@ public class JavaQuantumAPITest {
         assertEquals(new QubitZero(), qubits[2]);
     }
 
-    private void testCircuitSimulator() {
+    @Test
+    public void testCircuitSimulator() {
         final int COUNT = 10000;
         Circuit circuit = new Circuit(1);
         CircuitLevel level1 = new CircuitLevel();
@@ -205,11 +178,13 @@ public class JavaQuantumAPITest {
 
         }
 
-        System.out.println("Executed " + COUNT + " times the hadamard gate on single qubit: " + cntZero + " of them were 0 and " + cntOne + " were 1.");
+        assertEquals(COUNT, cntZero + cntOne);
+        assertTrue(cntZero > 4500 && cntZero < 5500, "cntZero=" + cntZero);
+        assertTrue(cntOne > 4500 && cntOne < 5500, "cntOne=" + cntOne);
     }
 
-    private void testCoinLaunch() {
-        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testCoinLaunch()");
+    @Test
+    public void testCoinLaunch() {
         final int COUNT = 10000;
         int results[] = new int[4];
         Circuit circuit = new Circuit(2);
@@ -240,19 +215,14 @@ public class JavaQuantumAPITest {
 
         }
 
-        System.out.println("We did " + COUNT + " experiments.");
-        System.out.println("0 0 occurred " + results[0] + " times.");
-        System.out.println("0 1 occurred " + results[1] + " times.");
-        System.out.println("1 0 occurred " + results[2] + " times.");
-        System.out.println("1 1 occurred " + results[3] + " times.");
         assertEquals(25.0, Precision.round((double) results[0] * 100 / COUNT, 2), 2.5);
         assertEquals(25.0, Precision.round((double) results[1] * 100 / COUNT, 2), 2.5);
         assertEquals(25.0, Precision.round((double) results[2] * 100 / COUNT, 2), 2.5);
         assertEquals(25.0, Precision.round((double) results[3] * 100 / COUNT, 2), 2.5);
     }
 
-    private void testCNotControlQubitZero() {
-        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testCNotControlQubitZero()");
+    @Test
+    public void testCNotControlQubitZero() {
         Circuit circuit = new Circuit(2);
         CircuitLevel level1 = new CircuitLevel();
         CircuitLevel level2 = new CircuitLevel();
@@ -262,13 +232,11 @@ public class JavaQuantumAPITest {
         simulator.execute();
         QuantumRegister qreg = simulator.getQuantumRegister();
         qreg.measure();
-        System.out.println("QuantumRegister input target qubit: " + qreg.getInput()[1]);
-        System.out.println("QuantumRegister output target qubit: " + qreg.getResult()[1]);
         assertEquals(new QubitZero(), qreg.getResult()[1]);
     }
 
-    private void testCNotControlQubitOne() {
-        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testCNotControlQubitOne()");
+    @Test
+    public void testCNotControlQubitOne() {
         Circuit circuit = new Circuit(2);
         CircuitLevel level1 = new CircuitLevel();
         CircuitLevel level2 = new CircuitLevel();
@@ -279,13 +247,11 @@ public class JavaQuantumAPITest {
         simulator.execute();
         QuantumRegister qreg = simulator.getQuantumRegister();
         qreg.measure();
-        System.out.println("QuantumRegister input target qubit: " + qreg.getInput()[1]);
-        System.out.println("QuantumRegister output target qubit: " + qreg.getResult()[1]);
         assertEquals(new QubitOne(), qreg.getResult()[1]);
     }
 
-    private void testBellState() {
-        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testBellState()");
+    @Test
+    public void testBellState() {
         final int COUNT = 10000;
         int results[] = new int[4];
         Circuit circuit = new Circuit(2);
@@ -317,19 +283,12 @@ public class JavaQuantumAPITest {
 
         }
 
-        System.out.println("We did " + COUNT + " experiments.");
-
-        System.out.println("00 occurred: " + results[0]);
-        System.out.println("10 occurred: " + results[1]);
-        System.out.println("01 occurred: " + results[2]);
-        System.out.println("11 occurred: " + results[3]);
-
         assertEquals(50.0, Precision.round((double) results[0] * 100 / COUNT, 2), 2.5);
         assertEquals(50.0, Precision.round((double) results[3] * 100 / COUNT, 2), 2.5);
     }
 
-    private void testOracle() {
-        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testOracle()");
+    @Test
+    public void testOracle() {
         final int COUNT = 10000;
         int results[] = new int[4];
         Circuit circuit = new Circuit(2);
@@ -362,19 +321,12 @@ public class JavaQuantumAPITest {
 
         }
 
-        System.out.println("We did " + COUNT + " experiments.");
-
-        System.out.println("00 occurred: " + results[0]);
-        System.out.println("10 occurred: " + results[1]);
-        System.out.println("01 occurred: " + results[2]);
-        System.out.println("11 occurred: " + results[3]);
-
         assertEquals(50.0, Precision.round((double) results[0] * 100 / COUNT, 2), 2.5);
         assertEquals(50.0, Precision.round((double) results[3] * 100 / COUNT, 2), 2.5);
     }
 
-    private void testQuantumTeleportation() {
-        System.out.println("org.aitan.jqapi.test.JavaQuantumAPITest.testQuantumTeleportation()");
+    @Test
+    public void testQuantumTeleportation() {
         final int COUNT = 10000;
         final int inputSize = 3;
         int q = 0, a = 1, b = 2;

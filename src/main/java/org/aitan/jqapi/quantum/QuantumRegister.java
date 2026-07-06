@@ -7,6 +7,9 @@ import org.aitan.jqapi.utils.Utils;
 import org.apache.commons.math3.complex.Complex;
 
 /**
+ * Holds the quantum state of {@code size} qubits as a {@code 2^size} complex
+ * amplitude vector. Supports full and partial measurement. By convention qubit
+ * 0 is the most significant bit of the state index.
  *
  * @author Gaetano Ferrara
  */
@@ -19,6 +22,8 @@ public class QuantumRegister {
     private final Qubit[] input;
     private ComplexVector registerState;
 
+    /** Creates a register of the given size initialised to |0...0>.
+     *  @param size number of qubits */
     public QuantumRegister(int size) {
         this.result = new Qubit[size];
         this.input = new Qubit[size];
@@ -27,6 +32,9 @@ public class QuantumRegister {
 
     }
 
+    /** Creates a register from explicit per-qubit initial states.
+     *  @param size number of qubits
+     *  @param qubits the initial state of each qubit */
     public QuantumRegister(int size, Qubit[] qubits) {
         this.result = new Qubit[size];
         this.input = new Qubit[size];
@@ -34,6 +42,9 @@ public class QuantumRegister {
         this.initializeQuantumRegister(qubits);
     }
 
+    /** Creates a register from amplitude coefficients.
+     *  @param size number of qubits
+     *  @param alphas amplitude coefficients of the state vector */
     public QuantumRegister(int size, double... alphas) {
         this.result = new Qubit[size];
         this.input = new Qubit[size];
@@ -42,10 +53,12 @@ public class QuantumRegister {
 
     }
 
+    /** @return the number of qubits in the register */
     public int getSize() {
         return size;
     }
 
+    /** @return the full complex amplitude vector of the register state */
     public ComplexVector getRegisterState() {
         return registerState;
     }
@@ -72,6 +85,7 @@ public class QuantumRegister {
         return qubits;
     }
 
+    /** @param registerState the new complex amplitude vector */
     public void setRegisterState(ComplexVector registerState) {
         if (registerState.getDimension() != this.registerState.getDimension()) {
             throw new IllegalArgumentException("ERROR: Overflow register dimension");
@@ -79,6 +93,8 @@ public class QuantumRegister {
         this.registerState = registerState;
     }
 
+    /** Collapses the whole register to a basis state according to the current
+     *  measurement probabilities. */
     public void measure() {
         int indexCollapsed = this.calculateCollapsedIndex();
         //Initialize all register state to 0
@@ -93,6 +109,9 @@ public class QuantumRegister {
         }
     }
 
+    /** Measures only the qubits at the given indexes, renormalising the residual
+     *  state.
+     *  @param indexes the qubit indexes to measure */
     public void measureQubitAtIndexes(List<Integer> indexes) {
         if (indexes.size() < size) {
             indexes.forEach(index -> {
@@ -107,10 +126,12 @@ public class QuantumRegister {
 
     }
 
+    /** @return the input qubits the register was initialised with */
     public Qubit[] getInput() {
         return input;
     }
 
+    /** @return the measured result qubits, available after {@link #measure()} */
     public Qubit[] getResult() {
         return result;
     }

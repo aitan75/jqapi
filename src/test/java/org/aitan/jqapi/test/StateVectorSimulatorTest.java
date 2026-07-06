@@ -26,21 +26,12 @@ public class StateVectorSimulatorTest {
 
     private static final double EPS = 1e-9;
 
-    @Test
-    public void testStateVectorSimulator() {
-        testCNotOnNonAdjacentQubits();
-        testCNotWithControlAfterTarget();
-        testSwapOnNonAdjacentQubits();
-        testToffoliWithNonAdjacentControls();
-        testGhzStateOnTenQubits();
-        testSixteenQubitCircuit();
-    }
-
     /**
      * CNOT with control on qubit 0 and target on qubit 2, skipping qubit 1:
      * |100> must become |101>.
      */
-    private void testCNotOnNonAdjacentQubits() {
+    @Test
+    public void testCNotOnNonAdjacentQubits() {
         Circuit circuit = new Circuit(3);
         CircuitLevel level = new CircuitLevel();
         level.addGate(new ControlledNot(0, 2));
@@ -54,7 +45,8 @@ public class StateVectorSimulatorTest {
      * CNOT with control on qubit 2 and target on qubit 0 (declared in reverse
      * order): |001> must become |101>.
      */
-    private void testCNotWithControlAfterTarget() {
+    @Test
+    public void testCNotWithControlAfterTarget() {
         Circuit circuit = new Circuit(3);
         CircuitLevel level = new CircuitLevel();
         level.addGate(new ControlledNot(2, 0));
@@ -67,7 +59,8 @@ public class StateVectorSimulatorTest {
     /**
      * Swap between qubit 0 and qubit 2: |100> must become |001>.
      */
-    private void testSwapOnNonAdjacentQubits() {
+    @Test
+    public void testSwapOnNonAdjacentQubits() {
         Circuit circuit = new Circuit(3);
         CircuitLevel level = new CircuitLevel();
         level.addGate(new Swap(0, 2));
@@ -81,7 +74,8 @@ public class StateVectorSimulatorTest {
      * Toffoli with controls on qubits 0 and 2 and target on qubit 1:
      * |101> must become |111>.
      */
-    private void testToffoliWithNonAdjacentControls() {
+    @Test
+    public void testToffoliWithNonAdjacentControls() {
         Circuit circuit = new Circuit(3);
         CircuitLevel level = new CircuitLevel();
         level.addGate(new Toffoli(0, 2, 1));
@@ -97,7 +91,8 @@ public class StateVectorSimulatorTest {
      * (|0000000000> + |1111111111>)/sqrt(2) and every measurement must yield
      * all qubits with the same value.
      */
-    private void testGhzStateOnTenQubits() {
+    @Test
+    public void testGhzStateOnTenQubits() {
         final int N = 10;
         Circuit circuit = new Circuit(N);
         CircuitLevel hadamardLevel = new CircuitLevel();
@@ -133,7 +128,8 @@ public class StateVectorSimulatorTest {
      * basis states), so every amplitude must be 1/2^8. The Kronecker-based
      * simulator would have required a 65536 x 65536 operator for each level.
      */
-    private void testSixteenQubitCircuit() {
+    @Test
+    public void testSixteenQubitCircuit() {
         final int N = 16;
         Circuit circuit = new Circuit(N);
         CircuitLevel hadamardLevel = new CircuitLevel();
