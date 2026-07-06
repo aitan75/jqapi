@@ -141,13 +141,20 @@ constructors only for manual state setup.
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `getSize()` | `int` | Number of qubits. |
-| `getRegisterState()` | `ComplexVector` | The full `2^size` complex amplitude vector (live, mutable). |
-| `setRegisterState(ComplexVector)` | `void` | Replaces the amplitude vector. Throws `IllegalArgumentException` on dimension mismatch. |
+| `getRegisterState()` | `ComplexVector` | The full `2^size` complex amplitude vector (defensive copy, read-only). |
+| `applyOperator(ComplexMatrix, List<Integer>)` | `void` | Applies a gate matrix (operator) to the listed target qubits. |
+| `setRegisterState(ComplexVector)` | `void` | **Deprecated.** Replaces the amplitude vector. Throws `IllegalArgumentException` on dimension mismatch. |
 | `getInput()` | `Qubit[]` | The per-qubit states the register was initialized with. |
 | `getResult()` | `Qubit[]` | The measured qubits; populated by `measure()` / `measureQubitAtIndexes(...)`. |
 | `measure()` | `void` | Collapses the whole register to a basis state per current probabilities. |
 | `measureQubitAtIndexes(List<Integer>)` | `void` | Measures only the listed qubits, renormalizing the residual state. |
 | `getQubitRegisterState()` | `Qubit[]` | Factorizes a **separable** state into single qubits. |
+
+### `applyOperator(ComplexMatrix operator, List<Integer> targetQubits)`
+
+Applies a $2^k \times 2^k$ matrix operator directly to the target qubits of the register state, in place. The amplitude manipulation is encapsulated entirely within this method, keeping the register's internal representation hidden.
+
+- **Throws** `IllegalArgumentException` if the operator matrix dimension does not match the target qubit size.
 
 ### `measure()`
 

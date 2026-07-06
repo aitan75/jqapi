@@ -2,6 +2,7 @@ package org.aitan.jqapi.quantum;
 
 import java.security.SecureRandom;
 import java.util.List;
+import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.utils.Utils;
 import org.apache.commons.math3.complex.Complex;
@@ -60,7 +61,7 @@ public class QuantumRegister {
 
     /** @return the full complex amplitude vector of the register state */
     public ComplexVector getRegisterState() {
-        return registerState;
+        return new ComplexVector(this.registerState.getData());
     }
 
     /**
@@ -85,12 +86,67 @@ public class QuantumRegister {
         return qubits;
     }
 
-    /** @param registerState the new complex amplitude vector */
+    /** @param registerState the new complex amplitude vector
+     *  @deprecated Use {@link #applyOperator(ComplexMatrix, List)} instead to apply quantum gates. */
+    @Deprecated
     public void setRegisterState(ComplexVector registerState) {
         if (registerState.getDimension() != this.registerState.getDimension()) {
             throw new IllegalArgumentException("ERROR: Overflow register dimension");
         }
         this.registerState = registerState;
+    }
+
+    /**
+     * Applies a 2^k x 2^k gate matrix (operator) to the k target qubits of the register state, in place.
+     * For every group of 2^k amplitudes that differ only in the target-qubit bits, the group is multiplied
+     * by the operator matrix.
+     *
+     * @param operator the 2^k x 2^k matrix operator to apply
+     * @param targetQubits the list of target qubits
+     */
+    public void applyOperator(ComplexMatrix operator, List<Integer> targetQubits) {
+        int k = targetQubits.size();
+        int localDimension = 1 << k;
+        if (operator.getRowDimension() != localDimension) {
+            throw new IllegalArgumentException("Gate matrix of dimension " + operator.getRowDimension()
+                    + " cannot be applied to " + k + " qubit(s)");
+        }
+        int dimension = this.registerState.getDimension();
+
+        //offsets[t] = bits to set in the base index to select the local state t.
+        //Qubit q lives at integer bit position (size - 1 - q) because qubit 0
+        //is the most significant; local bit j of the gate maps to targetQubits[j].
+        int[] offsets = new int[localDimension];
+        for (int t = 0; t < localDimension; t++) {
+            int offset = 0;
+            for (int j = 0; j < k; j++) {
+                if (((t >> (k - 1 - j)) & 1) != 0) {
+                    offset |= 1 << (this.size - 1 - targetQubits.get(j));
+                }
+            }
+            offsets[t] = offset;
+        }
+        int targetMask = offsets[localDimension - 1];
+
+        Complex[] local = new Complex[localDimension];
+        for (int base = 0; base < dimension; base++) {
+            if ((base & targetMask) != 0) {
+                continue; //visit each amplitude group once, starting from the index with all target bits at 0
+            }
+            for (int t = 0; t < localDimension; t++) {
+                local[t] = this.registerState.getEntry(base | offsets[t]);
+            }
+            for (int r = 0; r < localDimension; r++) {
+                Complex sum = Complex.ZERO;
+                for (int c = 0; c < localDimension; c++) {
+                    Complex entry = operator.getEntry(r, c);
+                    if (!entry.equals(Complex.ZERO)) {
+                        sum = sum.add(entry.multiply(local[c]));
+                    }
+                }
+                this.registerState.setEntry(base | offsets[r], sum);
+            }
+        }
     }
 
     /** Collapses the whole register to a basis state according to the current

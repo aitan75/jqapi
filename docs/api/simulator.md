@@ -31,11 +31,7 @@ then measure or inspect the register.
 
 `implements QuantumSimulator`
 
-Local **state-vector** simulator. Gates are applied directly to the amplitude
-vector, one gate at a time: for a gate acting on `k` qubits only the `2^k`
-amplitudes of each affected group are combined, so the full `2^n x 2^n` operator
-of a circuit level is **never materialized**. This keeps memory at `O(2^n)` and
-lets gates act on arbitrary, non-adjacent qubits.
+Local **state-vector** simulator. During execution, it delegates the gate application to [`QuantumRegister.applyOperator(...)`](quantum.md#applyoperatorcomplexmatrix-operator-listinteger-targetqubits), evolving the register state in-place without exposing or mutating its internal vector representation directly. For a gate acting on `k` qubits, only the `2^k` amplitudes of each affected group are combined, so the full `2^n x 2^n` operator of a circuit level is **never materialized**. This keeps memory at `O(2^n)` and lets gates act on arbitrary, non-adjacent qubits.
 
 ### Constructors
 
