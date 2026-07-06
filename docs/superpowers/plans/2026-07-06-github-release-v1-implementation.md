@@ -22,7 +22,7 @@
 
 ### Task 1: Refactor della test suite (approccio A — split meccanico)
 
-Ogni classe di test ha oggi un unico metodo `@Test` "aggregatore" che invoca a catena N metodi `private void testXxx()`. Questo task rende ogni metodo di test un `@Test` isolato e rimuove gli aggregatori. Nessuna modifica al corpo dei test né a `src/main`.
+Ogni classe di test ha oggi un unico metodo `@Test` "aggregatore" che invoca a catena N metodi `private void testXxx()`. Questo task rende ogni metodo di test un `@Test` isolato, rimuove gli aggregatori, **rimuove tutte le `System.out.println` dai file di test** e **aggiunge asserzioni reali ai 4 test che oggi non asseriscono nulla**. Nessuna modifica a `src/main`.
 
 **Files:**
 - Modify: `src/test/java/org/aitan/jqapi/test/JavaQuantumAPITest.java`
@@ -39,7 +39,8 @@ Ogni classe di test ha oggi un unico metodo `@Test` "aggregatore" che invoca a c
 1. Il metodo aggregatore `@Test public void <aggregatore>()` che si limita a chiamare gli altri metodi va **eliminato** (annotazione inclusa).
 2. Ogni metodo `private void testXxx()` che è un vero test diventa `@Test public void testXxx()` (cambia `private` → `public` e si aggiunge `@Test` sulla riga sopra).
 3. I metodi **helper** (non test) restano `private` e senza `@Test`.
-4. Il corpo dei metodi resta invariato (incluse le `System.out.println` esistenti: fuori scope rimuoverle).
+4. **Rimuovere tutte le righe `System.out.println(...)`** nei 5 file di test (42 in `JavaQuantumAPITest`, 9 in `QuantumAlgorithmTest`, più eventuali altrove). Non rimuovere `System.err`/commenti già presenti né altra logica.
+5. **Aggiungere asserzioni reali** ai 4 test elencati nella sottosezione "Asserzioni da aggiungere" sotto; per gli altri metodi il corpo resta invariato (a parte le print rimosse).
 
 Mappa esatta per classe (aggregatore da rimuovere → test da promuovere):
 
@@ -49,7 +50,41 @@ Mappa esatta per classe (aggregatore da rimuovere → test da promuovere):
 - **LinearAlgebraTest** — rimuovere `testLinearAlgebra()`. Promuovere: `testIdentityMatrix`, `testKroneckerProduct` (2).
 - **StateVectorSimulatorTest** — rimuovere `testStateVectorSimulator()`. Promuovere: `testCNotOnNonAdjacentQubits`, `testCNotWithControlAfterTarget`, `testSwapOnNonAdjacentQubits`, `testToffoliWithNonAdjacentControls`, `testGhzStateOnTenQubits`, `testSixteenQubitCircuit` (6). **`assertBasisState(...)` è un helper: lasciarlo `private`, NON aggiungere `@Test`.**
 
-Totale atteso dopo il refactor: **29 `@Test`**.
+Totale atteso dopo il refactor: **29 `@Test`** (il conteggio non cambia: gli assert vengono aggiunti dentro test esistenti, non come nuovi metodi).
+
+**Asserzioni da aggiungere** (i valori sono deterministici, verificati sul codice):
+
+- `QuantumAlgorithmTest.testDeutschJoszaAlgorithm`: dentro il ciclo, dopo aver calcolato `message`, la funzione `case 0` è l'identità (costante) mentre `case 1/2/3` sono bilanciate. Sostituire la `System.out.println` finale con:
+  ```java
+  String expected = (function == 0) ? "constant" : "balanced";
+  assertEquals(expected, message, "function " + function);
+  ```
+- `QuantumAlgorithmTest.testFunctionSearchAlgorithm`: il predicato `search()` è `age()==45 && name().startsWith("P")`; nella lista l'unico match è `Pippo (45)`. Dopo il ciclo, sostituire la print con:
+  ```java
+  assertTrue(found, "expected to find a matching person");
+  Person result = persons.get(index - 1);
+  assertEquals("Pippo", result.name());
+  assertEquals(45, result.age());
+  ```
+- `QuantumAlgorithmTest.testGroverSearchAlgorithm`: rimuovere il `try/catch` che ingoia `JQApiException` (il test deve fallire se viene lanciata); dichiarare `throws JQApiException` sul metodo. Il target di `search()` è `Pippo (45)`. Corpo risultante:
+  ```java
+  @Test
+  public void testGroverSearchAlgorithm() throws JQApiException {
+      List<Person> persons = createListPersons();
+      Collections.shuffle(persons);
+      Person found = Algorithm.search(persons, search());
+      assertNotNull(found);
+      assertEquals("Pippo", found.name());
+      assertEquals(45, found.age());
+  }
+  ```
+  (Verificare che `import static org.junit.jupiter.api.Assertions.*;` sia presente — lo è già.)
+- `JavaQuantumAPITest.testCircuitSimulator`: applica PauliX poi Hadamard su 1 qubit e misura 10000 volte → distribuzione ~50/50. Sostituire la print finale con asserzioni statistiche a soglia larga (10σ, non flaky):
+  ```java
+  assertEquals(COUNT, cntZero + cntOne);
+  assertTrue(cntZero > 4500 && cntZero < 5500, "cntZero=" + cntZero);
+  assertTrue(cntOne > 4500 && cntOne < 5500, "cntOne=" + cntOne);
+  ```
 
 - [ ] **Step 1: Baseline — verificare lo stato attuale dei test**
 
@@ -91,11 +126,11 @@ a:
     @Test
     public void testTwoQubitTensor() {
 ```
-(idem per gli altri 12). Il `@Test` è già importato (`import org.junit.jupiter.api.Test;`).
+(idem per gli altri 12). Il `@Test` è già importato (`import org.junit.jupiter.api.Test;`). In questo file: **rimuovere tutte le 42 `System.out.println`** e aggiungere le asserzioni a `testCircuitSimulator` come da sottosezione "Asserzioni da aggiungere".
 
 - [ ] **Step 3: Trasformare `QuantumAlgorithmTest`**
 
-Rimuovere `@Test public void testAlgorithm()` (il metodo aggregatore che chiama gli altri) e promuovere i 4 metodi (`testRandomBit`, `testDeutschJoszaAlgorithm`, `testFunctionSearchAlgorithm`, `testGroverSearchAlgorithm`) da `private void` a `@Test public void` come nello Step 2.
+Rimuovere `@Test public void testAlgorithm()` (il metodo aggregatore che chiama gli altri) e promuovere i 4 metodi (`testRandomBit`, `testDeutschJoszaAlgorithm`, `testFunctionSearchAlgorithm`, `testGroverSearchAlgorithm`) da `private void` a `@Test public void` come nello Step 2. Inoltre: **rimuovere tutte le 9 `System.out.println`** e aggiungere le asserzioni a `testDeutschJoszaAlgorithm`, `testFunctionSearchAlgorithm`, `testGroverSearchAlgorithm` come da sottosezione "Asserzioni da aggiungere" (per Grover rimuovere anche il `try/catch` e aggiungere `throws JQApiException`).
 
 - [ ] **Step 4: Trasformare `QuantumMeasurementTest`**
 
@@ -119,7 +154,7 @@ Expected: la riga di riepilogo finale mostra `Tests run: 29, Failures: 0, Errors
 
 - [ ] **Step 8: Ri-eseguire per confermare la stabilità dei test statistici**
 
-Alcuni test sono probabilistici (`testCoinLaunch`, `testBellState`, `testRandomBit`, Hadamard). Rieseguire una seconda volta:
+Alcuni test sono probabilistici (`testCoinLaunch`, `testBellState`, `testRandomBit`, `testCircuitSimulator`, `testDeutschJoszaAlgorithm`, `testGroverSearchAlgorithm`). Rieseguire una seconda volta:
 ```bash
 mvn -q clean test 2>&1 | grep -E "Tests run: 29|BUILD"
 ```
@@ -129,12 +164,15 @@ Expected: ancora 29 verdi, `BUILD SUCCESS`. Se un test statistico diventa flaky,
 
 ```bash
 git add src/test/java/org/aitan/jqapi/test/
-git commit -m "test: split aggregated tests into isolated @Test methods
+git commit -m "test: isolate tests, add assertions, drop console noise
 
 Convert the single per-class aggregator @Test (which invoked the real
-tests in sequence) into 29 independent @Test methods. No production code
-or assertion logic changed. Restores real test isolation and correct CI
-reporting (29 tests instead of 5)."
+tests in sequence) into 29 independent @Test methods. Add real assertions
+to the four previously assertion-free tests (Deutsch-Jozsa, function
+search, Grover search, single-qubit circuit) and stop Grover from
+swallowing JQApiException. Remove System.out.println debug noise from the
+test sources. No production code changed. Restores real test isolation and
+correct CI reporting (29 tests instead of 5)."
 ```
 
 ---
