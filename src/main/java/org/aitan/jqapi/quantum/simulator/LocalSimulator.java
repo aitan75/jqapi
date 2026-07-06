@@ -31,11 +31,14 @@ public class LocalSimulator implements QuantumSimulator {
     private final Circuit circuit;
     private final QuantumRegister quantumRegister;
 
+    /** @param circuit the circuit to simulate (register initialised to |0...0>) */
     public LocalSimulator(Circuit circuit) {
         this.circuit = circuit;
         this.quantumRegister = new QuantumRegister(circuit.getInputSize());
     }
 
+    /** @param circuit the circuit to simulate
+     *  @param qubits the initial per-qubit states */
     public LocalSimulator(Circuit circuit, Qubit... qubits) {
 
         if (circuit.getInputSize() != qubits.length) {
@@ -45,6 +48,8 @@ public class LocalSimulator implements QuantumSimulator {
         this.quantumRegister = new QuantumRegister(circuit.getInputSize(), qubits);
     }
 
+    /** @param circuit the circuit to simulate
+     *  @param alphas the initial amplitude coefficients */
     public LocalSimulator(Circuit circuit, double... alphas) {
 
         if (circuit.getInputSize() != alphas.length) {
@@ -54,6 +59,7 @@ public class LocalSimulator implements QuantumSimulator {
         this.quantumRegister = new QuantumRegister(circuit.getInputSize(), alphas);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void execute() {
         int numQubits = circuit.getInputSize();
@@ -127,6 +133,7 @@ public class LocalSimulator implements QuantumSimulator {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public QuantumRegister getQuantumRegister() {
         return this.quantumRegister;

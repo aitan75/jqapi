@@ -5,6 +5,9 @@ import java.util.List;
 import org.aitan.jqapi.math.ComplexMatrix;
 
 /**
+ * Base class for quantum gates. A gate exposes its unitary {@link ComplexMatrix}
+ * and the qubit indexes it acts on. In multi-qubit gates the first declared
+ * index is the most significant qubit.
  *
  * @author Gaetano Ferrara
  */
@@ -27,22 +30,27 @@ public abstract class Gate {
         this.size = (int) (Math.pow(2, numberQubits));
     }
 
+    /** @return the unitary matrix representing this gate */
     public ComplexMatrix getMatrix() {
         return matrix;
     }
 
+    /** @return the qubit indexes this gate acts on */
     public List<Integer> getIndexes() {
         return indexes;
     }
 
+    /** @return a human-readable gate type name */
     public String getType() {
         return type;
     }
 
+    /** @return the number of qubits this gate acts on */
     public int getNumberQubits() {
         return numberQubits;
     }
 
+    /** @return the dimension of the gate matrix */
     public int getSize() {
         return size;
     }
