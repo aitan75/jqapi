@@ -48,13 +48,23 @@ jobs:
             dependency-check-data-
 
       - name: OWASP Dependency-Check (SCA)
+        continue-on-error: true # non-blocking: report visibility without gating the merge
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
           if [ -z "$NVD_API_KEY" ]; then
-            echo "::warning::NVD_API_KEY not set — NVD downloads are rate-limited, SCA gate may be degraded"
+            echo "::warning::NVD_API_KEY not set — NVD downloads are rate-limited, SCA report may be degraded"
           fi
           mvn -B org.owasp:dependency-check-maven:12.2.2:check \
             -DfailBuildOnCVSS=7 \
             -DfailOnError=true \
             ${NVD_API_KEY:+-DnvdApiKey=$NVD_API_KEY}
+
+      - name: Upload dependency-check report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dependency-check-report
+          path: target/dependency-check-report.html
+          if-no-files-found: ignore
+          retention-days: 30
