@@ -1,0 +1,48 @@
+name: NVD cache warm-up
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5.4.0
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Restore/save OWASP dependency-check data cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: dependency-check-data-${{ github.run_id }}
+          restore-keys: |
+            dependency-check-data-
+
+      - name: Update NVD data (no scan)
+        continue-on-error: true # best-effort: a slow/degraded NVD sync must not fail this maintenance job
+        timeout-minutes: 60 # generous — this run isn't gating any PR, it just advances the shared cache
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -z "$NVD_API_KEY" ]; then
+            echo "::warning::NVD_API_KEY not set — NVD downloads are rate-limited, cache warm-up will be slower"
+          fi
+          mvn -B org.owasp:dependency-check-maven:12.2.2:update-only \
+            -DfailOnError=true \
+            ${NVD_API_KEY:+-DnvdApiKey=$NVD_API_KEY}
