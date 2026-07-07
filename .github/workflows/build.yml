@@ -49,7 +49,10 @@ jobs:
 
       - name: OWASP Dependency-Check (SCA)
         continue-on-error: true # non-blocking: report visibility without gating the merge
-        timeout-minutes: 15 # NVD cold syncs can take hours when NVD's API is degraded; cap so the job doesn't hang
+        # The shared dependency-check-data cache is kept warm by the scheduled
+        # nvd-cache-warm workflow, so this should normally only need a fast
+        # incremental update. Still capped in case NVD is degraded.
+        timeout-minutes: 15
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
