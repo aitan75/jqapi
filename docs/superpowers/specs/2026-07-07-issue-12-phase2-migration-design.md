@@ -161,3 +161,29 @@ during implementation (same pattern as Phase 1).
   removing them.
 - Parallelization (issue #8), density matrices (issue #9), parametric gates (issue
   #7) — unrelated, separate issues.
+
+## Results
+
+Benchmark: `QuantumRegisterHotLoopBenchmark` (production `applyOperator`,
+50 warmup + 200 timed iterations, allocation via
+`ThreadMXBean.getThreadAllocatedBytes`). Same machine and JVM for both runs
+(see environment header transcribed below).
+
+Environment: os.name: Mac OS X, os.arch: aarch64, java.version: 25.0.3, availableProcessors: 8
+
+### Before migration (Complex-based, commit 3e8107a)
+
+| n  | gate          | ns/op | bytes/op |
+|----|---------------|-------|----------|
+| 16 | 1-qubit (H)   | 1019949.2 | 4194352.0 |
+| 16 | 2-qubit (CNOT)| 1359834.4 | 2097216.0 |
+| 20 | 1-qubit (H)   | 24250018.5 | 67108912.0 |
+| 20 | 2-qubit (CNOT)| 20050607.5 | 33554496.0 |
+
+### After migration (double[]-based)
+
+(filled in after the migration lands — see plan Task 4)
+
+### Verdict
+
+(filled in after the migration lands — see plan Task 4)
