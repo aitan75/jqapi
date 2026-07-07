@@ -128,9 +128,17 @@ vector. Supports full and partial measurement.
 
 | Constructor | Description |
 |-------------|-------------|
-| `QuantumRegister(int size)` | Register of `size` qubits initialized to `\|0...0>`. |
-| `QuantumRegister(int size, Qubit[] qubits)` | Initialized from explicit per-qubit states. |
-| `QuantumRegister(int size, double... alphas)` | Initialized from `\|0>`-amplitude coefficients (each becomes a `QubitSuperposition(alpha)`). |
+| `QuantumRegister(int size)` | Register of `size` qubits initialized to `\|0...0>`, using the default `JQAPIConfig`. |
+| `QuantumRegister(int size, Qubit[] qubits)` | Initialized from explicit per-qubit states, using the default `JQAPIConfig`. |
+| `QuantumRegister(int size, double... alphas)` | Initialized from `\|0>`-amplitude coefficients (each becomes a `QubitSuperposition(alpha)`), using the default `JQAPIConfig`. |
+| `QuantumRegister(int size, JQAPIConfig config)` | Same as above, bounded by a per-instance `JQAPIConfig`. |
+| `QuantumRegister(int size, JQAPIConfig config, Qubit[] qubits)` | Same as above, bounded by a per-instance `JQAPIConfig`. |
+| `QuantumRegister(int size, JQAPIConfig config, double... alphas)` | Same as above, bounded by a per-instance `JQAPIConfig`. |
+
+Config injection is uniform with [`Circuit`](#circuit): pass a `JQAPIConfig` to
+any constructor to bound the register to a non-default size limit. The static
+`forSimulation(...)` factories are deprecated in favor of the
+`JQAPIConfig`-accepting constructors above.
 
 Normally you do not construct a register directly — the
 [`LocalSimulator`](simulator.md) creates one for you from the circuit. Use these

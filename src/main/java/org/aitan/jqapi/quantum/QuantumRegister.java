@@ -26,24 +26,53 @@ public class QuantumRegister {
     private final Qubit[] input;
     private ComplexVector registerState;
 
-    /** Creates a register of the given size initialised to |0...0>.
+    /** Creates a register of the given size initialised to |0...0>, using the
+     *  default configuration.
      *  @param size number of qubits */
     public QuantumRegister(int size) {
-        this(size, JQAPIConfig.getDefault().maxQubits());
+        this(size, JQAPIConfig.getDefault());
     }
 
-    /** Creates a register from explicit per-qubit initial states.
+    /** Creates a register from explicit per-qubit initial states, using the
+     *  default configuration.
      *  @param size number of qubits
      *  @param qubits the initial state of each qubit */
     public QuantumRegister(int size, Qubit[] qubits) {
-        this(size, JQAPIConfig.getDefault().maxQubits(), qubits);
+        this(size, JQAPIConfig.getDefault(), qubits);
     }
 
-    /** Creates a register from amplitude coefficients.
+    /** Creates a register from amplitude coefficients, using the default
+     *  configuration.
      *  @param size number of qubits
      *  @param alphas amplitude coefficients of the state vector */
     public QuantumRegister(int size, double... alphas) {
-        this(size, JQAPIConfig.getDefault().maxQubits(), alphas);
+        this(size, JQAPIConfig.getDefault(), alphas);
+    }
+
+    /** Creates a register of the given size initialised to |0...0>, bounded by
+     *  the supplied configuration.
+     *  @param size number of qubits
+     *  @param config the configuration bounding the register size */
+    public QuantumRegister(int size, JQAPIConfig config) {
+        this(size, config.maxQubits());
+    }
+
+    /** Creates a register from explicit per-qubit initial states, bounded by
+     *  the supplied configuration.
+     *  @param size number of qubits
+     *  @param config the configuration bounding the register size
+     *  @param qubits the initial state of each qubit */
+    public QuantumRegister(int size, JQAPIConfig config, Qubit[] qubits) {
+        this(size, config.maxQubits(), qubits);
+    }
+
+    /** Creates a register from amplitude coefficients, bounded by the supplied
+     *  configuration.
+     *  @param size number of qubits
+     *  @param config the configuration bounding the register size
+     *  @param alphas amplitude coefficients of the state vector */
+    public QuantumRegister(int size, JQAPIConfig config, double... alphas) {
+        this(size, config.maxQubits(), alphas);
     }
 
     private QuantumRegister(int size, int maxQubits) {
@@ -77,9 +106,12 @@ public class QuantumRegister {
      * @param size number of qubits
      * @param config the configuration bounding the register size
      * @return a new register initialised to |0...0>
+     * @deprecated use {@link #QuantumRegister(int, JQAPIConfig)} instead;
+     *             config injection is now uniform across the constructors.
      */
+    @Deprecated
     public static QuantumRegister forSimulation(int size, JQAPIConfig config) {
-        return new QuantumRegister(size, config.maxQubits());
+        return new QuantumRegister(size, config);
     }
 
     /**
@@ -90,9 +122,12 @@ public class QuantumRegister {
      * @param config the configuration bounding the register size
      * @param qubits the initial state of each qubit
      * @return a new register initialised from the given qubits
+     * @deprecated use {@link #QuantumRegister(int, JQAPIConfig, Qubit[])} instead;
+     *             config injection is now uniform across the constructors.
      */
+    @Deprecated
     public static QuantumRegister forSimulation(int size, JQAPIConfig config, Qubit[] qubits) {
-        return new QuantumRegister(size, config.maxQubits(), qubits);
+        return new QuantumRegister(size, config, qubits);
     }
 
     /**
@@ -103,9 +138,12 @@ public class QuantumRegister {
      * @param config the configuration bounding the register size
      * @param alphas amplitude coefficients of the state vector
      * @return a new register initialised from the given amplitudes
+     * @deprecated use {@link #QuantumRegister(int, JQAPIConfig, double...)} instead;
+     *             config injection is now uniform across the constructors.
      */
+    @Deprecated
     public static QuantumRegister forSimulation(int size, JQAPIConfig config, double... alphas) {
-        return new QuantumRegister(size, config.maxQubits(), alphas);
+        return new QuantumRegister(size, config, alphas);
     }
 
     private static void validateSize(int size, int maxQubits) {
