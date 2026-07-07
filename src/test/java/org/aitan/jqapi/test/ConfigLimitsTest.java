@@ -273,18 +273,52 @@ public class ConfigLimitsTest {
         }
 
         @Test
-        @DisplayName("forSimulation honours the passed config (can exceed the default)")
-        void forSimulationHonoursPassedConfig() {
-            // A raised config lets the simulator infra build a register the direct
-            // default path would reject. Keep the size small (3) to stay fast.
+        @DisplayName("the config-accepting constructor honours the passed config (can exceed the default)")
+        void configConstructorHonoursPassedConfig() {
+            // A raised config lets a caller build a register the no-arg-config
+            // path would reject. Keep the size small (3) to stay fast.
             QuantumRegister reg = assertDoesNotThrow(
-                    () -> QuantumRegister.forSimulation(3, JQAPIConfig.of(28, 28)));
+                    () -> new QuantumRegister(3, JQAPIConfig.of(28, 28)));
             assertEquals(3, reg.getSize());
         }
 
         @Test
-        @DisplayName("forSimulation still rejects non-positive and over-limit sizes")
-        void forSimulationStillValidates() {
+        @DisplayName("the config-accepting constructor still rejects non-positive and over-limit sizes")
+        void configConstructorStillValidates() {
+            assertThrows(JQApiLimitException.class,
+                    () -> new QuantumRegister(0, JQAPIConfig.of(28, 28)));
+            JQApiLimitException ex = assertThrows(JQApiLimitException.class,
+                    () -> new QuantumRegister(5, JQAPIConfig.of(3, 3)));
+            assertEquals("Register size 5 exceeds maximum allowed qubits (3)", ex.getMessage());
+        }
+
+        @Test
+        @DisplayName("getSize/getRegisterState reflect a config-bounded qubits-array construction")
+        void configConstructorWithQubitsArray() {
+            org.aitan.jqapi.quantum.Qubit[] qubits = {
+                new org.aitan.jqapi.quantum.QubitZero(), new org.aitan.jqapi.quantum.QubitOne()
+            };
+            QuantumRegister reg = assertDoesNotThrow(
+                    () -> new QuantumRegister(2, JQAPIConfig.of(28, 28), qubits));
+            assertEquals(2, reg.getSize());
+        }
+
+        @Test
+        @DisplayName("getSize/getRegisterState reflect a config-bounded alphas construction")
+        void configConstructorWithAlphas() {
+            QuantumRegister reg = assertDoesNotThrow(
+                    () -> new QuantumRegister(2, JQAPIConfig.of(28, 28), 1.0, 0.0));
+            assertEquals(2, reg.getSize());
+        }
+
+        @Test
+        @DisplayName("the deprecated forSimulation factories still delegate to the config constructors")
+        @SuppressWarnings("deprecation")
+        void deprecatedForSimulationStillWorks() {
+            QuantumRegister reg = assertDoesNotThrow(
+                    () -> QuantumRegister.forSimulation(3, JQAPIConfig.of(28, 28)));
+            assertEquals(3, reg.getSize());
+
             assertThrows(JQApiLimitException.class,
                     () -> QuantumRegister.forSimulation(0, JQAPIConfig.of(28, 28)));
             JQApiLimitException ex = assertThrows(JQApiLimitException.class,
