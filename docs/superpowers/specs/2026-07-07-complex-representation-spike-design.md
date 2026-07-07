@@ -95,13 +95,59 @@ contingent on this spike's outcome.
 
 ## Decision documentation
 
-Once the benchmark runs, this spec is updated in place with:
-- The raw results table (wall-clock ns/op and bytes-allocated/op, per qubit count and gate
-  arity, per representation).
-- A short qualitative write-up of which representation is adopted for Phase 2 and why,
-  written by inspecting the numbers rather than against a pre-committed numeric threshold —
-  the issue's acceptance criterion is a documented, evidence-based decision, not a
-  pass/fail gate.
+### Results
+
+Measured by running `RepresentationBenchmark.main` on macOS (aarch64), Java 25.0.3, 8
+available processors:
+
+| n  | gate           | impl               | ns/op         | bytes/op | correctness |
+|----|----------------|--------------------|---------------|----------|--------------|
+| 16 | 1-qubit (H)    | double[] baseline  | 341,490.0     | 88.0     | OK           |
+| 16 | 1-qubit (H)    | EJML ZMatrixRMaj   | 585,307.1     | 205.0    | OK           |
+| 16 | 2-qubit (CNOT) | double[] baseline  | 451,564.2     | 128.0    | OK           |
+| 16 | 2-qubit (CNOT) | EJML ZMatrixRMaj   | 670,464.4     | 464.0    | OK           |
+| 20 | 1-qubit (H)    | double[] baseline  | 5,546,197.9   | 88.0     | OK           |
+| 20 | 1-qubit (H)    | EJML ZMatrixRMaj   | 8,885,590.6   | 200.0    | OK           |
+| 20 | 2-qubit (CNOT) | double[] baseline  | 6,828,750.2   | 128.0    | OK           |
+| 20 | 2-qubit (CNOT) | EJML ZMatrixRMaj   | 10,816,337.5  | 464.0    | OK           |
+
+All 8 rows report `OK` on the correctness sanity check — both representations compute the
+same amplitudes for the same gate application, so the comparison below is valid.
+
+### Decision: adopt the raw `double[]` baseline for Phase 2
+
+There is no pre-committed numeric pass/fail threshold for this decision (a deliberate
+project convention, not an oversight) — the call below is made by inspecting the measured
+numbers directly, as the approved spec requires.
+
+The `double[]` baseline is faster and allocates less than EJML's `ZMatrixRMaj` in **all
+four** configurations (both qubit counts, both gate arities), not just on average or at one
+data point:
+
+- **Speed**: EJML is 48–71% slower than the baseline across the board — 1.71x at 16
+  qubits/1-qubit gate, 1.49x at 16 qubits/2-qubit gate, 1.60x at 20 qubits/1-qubit gate, and
+  1.58x at 20 qubits/2-qubit gate. This is a large, consistent gap, not noise: it holds at
+  both qubit counts and both gate arities, so it isn't an artifact of a particular problem
+  size or gate shape.
+- **Allocation**: EJML allocates 2.3x–3.6x more bytes/op than the baseline (205 vs. 88 bytes
+  for the 1-qubit gate at 16 qubits; 464 vs. 128 bytes for the 2-qubit gate at both qubit
+  counts). Both representations already allocate very little per op compared to the
+  boxed-`Complex` status quo this issue exists to move away from, but the *relative* gap
+  between the two candidates is still substantial and consistently in the baseline's favor.
+
+Both gaps point the same direction, at every measured point, so this isn't a case of "faster
+here, slower there" that would need a judgment call about which axis matters more. The
+baseline wins outright on both axes.
+
+This also matches the qualitative case laid out in the spec's Candidates section: EJML's
+only argument for inclusion was being a maintained library with existing complex
+linear-algebra operations, since Phase 1's harness exercises only its multiply op — it was
+never expected to win on raw speed given its more general internal representation
+(`ZMatrixRMaj` carries additional bookkeeping/indirection the hand-written interleaved
+`double[]` multiply does not). Given it does not win on speed either, and allocates
+consistently more, EJML brings no measured advantage here to offset the cost of a new
+external dependency. The raw `double[]` representation is therefore adopted as the target
+representation for the Phase 2 migration (out of scope for this spike).
 
 ## Out of scope
 
