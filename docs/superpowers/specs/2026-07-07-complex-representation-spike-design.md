@@ -98,7 +98,9 @@ contingent on this spike's outcome.
 ### Results
 
 Measured by running `RepresentationBenchmark.main` on macOS (aarch64), Java 25.0.3, 8
-available processors:
+available processors. As with the harness described above, these numbers measure the
+hot-loop multiply only — state is pre-allocated once outside the timed region, and no
+`Circuit`/`CircuitLevel`/`Algorithm` overhead is included:
 
 | n  | gate           | impl               | ns/op         | bytes/op | correctness |
 |----|----------------|--------------------|---------------|----------|--------------|
@@ -126,9 +128,11 @@ data point:
 
 - **Speed**: EJML is 48–71% slower than the baseline across the board — 1.71x at 16
   qubits/1-qubit gate, 1.49x at 16 qubits/2-qubit gate, 1.60x at 20 qubits/1-qubit gate, and
-  1.58x at 20 qubits/2-qubit gate. This is a large, consistent gap, not noise: it holds at
-  both qubit counts and both gate arities, so it isn't an artifact of a particular problem
-  size or gate shape.
+  1.58x at 20 qubits/2-qubit gate. This gap is far larger than the run-to-run variance
+  normally expected from JIT warm-up or GC timing on a single measurement — it holds
+  consistently at both qubit counts and both gate arities, so it isn't an artifact of a
+  particular problem size or gate shape, though this is one sampled run, not a statistically
+  repeated one (no repeated trials, no JVM forking, no confidence intervals).
 - **Allocation**: EJML allocates 2.3x–3.6x more bytes/op than the baseline (205 vs. 88 bytes
   for the 1-qubit gate at 16 qubits; 464 vs. 128 bytes for the 2-qubit gate at both qubit
   counts). Both representations already allocate very little per op compared to the
