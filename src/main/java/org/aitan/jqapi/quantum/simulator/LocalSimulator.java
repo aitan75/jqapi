@@ -34,7 +34,7 @@ public class LocalSimulator implements QuantumSimulator {
     /** @param circuit the circuit to simulate (register initialised to |0...0>) */
     public LocalSimulator(Circuit circuit) {
         this.circuit = circuit;
-        this.quantumRegister = QuantumRegister.forSimulation(circuit.getInputSize(), circuit.getConfig());
+        this.quantumRegister = new QuantumRegister(circuit.getInputSize(), circuit.getConfig());
     }
 
     /** @param circuit the circuit to simulate
@@ -45,7 +45,7 @@ public class LocalSimulator implements QuantumSimulator {
             throw new IllegalArgumentException("Number of input qubits are different from circuit size");
         }
         this.circuit = circuit;
-        this.quantumRegister = QuantumRegister.forSimulation(circuit.getInputSize(), circuit.getConfig(), qubits);
+        this.quantumRegister = new QuantumRegister(circuit.getInputSize(), circuit.getConfig(), qubits);
     }
 
     /** @param circuit the circuit to simulate
@@ -56,7 +56,7 @@ public class LocalSimulator implements QuantumSimulator {
             throw new IllegalArgumentException("Number of input qubits are different from circuit size");
         }
         this.circuit = circuit;
-        this.quantumRegister = QuantumRegister.forSimulation(circuit.getInputSize(), circuit.getConfig(), alphas);
+        this.quantumRegister = new QuantumRegister(circuit.getInputSize(), circuit.getConfig(), alphas);
     }
 
     /** {@inheritDoc} */
