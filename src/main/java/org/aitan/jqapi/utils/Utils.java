@@ -24,8 +24,11 @@ public class Utils {
     
     public static int bitAtIndex(int index,int number, int length)
     {
+        if (index < 0 || index >= length) {
+            throw new IllegalArgumentException("Bit index " + index + " out of range [0, " + length + ")");
+        }
         String toBinary=toBinary(number, length);
- 
+
         return Integer.parseInt(toBinary.substring(index, index + 1));
     }
 }
