@@ -39,8 +39,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:5.7.0.6970:sonar
 
-      - name: Cache OWASP dependency-check data
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Restore OWASP dependency-check data cache
+        # Restore-only: nvd-cache-warm.yml is the sole writer to this cache.
+        # If this job also saved, a fast/partial run here could overwrite a
+        # more complete snapshot with a worse one (cache picks newest, not biggest).
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.m2/repository/org/owasp/dependency-check-data
           key: dependency-check-data-${{ github.run_id }}
