@@ -180,10 +180,23 @@ Environment: os.name: Mac OS X, os.arch: aarch64, java.version: 25.0.3, availabl
 | 20 | 1-qubit (H)   | 24250018.5 | 67108912.0 |
 | 20 | 2-qubit (CNOT)| 20050607.5 | 33554496.0 |
 
-### After migration (double[]-based)
+### After migration (double[]-based, commit 03aa14d)
 
-(filled in after the migration lands — see plan Task 4)
+| n  | gate          | ns/op | bytes/op |
+|----|---------------|-------|----------|
+| 16 | 1-qubit (H)   | 195258.5 | 336.0 |
+| 16 | 2-qubit (CNOT)| 338040.8 | 640.0 |
+| 20 | 1-qubit (H)   | 4199778.3 | 400.0 |
+| 20 | 2-qubit (CNOT)| 5063977.3 | 640.0 |
 
 ### Verdict
 
-(filled in after the migration lands — see plan Task 4)
+The migration confirms issue #12's acceptance criteria on the production
+`applyOperator` path. At 16 qubits, runtime improved ~5.2x for the 1-qubit
+gate and ~4.0x for the 2-qubit gate; at 20 qubits, ~5.8x and ~4.0x
+respectively. Allocation dropped far more dramatically than runtime: bytes/op
+fell from megabytes per call to a few hundred bytes — roughly 12,500x at 16
+qubits (1-qubit gate) and 52,400x–167,800x at 20 qubits, since the only
+remaining allocations are the small per-call `opRe`/`opIm`/`opNonZero`
+flatten arrays rather than a `Complex` object per amplitude touched. No
+configuration regressed on either axis.
