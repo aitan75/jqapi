@@ -1,6 +1,7 @@
 package org.aitan.jqapi.quantum;
 
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import org.aitan.jqapi.JQAPIConfig;
@@ -24,7 +25,7 @@ public class QuantumRegister {
     private final Qubit[] result;
     private final int size;
     private final Qubit[] input;
-    private ComplexVector registerState;
+    private double[] registerState;
 
     /** Creates a register of the given size initialised to |0...0>, using the
      *  default configuration.
@@ -162,7 +163,7 @@ public class QuantumRegister {
 
     /** @return the full complex amplitude vector of the register state */
     public ComplexVector getRegisterState() {
-        return new ComplexVector(this.registerState.getData());
+        return this.toComplexVector();
     }
 
     /**
@@ -178,7 +179,7 @@ public class QuantumRegister {
      * @throws IllegalStateException if the register state is entangled
      */
     public Qubit[] getQubitRegisterState() {
-        ComplexVector[] factorize = ComplexVector.factorize(this.registerState);
+        ComplexVector[] factorize = ComplexVector.factorize(this.toComplexVector());
         this.verifySeparable(factorize);
         Qubit[] qubits = new Qubit[size];
         for (int i = 0; i < factorize.length; i++) {
@@ -191,10 +192,10 @@ public class QuantumRegister {
      *  @deprecated Use {@link #applyOperator(ComplexMatrix, List)} instead to apply quantum gates. */
     @Deprecated
     public void setRegisterState(ComplexVector registerState) {
-        if (registerState.getDimension() != this.registerState.getDimension()) {
+        if (registerState.getDimension() != this.registerState.length / 2) {
             throw new IllegalArgumentException("ERROR: Overflow register dimension");
         }
-        this.registerState = registerState;
+        this.registerState = toInterleaved(registerState);
     }
 
     /**
@@ -212,7 +213,7 @@ public class QuantumRegister {
             throw new IllegalArgumentException("Gate matrix of dimension " + operator.getRowDimension()
                     + " cannot be applied to " + k + " qubit(s)");
         }
-        int dimension = this.registerState.getDimension();
+        int dimension = this.registerState.length / 2;
 
         //offsets[t] = bits to set in the base index to select the local state t.
         //Qubit q lives at integer bit position (size - 1 - q) because qubit 0
@@ -229,23 +230,46 @@ public class QuantumRegister {
         }
         int targetMask = offsets[localDimension - 1];
 
-        Complex[] local = new Complex[localDimension];
+        //Flatten the operator once per call: the zero-check happens on the boxed
+        //entry (same check as before the migration); the per-amplitude loops
+        //below then run entirely on primitives, with no Complex allocation.
+        double[] opRe = new double[localDimension * localDimension];
+        double[] opIm = new double[localDimension * localDimension];
+        boolean[] opNonZero = new boolean[localDimension * localDimension];
+        for (int r = 0; r < localDimension; r++) {
+            for (int c = 0; c < localDimension; c++) {
+                Complex entry = operator.getEntry(r, c);
+                int flat = r * localDimension + c;
+                opNonZero[flat] = !entry.equals(Complex.ZERO);
+                opRe[flat] = entry.getReal();
+                opIm[flat] = entry.getImaginary();
+            }
+        }
+
+        double[] localRe = new double[localDimension];
+        double[] localIm = new double[localDimension];
         for (int base = 0; base < dimension; base++) {
             if ((base & targetMask) != 0) {
                 continue; //visit each amplitude group once, starting from the index with all target bits at 0
             }
             for (int t = 0; t < localDimension; t++) {
-                local[t] = this.registerState.getEntry(base | offsets[t]);
+                int amplitudeIndex = base | offsets[t];
+                localRe[t] = this.registerState[2 * amplitudeIndex];
+                localIm[t] = this.registerState[2 * amplitudeIndex + 1];
             }
             for (int r = 0; r < localDimension; r++) {
-                Complex sum = Complex.ZERO;
+                double sumRe = 0.0;
+                double sumIm = 0.0;
                 for (int c = 0; c < localDimension; c++) {
-                    Complex entry = operator.getEntry(r, c);
-                    if (!entry.equals(Complex.ZERO)) {
-                        sum = sum.add(entry.multiply(local[c]));
+                    int flat = r * localDimension + c;
+                    if (opNonZero[flat]) {
+                        sumRe += opRe[flat] * localRe[c] - opIm[flat] * localIm[c];
+                        sumIm += opRe[flat] * localIm[c] + opIm[flat] * localRe[c];
                     }
                 }
-                this.registerState.setEntry(base | offsets[r], sum);
+                int amplitudeIndex = base | offsets[r];
+                this.registerState[2 * amplitudeIndex] = sumRe;
+                this.registerState[2 * amplitudeIndex + 1] = sumIm;
             }
         }
     }
@@ -255,11 +279,9 @@ public class QuantumRegister {
     public void measure() {
         int indexCollapsed = this.calculateCollapsedIndex();
         //Initialize all register state to 0
-        for (int i = 0; i < registerState.getDimension(); i++) {
-            registerState.setEntry(i, Complex.ZERO);
-        }
+        Arrays.fill(this.registerState, 0.0);
         //Set indexCollapsed element of register state to 1
-        registerState.setEntry(indexCollapsed, Complex.ONE);
+        this.registerState[2 * indexCollapsed] = 1.0;
         //The collapsed state is a computational basis state: read each qubit directly from its bit
         for (int i = 0; i < size; i++) {
             result[i] = Utils.bitAtIndex(i, indexCollapsed, size) == 0 ? new QubitZero() : new QubitOne();
@@ -306,7 +328,7 @@ public class QuantumRegister {
             registerStateToUpdate = new QubitZero().getValue().tensorProduct(registerStateToUpdate);
             this.input[i] = new QubitZero();
         }
-        this.registerState = registerStateToUpdate;
+        this.registerState = toInterleaved(registerStateToUpdate);
     }
 
     private void initializeQuantumRegister(Qubit[] qubits) {
@@ -317,7 +339,7 @@ public class QuantumRegister {
             registerStateToUpdate = qubit.getValue().tensorProduct(registerStateToUpdate);
             this.input[i] = qubit;
         }
-        this.registerState = registerStateToUpdate;
+        this.registerState = toInterleaved(registerStateToUpdate);
     }
 
     private void initializeQuantumRegister(double... alphas) {
@@ -328,16 +350,18 @@ public class QuantumRegister {
             registerStateToUpdate = qubit.getValue().tensorProduct(registerStateToUpdate);
             this.input[i] = qubit;
         }
-        this.registerState = registerStateToUpdate;
+        this.registerState = toInterleaved(registerStateToUpdate);
     }
 
     private int calculateCollapsedIndex() {
         double random = RANDOM.nextDouble();
-        int lastIndex = this.registerState.getDimension() - 1;
+        int lastIndex = this.registerState.length / 2 - 1;
         int j = -1;
         while (random >= 0 && j < lastIndex) {
             j++;
-            random -= Math.pow(this.registerState.getEntry(j).abs(), 2);
+            double re = this.registerState[2 * j];
+            double im = this.registerState[2 * j + 1];
+            random -= re * re + im * im;
         }
         return j;
     }
@@ -347,11 +371,15 @@ public class QuantumRegister {
         double zeroProbability = 0;
         double oneProbability = 0;
 
-        for (int i = 0; i < this.registerState.getDimension(); i++) {
+        int dimension = this.registerState.length / 2;
+        for (int i = 0; i < dimension; i++) {
             String toBinary = Utils.toBinary(i, size);
             int bitAtIndex = Integer.parseInt(toBinary.substring(qubitIndex, qubitIndex + 1));
-            zeroProbability += bitAtIndex == 0 ? Math.pow(this.registerState.getEntry(i).abs(), 2) : 0;
-            oneProbability += bitAtIndex == 1 ? Math.pow(this.registerState.getEntry(i).abs(), 2) : 0;
+            double re = this.registerState[2 * i];
+            double im = this.registerState[2 * i + 1];
+            double probability = re * re + im * im;
+            zeroProbability += bitAtIndex == 0 ? probability : 0;
+            oneProbability += bitAtIndex == 1 ? probability : 0;
         }
         return zeroProbability >= random ? 0 : 1;
     }
@@ -359,10 +387,13 @@ public class QuantumRegister {
     private void updateRegisterStateAfterQubitCollapsed(int qubitPos, int collapsedValue) {
         //Probability of the branch we collapsed into: sum of |amplitude|^2 over
         //all basis states whose bit at qubitPos equals the measured value
+        int dimension = this.registerState.length / 2;
         double branchProbability = 0;
-        for (int i = 0; i < this.registerState.getDimension(); i++) {
+        for (int i = 0; i < dimension; i++) {
             if (Utils.bitAtIndex(qubitPos, i, size) == collapsedValue) {
-                branchProbability += Math.pow(this.registerState.getEntry(i).abs(), 2);
+                double re = this.registerState[2 * i];
+                double im = this.registerState[2 * i + 1];
+                branchProbability += re * re + im * im;
             }
         }
         if (branchProbability == 0) {
@@ -371,11 +402,13 @@ public class QuantumRegister {
         //Zero out the discarded branch and renormalize the surviving amplitudes,
         //dividing by sqrt(p): this preserves the relative phases
         double norm = Math.sqrt(branchProbability);
-        for (int i = 0; i < this.registerState.getDimension(); i++) {
+        for (int i = 0; i < dimension; i++) {
             if (Utils.bitAtIndex(qubitPos, i, size) == collapsedValue) {
-                this.registerState.setEntry(i, this.registerState.getEntry(i).divide(norm));
+                this.registerState[2 * i] /= norm;
+                this.registerState[2 * i + 1] /= norm;
             } else {
-                this.registerState.setEntry(i, Complex.ZERO);
+                this.registerState[2 * i] = 0.0;
+                this.registerState[2 * i + 1] = 0.0;
             }
         }
     }
@@ -386,17 +419,55 @@ public class QuantumRegister {
      * (probabilistically) separable.
      */
     private void verifySeparable(ComplexVector[] qubitMarginals) {
-        for (int i = 0; i < this.registerState.getDimension(); i++) {
+        int dimension = this.registerState.length / 2;
+        for (int i = 0; i < dimension; i++) {
             double product = 1;
             for (int q = 0; q < size; q++) {
                 int bit = Utils.bitAtIndex(q, i, size);
                 product *= Math.pow(qubitMarginals[q].getEntry(bit).abs(), 2);
             }
-            double actual = Math.pow(this.registerState.getEntry(i).abs(), 2);
+            double re = this.registerState[2 * i];
+            double im = this.registerState[2 * i + 1];
+            double actual = re * re + im * im;
             if (Math.abs(product - actual) > 1e-9) {
                 throw new IllegalStateException("Register state is entangled and cannot be factorized into independent qubits: use measure() or read the full register state instead");
             }
         }
+    }
+
+    /** Flattens a complex vector into the interleaved (re, im) primitive layout. */
+    private static double[] toInterleaved(ComplexVector vector) {
+        Complex[] data = vector.getData();
+        double[] interleaved = new double[data.length * 2];
+        for (int i = 0; i < data.length; i++) {
+            interleaved[2 * i] = data[i].getReal();
+            interleaved[2 * i + 1] = data[i].getImaginary();
+        }
+        return interleaved;
+    }
+
+    /** Builds a fresh complex-vector view of the interleaved primitive state.
+     *  Exact 0.0 and 1.0+0.0i amplitudes are canonicalized to the shared
+     *  {@link Complex#ZERO}/{@link Complex#ONE} instances: the pre-migration
+     *  {@code ComplexVector}-backed representation stored those very
+     *  singletons whenever an amplitude was set to exactly zero or one (e.g.
+     *  via {@link #measure()}), so callers comparing by reference identity
+     *  observe the same behavior after the primitive-array migration. */
+    private ComplexVector toComplexVector() {
+        int dimension = this.registerState.length / 2;
+        Complex[] data = new Complex[dimension];
+        for (int i = 0; i < dimension; i++) {
+            double re = this.registerState[2 * i];
+            double im = this.registerState[2 * i + 1];
+            if (re == 0.0 && im == 0.0) {
+                data[i] = Complex.ZERO;
+            } else if (re == 1.0 && im == 0.0) {
+                data[i] = Complex.ONE;
+            } else {
+                data[i] = new Complex(re, im);
+            }
+        }
+        return new ComplexVector(data);
     }
 
 }
