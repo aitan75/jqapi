@@ -36,7 +36,14 @@ jobs:
 
       - name: Update NVD data (no scan)
         continue-on-error: true # best-effort: a slow/degraded NVD sync must not fail this maintenance job
-        timeout-minutes: 60 # generous — this run isn't gating any PR, it just advances the shared cache
+        # The first-ever sync must download the full ~363k NVD record set before
+        # dependency-check will persist a "last synced" checkpoint; at the observed
+        # throughput that takes several hours. A 60-minute cap meant every run was
+        # killed mid-crawl and restarted from zero next time, regardless of cache
+        # size (issue: NVD sync never converges). 330 min stays under the 360-min
+        # GitHub-hosted runner hard cap and gives one run room to finish the seed
+        # sync; subsequent runs should only need fast incremental deltas.
+        timeout-minutes: 330
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
