@@ -7,10 +7,6 @@ import org.aitan.jqapi.quantum.gates.Gate;
  * A dense complex matrix, backed by a flat primitive {@code double[]} in
  * row-major, interleaved {@code (re, im)} layout
  * ({@code data[2*(r*cols+c)]} = real, {@code +1} = imaginary).
- * <p>
- * This is the issue #12 replacement for the previous
- * {@code BlockFieldMatrix<Complex>} subclass: the public method names and
- * behavior are preserved, but there is no longer any commons-math3 dependency.
  *
  * @author Gaetano Ferrara
  */

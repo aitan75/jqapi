@@ -50,8 +50,8 @@ The library also ships a few ready-made algorithms in the
 - **Java 21+**
 - **Maven 3.9+**
 
-The only runtime dependency is Apache Commons Math 3.6.1, pulled in
-transitively by Maven.
+jqapi has no third-party runtime dependencies — it relies only on the Java 21
+standard library. (JUnit is used for tests only.)
 
 ---
 
