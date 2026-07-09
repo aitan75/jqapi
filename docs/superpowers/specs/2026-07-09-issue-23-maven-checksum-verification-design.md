@@ -173,7 +173,7 @@ directory (no repo pollution):
 - [x] Decision made and documented: **native trusted-checksums lockfile (SHA-256)
       + `--strict-checksums`**, with `failIfMissing=false`; rationale and residual
       risk recorded here.
-- [ ] Wired into the build via `.mvn/maven.config` and `.mvn/checksums/checksums-central.sha256`,
+- [x] Wired into the build via `.mvn/maven.config` and `.mvn/checksums/checksums-central.sha256`,
       verified not to break the existing build (`mvn -B verify`, SonarCloud, Dependency-Check).
 
 ## Out of scope
