@@ -65,7 +65,7 @@ Dependency-Check) need no changes and no duplicated flags:
 ```
 --strict-checksums
 -Daether.trustedChecksumsSource.summaryFile=true
--Daether.trustedChecksumsSource.summaryFile.basedir=.mvn/checksums
+-Daether.trustedChecksumsSource.summaryFile.basedir=${maven.multiModuleProjectDirectory}/.mvn/checksums
 -Daether.artifactResolver.postProcessor.trustedChecksums=true
 -Daether.artifactResolver.postProcessor.trustedChecksums.checksumAlgorithms=SHA-256
 -Daether.artifactResolver.postProcessor.trustedChecksums.failIfMissing=false
@@ -73,6 +73,13 @@ Dependency-Check) need no changes and no duplicated flags:
 
 Applying it globally (not CI-only) means local developer builds are protected
 too, and CI and local behavior stay identical.
+
+> **Basedir must be non-relative (validated).** A plain relative
+> `basedir=.mvn/checksums` is silently not honored by the summary-file source —
+> the lockfile is neither written nor read there. The portable fix is
+> `${maven.multiModuleProjectDirectory}/.mvn/checksums`: Maven expands
+> `maven.multiModuleProjectDirectory` to the directory containing `.mvn/` (the
+> repo root) on every machine and in CI. Confirmed empirically on Maven 3.9.15.
 
 ### 2. `failIfMissing=false` (deliberate)
 
@@ -101,22 +108,20 @@ artifact set, without cross-command brittleness.
 
 ### 4. Lockfile regeneration workflow (manual, on dependency/plugin bump)
 
-Documented command that re-records the lockfile from a fresh resolution:
+Documented command that re-records the lockfile. Because `.mvn/maven.config`
+already enables the summary-file source, its basedir, and the post-processor,
+regeneration only needs to add **record mode** (everything else is inherited):
 
 ```
-mvn -B \
-  -Daether.trustedChecksumsSource.summaryFile=true \
-  -Daether.trustedChecksumsSource.summaryFile.basedir=.mvn/checksums \
-  -Daether.artifactResolver.postProcessor.trustedChecksums=true \
-  -Daether.artifactResolver.postProcessor.trustedChecksums.record=true \
-  -Daether.artifactResolver.postProcessor.trustedChecksums.checksumAlgorithms=SHA-256 \
-  verify
+mvn -Daether.artifactResolver.postProcessor.trustedChecksums.record=true verify
 ```
 
-To also pin the auxiliary tool chains, the maintainer may append the SonarCloud
-and Dependency-Check goals to the same record run. The regenerated file is
-reviewed in the diff and committed. (Record mode is never run in CI — CI only
-verifies.)
+Record mode captures every artifact resolved during the build, including those
+already present in the local `~/.m2` cache (validated: a warm-cache `verify`
+records the full core set). To also pin the auxiliary tool chains, the
+maintainer may append the SonarCloud and Dependency-Check goals to the same
+record run. The regenerated file is reviewed in the diff and committed. (Record
+mode is never run in CI — CI only verifies.)
 
 ### 5. CI impact
 
@@ -156,6 +161,12 @@ directory (no repo pollution):
 3. **Tamper** one line (corrupted the SHA-256 of `junit-platform-engine-6.1.1.jar`)
    then verify: `BUILD FAILURE`, `EXIT 1`, message:
    `trusted checksum mismatch: summaryFile=deadbeef…; calculated=3ae22ca7…`.
+4. **Warm-cache record**: recording against the already-populated default `~/.m2`
+   (no fresh download) produced a complete 243-artifact lockfile including
+   `junit-jupiter` and all core build plugins.
+5. **Basedir resolution**: a plain relative `basedir=.mvn/checksums` wrote/read
+   nothing; `${maven.multiModuleProjectDirectory}/.mvn/checksums` correctly
+   resolved to the repo-root `.mvn/checksums/`.
 
 ## Acceptance criteria (from #23)
 
