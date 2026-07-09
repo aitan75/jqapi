@@ -41,6 +41,7 @@ public class Constants {
     public static final String RZ = "Rz";
     public static final String PHASE = "P";
     public static final String U3 = "U3";
+    public static final String MULTI_CONTROLLED = "MC";
 
     public static final ComplexMatrix CONTROLLED_NOT_MATRIX
             = ComplexMatrix.createMatrixWithData(new Complex[][]{
