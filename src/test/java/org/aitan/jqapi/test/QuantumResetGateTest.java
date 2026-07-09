@@ -3,7 +3,12 @@ package org.aitan.jqapi.test;
 import java.util.List;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.math.Complex;
+import org.aitan.jqapi.quantum.Circuit;
+import org.aitan.jqapi.quantum.CircuitLevel;
 import org.aitan.jqapi.quantum.QuantumRegister;
+import org.aitan.jqapi.quantum.gates.PauliX;
+import org.aitan.jqapi.quantum.gates.Reset;
+import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 import org.aitan.jqapi.utils.Constants;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
@@ -83,5 +88,45 @@ public class QuantumResetGateTest {
         QuantumRegister reg = new QuantumRegister(2);
         assertThrows(JQApiLimitException.class, () -> reg.reset(5));
         assertThrows(JQApiLimitException.class, () -> reg.resetQubitAtIndexes(List.of(5)));
+    }
+
+    @Test
+    void resetGate_exposesType() {
+        assertEquals(Constants.RESET, new Reset(0).getType());
+    }
+
+    @Test
+    void simulator_resetsQubitToKet0() {
+        // |0> --X--> |1> --Reset--> |0>
+        Circuit circuit = new Circuit(1);
+        CircuitLevel flip = new CircuitLevel();
+        flip.addGate(new PauliX(0));
+        CircuitLevel reset = new CircuitLevel();
+        reset.addGate(new Reset(0));
+        circuit.addLevel(flip);
+        circuit.addLevel(reset);
+        LocalSimulator sim = new LocalSimulator(circuit);
+        sim.execute();
+        assertEquals(Complex.ONE, sim.getQuantumRegister().getRegisterState().getEntry(0));
+        assertEquals(Complex.ZERO, sim.getQuantumRegister().getRegisterState().getEntry(1));
+    }
+
+    @Test
+    void simulator_multiIndexReset_returnsAllZeroState() {
+        // Flip qubits 0 and 1, then Reset(0,1) -> |000> (index 0).
+        Circuit circuit = new Circuit(3);
+        CircuitLevel flip = new CircuitLevel();
+        flip.addGate(new PauliX(0));
+        flip.addGate(new PauliX(1));
+        CircuitLevel reset = new CircuitLevel();
+        reset.addGate(new Reset(0, 1));
+        circuit.addLevel(flip);
+        circuit.addLevel(reset);
+        LocalSimulator sim = new LocalSimulator(circuit);
+        sim.execute();
+        assertEquals(Complex.ONE, sim.getQuantumRegister().getRegisterState().getEntry(0));
+        for (int i = 1; i < 8; i++) {
+            assertEquals(Complex.ZERO, sim.getQuantumRegister().getRegisterState().getEntry(i), "index " + i);
+        }
     }
 }
