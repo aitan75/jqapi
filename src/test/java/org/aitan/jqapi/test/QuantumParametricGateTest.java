@@ -2,6 +2,16 @@ package org.aitan.jqapi.test;
 
 import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexMatrix;
+import org.aitan.jqapi.quantum.Circuit;
+import org.aitan.jqapi.quantum.CircuitLevel;
+import org.aitan.jqapi.quantum.QuantumRegister;
+import org.aitan.jqapi.quantum.gates.Rx;
+import org.aitan.jqapi.quantum.gates.Ry;
+import org.aitan.jqapi.quantum.gates.Rz;
+import org.aitan.jqapi.quantum.gates.Phase;
+import org.aitan.jqapi.quantum.gates.U3;
+import org.aitan.jqapi.quantum.simulator.LocalSimulator;
+import org.aitan.jqapi.utils.Constants;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -144,5 +154,54 @@ public class QuantumParametricGateTest {
         Complex global = Complex.expI(-theta / 2);
         assertComplex(p.getEntry(0, 0).multiply(global), rz.getEntry(0, 0));
         assertComplex(p.getEntry(1, 1).multiply(global), rz.getEntry(1, 1));
+    }
+
+    @Test
+    void gates_exposeCorrectMatrixAndType() {
+        assertMatrix2(Constants.rotationXMatrix(0.4), new Rx(0.4, 0).getMatrix());
+        assertEquals(Constants.RX, new Rx(0.4, 0).getType());
+
+        assertMatrix2(Constants.rotationYMatrix(0.4), new Ry(0.4, 0).getMatrix());
+        assertEquals(Constants.RY, new Ry(0.4, 0).getType());
+
+        assertMatrix2(Constants.rotationZMatrix(0.4), new Rz(0.4, 0).getMatrix());
+        assertEquals(Constants.RZ, new Rz(0.4, 0).getType());
+
+        assertMatrix2(Constants.phaseMatrix(0.4), new Phase(0.4, 0).getMatrix());
+        assertEquals(Constants.PHASE, new Phase(0.4, 0).getType());
+
+        assertMatrix2(Constants.u3Matrix(0.4, 0.5, 0.6), new U3(0.4, 0.5, 0.6, 0).getMatrix());
+        assertEquals(Constants.U3, new U3(0.4, 0.5, 0.6, 0).getType());
+    }
+
+    @Test
+    void rxPi_on_ket0_gives_minus_i_ket1() {
+        Circuit circuit = new Circuit(1);
+        CircuitLevel level = new CircuitLevel();
+        level.addGate(new Rx(Math.PI, 0));
+        circuit.addLevel(level);
+        LocalSimulator sim = new LocalSimulator(circuit);
+        sim.execute();
+        QuantumRegister reg = sim.getQuantumRegister();
+        // Rx(pi)|0> = -i|1>
+        assertComplex(new Complex(0, 0), reg.getRegisterState().getEntry(0));
+        assertComplex(new Complex(0, -1), reg.getRegisterState().getEntry(1));
+    }
+
+    @Test
+    void ryPi_on_qubit1_of_two_qubit_register() {
+        // qubit 0 is the most significant bit; |00> has index 0.
+        // Ry(pi) flips |0> -> |1> (real), so applying to qubit 1 gives |01> = index 1.
+        Circuit circuit = new Circuit(2);
+        CircuitLevel level = new CircuitLevel();
+        level.addGate(new Ry(Math.PI, 1));
+        circuit.addLevel(level);
+        LocalSimulator sim = new LocalSimulator(circuit);
+        sim.execute();
+        QuantumRegister reg = sim.getQuantumRegister();
+        assertComplex(new Complex(0, 0), reg.getRegisterState().getEntry(0));
+        assertComplex(new Complex(1, 0), reg.getRegisterState().getEntry(1));
+        assertComplex(new Complex(0, 0), reg.getRegisterState().getEntry(2));
+        assertComplex(new Complex(0, 0), reg.getRegisterState().getEntry(3));
     }
 }
