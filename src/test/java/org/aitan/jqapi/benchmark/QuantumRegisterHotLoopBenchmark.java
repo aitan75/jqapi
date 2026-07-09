@@ -12,7 +12,7 @@ import org.aitan.jqapi.utils.Constants;
 /**
  * Standalone benchmark of the production {@code QuantumRegister.applyOperator}
  * hot loop, for issue #12 phase 2's before/after comparison. Like
- * {@link MemoryLimitBenchmark} and {@link RepresentationBenchmark}, this is
+ * {@link MemoryLimitBenchmark}, this is
  * intentionally NOT a JUnit test: no {@code @Test} method, and its name doesn't
  * match surefire's include patterns ({@code *Test}, {@code Test*},
  * {@code *Tests}, {@code *TestCase}), so {@code mvn test} never runs it. Run it
