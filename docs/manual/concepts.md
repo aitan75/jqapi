@@ -97,6 +97,7 @@ directly. See the full [gate catalog](../api/gates.md). The essentials:
 - **Custom:** `Oracle(matrix, indexes...)` and
   `GenericGate(matrix, size, indexes...)` wrap a matrix you supply.
 - **Measurement:** `Measurement(indexes...)` collapses qubits mid-circuit.
+- **Reset:** `Reset(indexes...)` forces qubits back to `|0>` mid-circuit.
 
 ```java
 new Hadamard(0);            // superpose qubit 0

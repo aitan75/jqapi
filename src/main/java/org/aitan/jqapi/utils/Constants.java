@@ -20,6 +20,7 @@ public class Constants {
     public static final String ONE_QUANTUM = "|1>";
     public static final String PSI_QUANTUM = "|ψ>";
     public static final String MEASUREMENT = "M";
+    public static final String RESET = "RST";
     public static final String PROBABILITIES = "P";
     public static final String ORACLE = "Oracle";
     public static final String CZ = "CZ";

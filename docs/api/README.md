@@ -66,7 +66,7 @@ The gate library. `Gate` is the abstract base; every concrete gate wraps a
 unitary `ComplexMatrix` and the qubit indexes it acts on.
 
 Single-qubit: `Identity`, `Hadamard`, `PauliX`, `PauliY`, `PauliZ`, `PauliS`,
-`PauliT`, `Measurement`.
+`PauliT`, `Measurement`, `Reset`.
 Parametric single-qubit: `Rx`, `Ry`, `Rz`, `Phase`, `U3`.
 Multi-qubit: `ControlledNot`, `ControlledY`, `ControlledZ`, `Swap`,
 `ControlledSwap`, `Toffoli`, `MultiControlled` (generic Cᵐ(U)).

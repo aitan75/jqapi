@@ -9,6 +9,7 @@ import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
+import org.aitan.jqapi.utils.Constants;
 import org.aitan.jqapi.utils.Utils;
 
 /**
@@ -309,6 +310,40 @@ public class QuantumRegister {
             this.measure();
         }
 
+    }
+
+    /**
+     * Forces the given qubit to {@code |0>}, regardless of its current state, by
+     * collapsing it in the Z basis and applying X if the outcome was 1. Unlike
+     * {@link #measureQubitAtIndexes(List)} this does not record a measurement
+     * result: it is a reset, not a read-out.
+     *
+     * @param qubitIndex the qubit to reset
+     */
+    public void reset(int qubitIndex) {
+        if (qubitIndex < 0 || qubitIndex >= size) {
+            throw new JQApiLimitException("Reset index " + qubitIndex + " out of range [0, " + size + ")");
+        }
+        int collapsedValue = this.calculateCollapsedIndex(qubitIndex);
+        this.updateRegisterStateAfterQubitCollapsed(qubitIndex, collapsedValue);
+        if (collapsedValue == 1) {
+            this.applyOperator(Constants.PAULI_X_MATRIX, List.of(qubitIndex));
+        }
+    }
+
+    /**
+     * Resets each listed qubit to {@code |0>}.
+     *
+     * @param indexes the qubits to reset
+     */
+    public void resetQubitAtIndexes(List<Integer> indexes) {
+        Objects.requireNonNull(indexes);
+        indexes.forEach(index -> {
+            if (index == null || index < 0 || index >= size) {
+                throw new JQApiLimitException("Reset index " + index + " out of range [0, " + size + ")");
+            }
+        });
+        indexes.forEach(this::reset);
     }
 
     /** @return the input qubits the register was initialised with */
