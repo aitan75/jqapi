@@ -92,7 +92,8 @@ directly. See the full [gate catalog](../api/gates.md). The essentials:
   `new Rx(Math.PI/2, 0)` or `new U3(θ, φ, λ, 0)`.
 - **Multi-qubit:** `ControlledNot(control, target)`, `ControlledY`,
   `ControlledZ`, `Swap(a, b)`, `ControlledSwap(control, a, b)`,
-  `Toffoli(c1, c2, target)`.
+  `Toffoli(c1, c2, target)`, and the generic
+  `MultiControlled(u, numControls, controls..., targets...)` for Cᵐ(U).
 - **Custom:** `Oracle(matrix, indexes...)` and
   `GenericGate(matrix, size, indexes...)` wrap a matrix you supply.
 - **Measurement:** `Measurement(indexes...)` collapses qubits mid-circuit.

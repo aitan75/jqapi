@@ -101,7 +101,8 @@ mvn -q exec:java -Dexec.classpathScope=test -Dexec.mainClass=org.aitan.jqapi.ben
 
 Identity, Pauli X/Y/Z, Pauli S, Pauli T, Hadamard, parametric rotations
 Rx/Ry/Rz, phase shift P, universal U3, Swap, Controlled-NOT, Controlled-Y,
-Controlled-Z, Controlled-Swap, Toffoli, Oracle, Measurement.
+Controlled-Z, Controlled-Swap, Toffoli, generic multi-controlled Cᵐ(U), Oracle,
+Measurement.
 
 ## Supported algorithms & examples
 
