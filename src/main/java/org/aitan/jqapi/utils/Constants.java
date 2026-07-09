@@ -1,7 +1,7 @@
 package org.aitan.jqapi.utils;
 
+import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexMatrix;
-import org.apache.commons.math3.complex.Complex;
 
 /**
  *
