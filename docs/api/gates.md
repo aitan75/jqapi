@@ -12,6 +12,7 @@ list of qubit indexes it acts on.
 - [Single-qubit gates](#single-qubit-gates)
 - [Parametric single-qubit gates](#parametric-single-qubit-gates)
 - [Multi-qubit gates](#multi-qubit-gates)
+- [Multi-controlled Cᵐ(U)](#multicontrolled)
 - [Custom-matrix gates](#custom-matrix-gates)
 - [Measurement](#measurement)
 - [Reset](#reset)
@@ -175,6 +176,20 @@ most significant).
 
 ---
 
+### `MultiControlled`
+
+`new MultiControlled(ComplexMatrix u, int numControls, Integer... indexes)` — the
+generic multi-controlled gate Cᵐ(U). Applies `u` (a `2^t × 2^t` unitary) to the
+target qubits when all `numControls` control qubits are `|1>`. Indexes are
+declared **controls first, then targets** (controls are the most significant
+qubits). Generalizes `Toffoli`: `new MultiControlled(Constants.PAULI_X_MATRIX, 2,
+c1, c2, target)` equals `new Toffoli(c1, c2, target)`.
+
+```java
+// C³(X): flip qubit 3 only when qubits 0, 1, 2 are all |1>
+level.addGate(new MultiControlled(Constants.PAULI_X_MATRIX, 3, 0, 1, 2, 3));
+```
+
 ## Custom-matrix gates
 
 These wrap a user-supplied unitary matrix.
@@ -262,6 +277,7 @@ level.addGate(new Reset(0, 1)); // reset qubits 0 and 1 to |0> mid-circuit
 | `Swap` | `Swap(first, second)` | 2 | `Swap` |
 | `ControlledSwap` | `ControlledSwap(first, second, third)` | 3 | `CSwap` |
 | `Toffoli` | `Toffoli(first, second, third)` | 3 | `TOFF` |
+| `MultiControlled` | `MultiControlled(ComplexMatrix u, int numControls, Integer...)` | `numControls + log2(u)` | `MC` |
 | `Oracle` | `Oracle(ComplexMatrix, Integer...)` | inferred | `Oracle` |
 | `GenericGate` | `GenericGate(ComplexMatrix, int, Integer...)` | `size` | `Generic Gate` |
 

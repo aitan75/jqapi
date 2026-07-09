@@ -69,7 +69,7 @@ Single-qubit: `Identity`, `Hadamard`, `PauliX`, `PauliY`, `PauliZ`, `PauliS`,
 `PauliT`, `Measurement`, `Reset`.
 Parametric single-qubit: `Rx`, `Ry`, `Rz`, `Phase`, `U3`.
 Multi-qubit: `ControlledNot`, `ControlledY`, `ControlledZ`, `Swap`,
-`ControlledSwap`, `Toffoli`.
+`ControlledSwap`, `Toffoli`, `MultiControlled` (generic Cᵐ(U)).
 Custom: `Oracle`, `GenericGate` (both wrap a user-supplied matrix).
 
 ### `org.aitan.jqapi.quantum.simulator` — [full reference](simulator.md)
