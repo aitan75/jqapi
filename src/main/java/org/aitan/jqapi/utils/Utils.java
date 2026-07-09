@@ -14,8 +14,7 @@ public class Utils {
 
     /**
      * Rounds a value to the given number of decimal places using HALF_UP
-     * rounding. Replicates {@code org.apache.commons.math3.util.Precision.round}
-     * (issue #12), including the negative-zero handling of MATH-1089.
+     * rounding, mapping a rounded-to-zero result back to the sign of the input.
      *
      * @param value the value to round
      * @param scale the number of decimal places

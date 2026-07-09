@@ -6,10 +6,6 @@ import org.aitan.jqapi.utils.Utils;
 /**
  * A dense complex vector, backed by a primitive {@code double[]} in interleaved
  * {@code (re, im)} layout ({@code data[2i]} = real, {@code data[2i+1]} = imaginary).
- * <p>
- * This is the issue #12 replacement for the previous
- * {@code ArrayFieldVector<Complex>} subclass: the public method names and
- * behavior are preserved, but there is no longer any commons-math3 dependency.
  *
  * @author Gaetano Ferrara
  */

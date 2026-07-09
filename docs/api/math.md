@@ -14,14 +14,6 @@ interleaved `(re, im)` layout.
 - [ComplexVector](#complexvector)
 - [ComplexMatrix](#complexmatrix)
 
-> **Migration note (issue #12).** Scalars are now
-> `org.aitan.jqapi.math.Complex` instead of
-> `org.apache.commons.math3.complex.Complex`. This is the **only** source-level
-> break for external consumers — update the import; all method names
-> (`getReal`, `getImaginary`, `add`, `subtract`, `multiply`, `abs`, `sqrt`,
-> `sqrt1z`) and the `ONE`/`ZERO`/`I` constants are unchanged. The
-> commons-math3 dependency has been removed from `pom.xml`.
-
 ---
 
 ## `Complex`
@@ -53,8 +45,8 @@ interleaved `(re, im)` layout.
 
 > **Behavioral caveat.** `sqrt()`/`sqrt1z()` implement the principal square root
 > for **finite** inputs only — the sole case that occurs in this codebase, where
-> amplitudes are always finite. The general-purpose NaN/Infinity hardening that
-> commons-math3 provided is intentionally not replicated.
+> amplitudes are always finite. General-purpose NaN/Infinity hardening is
+> intentionally not replicated.
 
 ---
 
@@ -89,8 +81,7 @@ primitive `double[]` (interleaved `(re, im)`).
 > probabilities, so **relative phases are not recovered** and the result is only
 > meaningful for separable states. This is the primitive behind
 > [`QuantumRegister.getQubitRegisterState`](quantum.md#getqubitregisterstate),
-> which adds the entanglement check. Its parameter type narrowed from the former
-> `FieldVector<Complex>` to `ComplexVector` (the only type ever passed).
+> which adds the entanglement check.
 
 ```java
 import org.aitan.jqapi.math.ComplexVector;

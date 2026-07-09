@@ -70,8 +70,8 @@ for (int i = 0; i < 10_000; i++) {
     simulator.execute();
     QuantumRegister qreg = simulator.getQuantumRegister();
     qreg.measure();
-    boolean first  = qreg.getResult()[0].getValue().getEntry(0).equals(org.apache.commons.math3.complex.Complex.ZERO);
-    boolean second = qreg.getResult()[1].getValue().getEntry(0).equals(org.apache.commons.math3.complex.Complex.ZERO);
+    boolean first  = qreg.getResult()[0].getValue().getEntry(0).equals(org.aitan.jqapi.math.Complex.ZERO);
+    boolean second = qreg.getResult()[1].getValue().getEntry(0).equals(org.aitan.jqapi.math.Complex.ZERO);
     int idx = (first ? 2 : 0) + (second ? 1 : 0);
     results[idx]++;
 }

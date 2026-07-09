@@ -3,16 +3,10 @@ package org.aitan.jqapi.math;
 /**
  * Immutable complex number, backed by two primitive {@code double} fields.
  * <p>
- * This is jqapi's own replacement for {@code org.apache.commons.math3.complex.Complex}
- * (issue #12): it keeps the exact method names, numeric behavior and
- * {@code equals}/{@code hashCode}/{@code toString} semantics that the codebase
- * relied on, so the only visible change for external consumers is the import
- * path ({@code org.aitan.jqapi.math.Complex}).
- * <p>
  * <b>Behavioral caveat:</b> {@link #sqrt()} implements the principal square root
  * for finite inputs only, which is the sole case that occurs here (amplitudes are
- * always finite). The general-purpose NaN/Infinity hardening that commons-math3
- * provided is intentionally not replicated.
+ * always finite). General-purpose NaN/Infinity hardening is intentionally not
+ * replicated.
  *
  * @author Gaetano Ferrara
  */
@@ -94,8 +88,7 @@ public final class Complex {
     }
 
     /**
-     * Returns the principal square root of this complex number, using the same
-     * algorithm commons-math3 used for finite inputs.
+     * Returns the principal square root of this complex number (finite inputs).
      *
      * @return the principal square root
      */
@@ -120,9 +113,8 @@ public final class Complex {
     }
 
     /**
-     * Exact equality on the real and imaginary parts, matching the semantics of
-     * commons-math3's {@code Complex.equals} (primitive {@code ==}, so
-     * {@code -0.0} equals {@code 0.0}).
+     * Exact equality on the real and imaginary parts using primitive
+     * {@code ==}, so {@code -0.0} equals {@code 0.0}.
      */
     @Override
     public boolean equals(Object other) {
