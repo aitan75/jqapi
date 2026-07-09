@@ -67,6 +67,7 @@ unitary `ComplexMatrix` and the qubit indexes it acts on.
 
 Single-qubit: `Identity`, `Hadamard`, `PauliX`, `PauliY`, `PauliZ`, `PauliS`,
 `PauliT`, `Measurement`.
+Parametric single-qubit: `Rx`, `Ry`, `Rz`, `Phase`, `U3`.
 Multi-qubit: `ControlledNot`, `ControlledY`, `ControlledZ`, `Swap`,
 `ControlledSwap`, `Toffoli`.
 Custom: `Oracle`, `GenericGate` (both wrap a user-supplied matrix).
