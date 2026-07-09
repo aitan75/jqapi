@@ -229,6 +229,11 @@ level.addGate(new Measurement(0, 1)); // measure qubits 0 and 1 mid-circuit
 | `PauliZ` | `PauliZ(Integer...)` | 1 | `Z` |
 | `PauliS` | `PauliS(Integer...)` | 1 | `S` |
 | `PauliT` | `PauliT(Integer...)` | 1 | `T` |
+| `Rx` | `Rx(double theta, Integer...)` | 1 | `Rx` |
+| `Ry` | `Ry(double theta, Integer...)` | 1 | `Ry` |
+| `Rz` | `Rz(double theta, Integer...)` | 1 | `Rz` |
+| `Phase` | `Phase(double theta, Integer...)` | 1 | `P` |
+| `U3` | `U3(double theta, double phi, double lambda, Integer...)` | 1 | `U3` |
 | `Measurement` | `Measurement(Integer...)` | 1 (per index) | `M` |
 | `ControlledNot` | `ControlledNot(control, target)` | 2 | `CNot` |
 | `ControlledY` | `ControlledY(control, target)` | 2 | `CY` |

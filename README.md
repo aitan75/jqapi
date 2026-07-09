@@ -99,8 +99,9 @@ mvn -q exec:java -Dexec.classpathScope=test -Dexec.mainClass=org.aitan.jqapi.ben
 
 ## Supported gates
 
-Identity, Pauli X/Y/Z, Pauli S, Pauli T, Hadamard, Swap, Controlled-NOT,
-Controlled-Y, Controlled-Z, Controlled-Swap, Toffoli, Oracle, Measurement.
+Identity, Pauli X/Y/Z, Pauli S, Pauli T, Hadamard, parametric rotations
+Rx/Ry/Rz, phase shift P, universal U3, Swap, Controlled-NOT, Controlled-Y,
+Controlled-Z, Controlled-Swap, Toffoli, Oracle, Measurement.
 
 ## Supported algorithms & examples
 
