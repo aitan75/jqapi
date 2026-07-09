@@ -151,6 +151,7 @@ Next, read the [core concepts](concepts.md), then work through the
 - [Gates](../api/gates.md)
 - [Simulator](../api/simulator.md)
 - [Math](../api/math.md)
+- [Build integrity](build-integrity.md) — how the build verifies Maven artifact checksums
 
 Runnable, verified examples live in the test suite under
 `src/test/java/org/aitan/jqapi/test/`.
