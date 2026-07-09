@@ -20,8 +20,8 @@ import org.aitan.jqapi.quantum.gates.Swap;
 import org.aitan.jqapi.quantum.gates.Toffoli;
 import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 import org.aitan.jqapi.quantum.simulator.QuantumSimulator;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.util.Precision;
+import org.aitan.jqapi.math.Complex;
+import org.aitan.jqapi.utils.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -215,10 +215,10 @@ public class JavaQuantumAPITest {
 
         }
 
-        assertEquals(25.0, Precision.round((double) results[0] * 100 / COUNT, 2), 2.5);
-        assertEquals(25.0, Precision.round((double) results[1] * 100 / COUNT, 2), 2.5);
-        assertEquals(25.0, Precision.round((double) results[2] * 100 / COUNT, 2), 2.5);
-        assertEquals(25.0, Precision.round((double) results[3] * 100 / COUNT, 2), 2.5);
+        assertEquals(25.0, Utils.round((double) results[0] * 100 / COUNT, 2), 2.5);
+        assertEquals(25.0, Utils.round((double) results[1] * 100 / COUNT, 2), 2.5);
+        assertEquals(25.0, Utils.round((double) results[2] * 100 / COUNT, 2), 2.5);
+        assertEquals(25.0, Utils.round((double) results[3] * 100 / COUNT, 2), 2.5);
     }
 
     @Test
@@ -283,8 +283,8 @@ public class JavaQuantumAPITest {
 
         }
 
-        assertEquals(50.0, Precision.round((double) results[0] * 100 / COUNT, 2), 2.5);
-        assertEquals(50.0, Precision.round((double) results[3] * 100 / COUNT, 2), 2.5);
+        assertEquals(50.0, Utils.round((double) results[0] * 100 / COUNT, 2), 2.5);
+        assertEquals(50.0, Utils.round((double) results[3] * 100 / COUNT, 2), 2.5);
     }
 
     @Test
@@ -321,8 +321,8 @@ public class JavaQuantumAPITest {
 
         }
 
-        assertEquals(50.0, Precision.round((double) results[0] * 100 / COUNT, 2), 2.5);
-        assertEquals(50.0, Precision.round((double) results[3] * 100 / COUNT, 2), 2.5);
+        assertEquals(50.0, Utils.round((double) results[0] * 100 / COUNT, 2), 2.5);
+        assertEquals(50.0, Utils.round((double) results[3] * 100 / COUNT, 2), 2.5);
     }
 
     @Test

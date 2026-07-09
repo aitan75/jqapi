@@ -2,12 +2,11 @@ package org.aitan.jqapi.test;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.gates.Identity;
 import org.aitan.jqapi.quantum.gates.PauliX;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.linear.FieldVector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,7 +57,7 @@ public class LinearAlgebraTest {
         ComplexVector first= new ComplexVector(new Complex[]{Complex.ONE,Complex.ZERO});
         ComplexVector second= new ComplexVector(new Complex[]{Complex.ONE,Complex.ZERO});
         
-        FieldVector<Complex> operate = matrix.operate(first.tensorProduct(second));
+        ComplexVector operate = matrix.operate(first.tensorProduct(second));
         ComplexVector[] factorize = ComplexVector.factorize(operate);
         assertEquals(first, factorize[0]);
         assertEquals(new ComplexVector(new Complex[]{Complex.ZERO,Complex.ONE}), factorize[1]);

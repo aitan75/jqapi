@@ -20,8 +20,8 @@ import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 import org.aitan.jqapi.quantum.simulator.QuantumSimulator;
 import org.aitan.jqapi.test.data.Person;
 import org.aitan.jqapi.utils.Constants;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.util.Precision;
+import org.aitan.jqapi.math.Complex;
+import org.aitan.jqapi.utils.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.*;
@@ -67,8 +67,8 @@ public class QuantumAlgorithmTest {
                 cntOne++;
             }
         }
-        assertEquals(50.0, Precision.round((double) cntZero * 100 / COUNT, 2), 2.5);
-        assertEquals(50.0, Precision.round((double) cntOne * 100 / COUNT, 2), 2.5);
+        assertEquals(50.0, Utils.round((double) cntZero * 100 / COUNT, 2), 2.5);
+        assertEquals(50.0, Utils.round((double) cntOne * 100 / COUNT, 2), 2.5);
     }
 
     @Test

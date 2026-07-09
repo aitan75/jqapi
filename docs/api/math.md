@@ -1,45 +1,80 @@
 # Linear Algebra — `org.aitan.jqapi.math`
 
-Complex-valued vector and matrix types underpinning quantum states and gate
-operators. Both extend Apache Commons Math types, so all inherited operations
-are available.
+Complex-valued scalar, vector and matrix types underpinning quantum states and
+gate operators. As of issue #12 these are jqapi's own types with **no
+third-party dependency**: they are backed by primitive `double[]` arrays in an
+interleaved `(re, im)` layout.
 
 - [Back to API index](README.md)
 - Related: [Quantum core](quantum.md) · [Gates](gates.md) · [Simulator](simulator.md)
 
 ## Contents
 
+- [Complex](#complex)
 - [ComplexVector](#complexvector)
 - [ComplexMatrix](#complexmatrix)
 
-> All scalars are `org.apache.commons.math3.complex.Complex`
-> (`Complex.ONE`, `Complex.ZERO`, `Complex.I`).
+---
+
+## `Complex`
+
+`final class` — immutable complex number backed by two `double` fields.
+
+### Constructor & constants
+
+| Member | Description |
+|--------|-------------|
+| `Complex(double re, double im)` | Builds `re + im·i`. |
+| `Complex.ZERO` | `0 + 0i`. |
+| `Complex.ONE` | `1 + 0i`. |
+| `Complex.I` | `0 + 1i`. |
+
+### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getReal()` / `getImaginary()` | `double` | Real / imaginary part. |
+| `add(Complex)` / `add(double)` | `Complex` | Addition. |
+| `subtract(Complex)` | `Complex` | Subtraction. |
+| `multiply(Complex)` / `multiply(double)` | `Complex` | Multiplication. |
+| `abs()` | `double` | Modulus (`Math.hypot`). |
+| `sqrt()` | `Complex` | Principal square root (finite inputs). |
+| `sqrt1z()` | `Complex` | Principal square root of `1 - this²`. |
+| `equals` / `hashCode` | | Exact `==` comparison on real/imaginary parts (matches the previous behavior; `-0.0` equals `0.0`). |
+| `toString()` | `String` | `(real, imaginary)`, e.g. `(1.0, 0.0)`. |
+
+> **Behavioral caveat.** `sqrt()`/`sqrt1z()` implement the principal square root
+> for **finite** inputs only — the sole case that occurs in this codebase, where
+> amplitudes are always finite. General-purpose NaN/Infinity hardening is
+> intentionally not replicated.
 
 ---
 
 ## `ComplexVector`
 
-`extends org.apache.commons.math3.linear.ArrayFieldVector<Complex>`
-
-A complex vector used for qubit amplitudes and register states. Inherits
-`getEntry(int)`, `setEntry(int, Complex)`, `getDimension()`, `getData()`,
-`dotProduct(...)`, `outerProduct(...)`, `operate(...)`, etc. from the Commons
-Math base.
+A complex vector used for qubit amplitudes and register states, backed by a
+primitive `double[]` (interleaved `(re, im)`).
 
 ### Constructors
 
 | Constructor | Description |
 |-------------|-------------|
 | `ComplexVector(int size)` | Zero vector of the given size. |
-| `ComplexVector(Complex[] complex)` | Vector wrapping the given amplitudes. |
+| `ComplexVector(Complex[] values)` | Vector wrapping the given amplitudes. |
 
 ### Methods
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `tensorProduct(ComplexVector v)` | `ComplexVector` | Tensor (Kronecker) product `this ⊗ v`, via outer product + vectorization. |
-| `matrixVectorization(FieldMatrix<Complex> m)` | `ComplexVector` | Column-stacks a matrix into a vector. |
-| `factorize(FieldVector<Complex> v)` *(static)* | `ComplexVector[]` | Splits a `2^n` state vector into `n` single-qubit vectors derived from marginal probabilities. |
+| `getEntry(int i)` | `Complex` | Amplitude at index `i`. |
+| `setEntry(int i, Complex v)` | `void` | Sets the amplitude at index `i`. |
+| `getDimension()` | `int` | Number of complex entries. |
+| `getData()` | `Complex[]` | Boxed copy of the amplitudes. |
+| `dotProduct(ComplexVector v)` | `Complex` | Non-conjugated dot product `Σ this[i]·v[i]`. |
+| `outerProduct(ComplexVector v)` | `ComplexMatrix` | Outer product, entry `(i,j) = this[i]·v[j]`. |
+| `tensorProduct(ComplexVector v)` | `ComplexVector` | Tensor (Kronecker) product `this ⊗ v`. |
+| `factorize(ComplexVector v)` *(static)* | `ComplexVector[]` | Splits a `2^n` state vector into `n` single-qubit vectors derived from marginal probabilities. |
+| `equals` / `hashCode` | | Element-wise equality (same `==` semantics as `Complex`). |
 | `toString()` | `String` | e.g. `ComplexVector{[(1.0, 0.0), (0.0, 0.0)]}`. |
 
 > **Note on `factorize`.** It reconstructs each qubit from marginal
@@ -50,7 +85,7 @@ Math base.
 
 ```java
 import org.aitan.jqapi.math.ComplexVector;
-import org.apache.commons.math3.complex.Complex;
+import org.aitan.jqapi.math.Complex;
 
 // Tensor product of |1> and |0>  ->  |10>  = [0, 0, 1, 0]
 ComplexVector one  = new QubitOne().getValue();
@@ -65,11 +100,9 @@ ComplexVector[] parts = ComplexVector.factorize(product);
 
 ## `ComplexMatrix`
 
-`extends org.apache.commons.math3.linear.BlockFieldMatrix<Complex>`
-
-A complex matrix used for gate operators. Constructed via static factories
-(constructors are private). Inherits `getEntry(int,int)`, `getRowDimension()`,
-`getColumnDimension()`, `getData()`, `operate(...)`, etc.
+A complex matrix used for gate operators, backed by a flat primitive `double[]`
+(row-major, interleaved `(re, im)`). Constructed via static factories
+(constructors are private).
 
 ### Static factory methods
 
@@ -80,6 +113,17 @@ A complex matrix used for gate operators. Constructed via static factories
 | `createGateMatrix(Gate g)` | `ComplexMatrix` | Convenience: returns `g.getMatrix()`. |
 | `kroneckerProduct(List<ComplexMatrix> matrices)` | `ComplexMatrix` | Kronecker product of the matrices, in order. |
 
+### Instance methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getEntry(int r, int c)` | `Complex` | Entry at row `r`, column `c`. |
+| `getRowDimension()` / `getColumnDimension()` | `int` | Dimensions. |
+| `getData()` | `Complex[][]` | Boxed row-major copy of the entries. |
+| `operate(ComplexVector v)` | `ComplexVector` | Matrix-vector product `M·v`. |
+| `equals` / `hashCode` | | Element-wise equality (same `==` semantics as `Complex`). |
+| `toString()` | `String` | e.g. `ComplexMatrix{[(1.0, 0.0), (0.0, 0.0)], [...]}`. |
+
 ### `kroneckerProduct(List<ComplexMatrix>)`
 
 - **Throws** `IllegalArgumentException` if the list is `null` or empty
@@ -88,6 +132,7 @@ A complex matrix used for gate operators. Constructed via static factories
 
 ```java
 import java.util.List;
+import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.quantum.gates.Identity;
 import org.aitan.jqapi.quantum.gates.PauliX;

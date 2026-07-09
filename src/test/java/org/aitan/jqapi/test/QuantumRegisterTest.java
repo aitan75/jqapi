@@ -6,7 +6,7 @@ import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.QuantumRegister;
 import org.aitan.jqapi.quantum.gates.Hadamard;
-import org.apache.commons.math3.complex.Complex;
+import org.aitan.jqapi.math.Complex;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 

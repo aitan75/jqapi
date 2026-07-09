@@ -8,7 +8,6 @@ import org.aitan.jqapi.quantum.Circuit;
 import org.aitan.jqapi.quantum.QuantumRegister;
 import org.aitan.jqapi.quantum.Qubit;
 import org.aitan.jqapi.utils.Constants;
-import org.apache.commons.math3.complex.Complex;
 
 /**
  * Local state-vector simulator.

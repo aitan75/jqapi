@@ -1,10 +1,9 @@
 package org.aitan.jqapi.quantum;
 
+import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.utils.Constants;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.complex.ComplexUtils;
-import org.apache.commons.math3.util.Precision;
+import org.aitan.jqapi.utils.Utils;
 
 /**
  * Abstract single-qubit state. Concrete subclasses are {@code QubitZero},
@@ -26,7 +25,7 @@ public abstract class Qubit {
 
     protected Qubit(double alpha) {
         double beta=Math.sqrt(1-Math.pow(alpha, 2));
-        this.vector=new ComplexVector(ComplexUtils.convertToComplex(new double[]{alpha,beta}));
+        this.vector=new ComplexVector(new Complex[]{new Complex(alpha, 0), new Complex(beta, 0)});
     }
     
     protected Qubit(Complex a) {
@@ -68,14 +67,14 @@ public abstract class Qubit {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        double real0 = Precision.round(this.vector.getEntry(0).getReal(),4);
-        double imaginary0 = Precision.round(this.vector.getEntry(0).getImaginary(),4);
-        double real1 = Precision.round(this.vector.getEntry(1).getReal(),4);
-        double imaginary1 = Precision.round(this.vector.getEntry(1).getImaginary(),4);
-        double realObj0 = Precision.round(((Qubit) obj).vector.getEntry(0).getReal(),4);
-        double imaginarObj0 = Precision.round(((Qubit) obj).vector.getEntry(0).getImaginary(),4);
-        double realObj1 = Precision.round(((Qubit) obj).vector.getEntry(1).getReal(),4);
-        double imaginaryObj1 = Precision.round(((Qubit) obj).vector.getEntry(1).getImaginary(),4);
+        double real0 = Utils.round(this.vector.getEntry(0).getReal(),4);
+        double imaginary0 = Utils.round(this.vector.getEntry(0).getImaginary(),4);
+        double real1 = Utils.round(this.vector.getEntry(1).getReal(),4);
+        double imaginary1 = Utils.round(this.vector.getEntry(1).getImaginary(),4);
+        double realObj0 = Utils.round(((Qubit) obj).vector.getEntry(0).getReal(),4);
+        double imaginarObj0 = Utils.round(((Qubit) obj).vector.getEntry(0).getImaginary(),4);
+        double realObj1 = Utils.round(((Qubit) obj).vector.getEntry(1).getReal(),4);
+        double imaginaryObj1 = Utils.round(((Qubit) obj).vector.getEntry(1).getImaginary(),4);
         
         return real0==realObj0&&imaginary0==imaginarObj0&&real1==realObj1&&imaginary1==imaginaryObj1;
         

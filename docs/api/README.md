@@ -6,7 +6,7 @@ state-vector simulator.
 
 - **Package root:** `org.aitan.jqapi`
 - **Requirements:** Java 21+, Maven 3.9+
-- **Runtime dependency:** Apache Commons Math 3.6.1 (`org.apache.commons.math3`)
+- **Runtime dependencies:** none (Java 21 standard library only)
 
 If you are new to the library, start with the [User Manual](../manual/README.md);
 this reference documents the public API surface class by class.
@@ -131,15 +131,15 @@ matrices.
 
 ---
 
-## External dependencies
+## Math types
 
-Several public methods expose Apache Commons Math types directly:
+The public API exposes jqapi's own linear-algebra types (no third-party
+dependency):
 
-- `org.apache.commons.math3.complex.Complex` — the scalar amplitude type used
-  throughout (`Complex.ONE`, `Complex.ZERO`, `Complex.I`).
-- `ComplexVector extends ArrayFieldVector<Complex>` and
-  `ComplexMatrix extends BlockFieldMatrix<Complex>`, so all inherited
-  `FieldVector`/`FieldMatrix` operations (`getEntry`, `setEntry`, `operate`,
-  `getDimension`, `getData`, ...) are available.
+- `org.aitan.jqapi.math.Complex` — the scalar amplitude type used throughout
+  (`Complex.ONE`, `Complex.ZERO`, `Complex.I`).
+- `ComplexVector` and `ComplexMatrix` — dense complex vector/matrix types
+  backed by primitive `double[]`, exposing `getEntry`, `setEntry`, `operate`,
+  `getDimension`, `getData`, and the tensor/Kronecker operations.
 
 See [math.md](math.md) for details.

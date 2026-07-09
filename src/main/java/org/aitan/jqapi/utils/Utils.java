@@ -1,5 +1,8 @@
 package org.aitan.jqapi.utils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 /**
  *
  * @author Gaetano Ferrara
@@ -8,7 +11,22 @@ public class Utils {
 
     private Utils() {
     }
-    
+
+    /**
+     * Rounds a value to the given number of decimal places using HALF_UP
+     * rounding, mapping a rounded-to-zero result back to the sign of the input.
+     *
+     * @param value the value to round
+     * @param scale the number of decimal places
+     * @return the rounded value
+     */
+    public static double round(double value, int scale) {
+        double rounded = new BigDecimal(Double.toString(value))
+                .setScale(scale, RoundingMode.HALF_UP)
+                .doubleValue();
+        return rounded == 0d ? 0d * value : rounded;
+    }
+
     public static String toBinary(int number, int length)
     {
         StringBuilder result = new StringBuilder();
