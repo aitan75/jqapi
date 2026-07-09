@@ -80,6 +80,44 @@ public class ComplexMatrix {
         return new ComplexMatrix(accumulator);
     }
 
+    /**
+     * Builds the operator for a gate that applies {@code u} to its target
+     * qubits conditioned on {@code numControls} control qubits all being
+     * {@code |1>}. Controls are the most-significant qubits, so the controlled
+     * block is the bottom-right {@code uDim x uDim} block; the rest is identity.
+     *
+     * @param u the base unitary applied when all controls are set
+     * @param numControls the number of control qubits (>= 1)
+     * @return the {@code (2^numControls · uDim)}-dimensional controlled operator
+     */
+    public static ComplexMatrix multiControlledMatrix(ComplexMatrix u, int numControls) {
+        if (numControls < 1) {
+            throw new IllegalArgumentException("numControls must be >= 1, was: " + numControls);
+        }
+        int uDim = u.getRowDimension();
+        if (u.getColumnDimension() != uDim) {
+            throw new IllegalArgumentException("Base operator U must be square");
+        }
+        if (uDim < 2 || (uDim & (uDim - 1)) != 0) {
+            throw new IllegalArgumentException(
+                    "Base operator U dimension must be a power of two >= 2, was: " + uDim);
+        }
+        int d = (1 << numControls) * uDim;
+        Complex[][] data = new Complex[d][d];
+        for (int r = 0; r < d; r++) {
+            for (int c = 0; c < d; c++) {
+                data[r][c] = (r == c) ? Complex.ONE : Complex.ZERO;
+            }
+        }
+        int base = d - uDim; // top-left corner of the bottom-right block
+        for (int r = 0; r < uDim; r++) {
+            for (int c = 0; c < uDim; c++) {
+                data[base + r][base + c] = u.getEntry(r, c);
+            }
+        }
+        return new ComplexMatrix(data);
+    }
+
     private static Complex[][] kron(Complex[][] a, Complex[][] b) {
         int aRows = a.length;
         int aCols = a[0].length;
