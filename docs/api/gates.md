@@ -10,6 +10,7 @@ list of qubit indexes it acts on.
 
 - [Gate (abstract base)](#gate-abstract)
 - [Single-qubit gates](#single-qubit-gates)
+- [Parametric single-qubit gates](#parametric-single-qubit-gates)
 - [Multi-qubit gates](#multi-qubit-gates)
 - [Custom-matrix gates](#custom-matrix-gates)
 - [Measurement](#measurement)
@@ -93,6 +94,33 @@ level.addGate(new Hadamard(0, 1, 2));           // same gate on qubits 0,1,2
 `new PauliT(Integer... indexes)` — T (π/8) gate. Matrix `[[1,0],[0,e^{iπ/4}]]`.
 
 ---
+
+## Parametric single-qubit gates
+
+Their 2×2 unitary is computed from the constructor parameters (angles in radians).
+Each takes varargs qubit indexes, like the fixed single-qubit gates. These unblock
+OpenQASM import (#6: `rx`/`ry`/`rz`/`p`/`u`) and the variational layer (#32).
+
+### `Rx`
+`new Rx(double theta, Integer... indexes)` — rotation about X:
+`[[cos(θ/2), −i·sin(θ/2)], [−i·sin(θ/2), cos(θ/2)]]`.
+
+### `Ry`
+`new Ry(double theta, Integer... indexes)` — rotation about Y:
+`[[cos(θ/2), −sin(θ/2)], [sin(θ/2), cos(θ/2)]]`.
+
+### `Rz`
+`new Rz(double theta, Integer... indexes)` — rotation about Z:
+`diag(e^(−iθ/2), e^(iθ/2))`.
+
+### `Phase`
+`new Phase(double theta, Integer... indexes)` — phase shift P(θ): `diag(1, e^(iθ))`.
+
+### `U3`
+`new U3(double theta, double phi, double lambda, Integer... indexes)` — universal
+single-qubit rotation:
+`[[cos(θ/2), −e^(iλ)·sin(θ/2)], [e^(iφ)·sin(θ/2), e^(i(φ+λ))·cos(θ/2)]]`.
+Note `U3(π,0,π) = X`, `U3(π/2,0,π) = H`, `U3(0,0,λ) = P(λ)`.
 
 ## Multi-qubit gates
 
