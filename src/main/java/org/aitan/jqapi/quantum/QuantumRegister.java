@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Objects;
 import org.aitan.jqapi.JQAPIConfig;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
+import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.utils.Utils;
-import org.apache.commons.math3.complex.Complex;
 
 /**
  * Holds the quantum state of {@code size} qubits as a {@code 2^size} complex

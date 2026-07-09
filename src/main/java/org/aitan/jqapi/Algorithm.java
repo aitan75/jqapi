@@ -6,6 +6,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.aitan.jqapi.exceptions.JQApiException;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
+import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
@@ -19,7 +20,6 @@ import org.aitan.jqapi.quantum.gates.Oracle;
 import org.aitan.jqapi.quantum.gates.PauliX;
 import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 import org.aitan.jqapi.quantum.simulator.QuantumSimulator;
-import org.apache.commons.math3.complex.Complex;
 
 /**
  *

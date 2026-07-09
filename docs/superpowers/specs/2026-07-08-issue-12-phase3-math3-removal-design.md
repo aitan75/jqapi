@@ -220,7 +220,25 @@ migration lands (same pattern as Phase 2).
 
 ### Results
 
-(filled in after the migration lands)
+Environment: Mac OS X, aarch64, Java 25.0.3, 8 processors.
+`QuantumRegisterHotLoopBenchmark` on the math3-free code (Phase 3):
+
+| n  | gate          | ns/op     | bytes/op |
+|----|---------------|-----------|----------|
+| 16 | 1-qubit (H)   | 143535.0  | 272.0    |
+| 16 | 2-qubit (CNOT)| 350691.0  | 448.0    |
+| 20 | 1-qubit (H)   | 4555636.5 | 336.0    |
+| 20 | 2-qubit (CNOT)| 5219933.3 | 448.0    |
+
+No regression versus the Phase 2 "after" baseline (ns/op in the same range —
+if anything marginally faster — and per-op allocation still a few hundred
+bytes, down from the megabytes of the pre-Phase-2 boxed representation). This
+is expected: the hot path (`QuantumRegister.applyOperator`) already ran on a
+primitive `double[]` from Phase 2 and was not touched here; Phase 3 only
+removed the commons-math3 dependency and rewrote the boundary
+`Complex`/`ComplexVector`/`ComplexMatrix` types, which are outside the loop.
+The full suite (97 tests, incl. the 24 golden-master equivalence tests) passes
+unchanged.
 
 ## Documentation
 

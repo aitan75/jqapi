@@ -1,7 +1,5 @@
 package org.aitan.jqapi.quantum;
 
-import org.apache.commons.math3.util.Precision;
-
 /**
  *
  * @author Gaetano Ferrara
