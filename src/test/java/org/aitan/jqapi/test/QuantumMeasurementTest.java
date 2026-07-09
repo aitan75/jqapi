@@ -13,7 +13,7 @@ import org.aitan.jqapi.quantum.gates.Hadamard;
 import org.aitan.jqapi.quantum.gates.PauliZ;
 import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 import org.aitan.jqapi.quantum.simulator.QuantumSimulator;
-import org.apache.commons.math3.complex.Complex;
+import org.aitan.jqapi.math.Complex;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
