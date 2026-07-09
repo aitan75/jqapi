@@ -61,6 +61,9 @@ During `execute()`, for each gate in each level:
 - **Measurement** gates trigger
   [`QuantumRegister.measureQubitAtIndexes`](quantum.md#measurequbitatindexeslistinteger)
   on their indexes (the matrix is the identity, so nothing else is applied).
+- **Reset** gates trigger
+  [`QuantumRegister.resetQubitAtIndexes`](quantum.md#resetqubitatindexeslistinteger),
+  forcing each listed qubit to `|0>`; non-unitary, handled by type like `Measurement`.
 - **Single-qubit** gates declared over several indexes are applied once per
   index.
 - **Multi-qubit** gates are applied to their declared index group.

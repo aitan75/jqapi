@@ -14,6 +14,7 @@ list of qubit indexes it acts on.
 - [Multi-qubit gates](#multi-qubit-gates)
 - [Custom-matrix gates](#custom-matrix-gates)
 - [Measurement](#measurement)
+- [Reset](#reset)
 - [Gate summary table](#gate-summary-table)
 
 > **Convention.** In a multi-qubit gate the **first declared qubit is the most
@@ -218,6 +219,25 @@ level.addGate(new Measurement(0, 1)); // measure qubits 0 and 1 mid-circuit
 
 ---
 
+## Reset
+
+### `Reset`
+
+`new Reset(Integer... indexes)` — a mid-circuit reset that forces each listed
+qubit to `|0>`, regardless of its current state. Like `Measurement`, it is
+non-unitary: its matrix is the identity and the [simulator](simulator.md)
+special-cases it by type, calling
+[`QuantumRegister.resetQubitAtIndexes`](quantum.md#resetqubitatindexeslistinteger).
+Reset works by collapsing the qubit in the Z basis and applying `X` if the
+outcome was 1, so the result is deterministically `|0>` (it does **not** record a
+measurement result in `getResult()`).
+
+```java
+level.addGate(new Reset(0, 1)); // reset qubits 0 and 1 to |0> mid-circuit
+```
+
+---
+
 ## Gate summary table
 
 | Gate | Constructor | Qubits | Label (`getType()`) |
@@ -235,6 +255,7 @@ level.addGate(new Measurement(0, 1)); // measure qubits 0 and 1 mid-circuit
 | `Phase` | `Phase(double theta, Integer...)` | 1 | `P` |
 | `U3` | `U3(double theta, double phi, double lambda, Integer...)` | 1 | `U3` |
 | `Measurement` | `Measurement(Integer...)` | 1 (per index) | `M` |
+| `Reset` | `Reset(Integer...)` | 1 (per index) | `RST` |
 | `ControlledNot` | `ControlledNot(control, target)` | 2 | `CNot` |
 | `ControlledY` | `ControlledY(control, target)` | 2 | `CY` |
 | `ControlledZ` | `ControlledZ(control, target)` | 2 | `CZ` |
