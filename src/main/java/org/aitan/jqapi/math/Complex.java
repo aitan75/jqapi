@@ -82,6 +82,14 @@ public final class Complex {
         return new Complex(real * factor, imaginary * factor);
     }
 
+    /**
+     * @param theta the angle in radians
+     * @return {@code e^(i·theta) = (cos theta, sin theta)}
+     */
+    public static Complex expI(double theta) {
+        return new Complex(Math.cos(theta), Math.sin(theta));
+    }
+
     /** @return the absolute value (modulus) of this complex number */
     public double abs() {
         return Math.hypot(real, imaginary);

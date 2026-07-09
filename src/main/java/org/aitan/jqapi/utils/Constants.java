@@ -36,6 +36,11 @@ public class Constants {
     public static final String SWAP = "Swap";
     public static final String CONTROLLED_SWAP = "CSwap";
     public static final String TOFFOLI = "TOFF";
+    public static final String RX = "Rx";
+    public static final String RY = "Ry";
+    public static final String RZ = "Rz";
+    public static final String PHASE = "P";
+    public static final String U3 = "U3";
 
     public static final ComplexMatrix CONTROLLED_NOT_MATRIX
             = ComplexMatrix.createMatrixWithData(new Complex[][]{
@@ -110,4 +115,51 @@ public class Constants {
     public static final ComplexMatrix PAULI_Z_MATRIX = ComplexMatrix.createMatrixWithData(new Complex[][]{
         {Complex.ONE, Complex.ZERO},
         {Complex.ZERO, Complex.ONE.multiply(-1d)}});
+
+    /** @param theta angle in radians @return the Rx(theta) rotation matrix */
+    public static ComplexMatrix rotationXMatrix(double theta) {
+        double c = Math.cos(theta / 2);
+        double s = Math.sin(theta / 2);
+        Complex diag = new Complex(c, 0);
+        Complex offDiag = new Complex(0, -s); // -i sin(theta/2)
+        return ComplexMatrix.createMatrixWithData(new Complex[][]{
+            {diag, offDiag},
+            {offDiag, diag}});
+    }
+
+    /** @param theta angle in radians @return the Ry(theta) rotation matrix */
+    public static ComplexMatrix rotationYMatrix(double theta) {
+        double c = Math.cos(theta / 2);
+        double s = Math.sin(theta / 2);
+        return ComplexMatrix.createMatrixWithData(new Complex[][]{
+            {new Complex(c, 0), new Complex(-s, 0)},
+            {new Complex(s, 0), new Complex(c, 0)}});
+    }
+
+    /** @param theta angle in radians @return the Rz(theta) rotation matrix */
+    public static ComplexMatrix rotationZMatrix(double theta) {
+        return ComplexMatrix.createMatrixWithData(new Complex[][]{
+            {Complex.expI(-theta / 2), Complex.ZERO},
+            {Complex.ZERO, Complex.expI(theta / 2)}});
+    }
+
+    /** @param theta angle in radians @return the phase-shift P(theta) matrix */
+    public static ComplexMatrix phaseMatrix(double theta) {
+        return ComplexMatrix.createMatrixWithData(new Complex[][]{
+            {Complex.ONE, Complex.ZERO},
+            {Complex.ZERO, Complex.expI(theta)}});
+    }
+
+    /** @return the universal single-qubit U3(theta, phi, lambda) matrix */
+    public static ComplexMatrix u3Matrix(double theta, double phi, double lambda) {
+        double c = Math.cos(theta / 2);
+        double s = Math.sin(theta / 2);
+        Complex m00 = new Complex(c, 0);
+        Complex m01 = Complex.expI(lambda).multiply(-s);
+        Complex m10 = Complex.expI(phi).multiply(s);
+        Complex m11 = Complex.expI(phi + lambda).multiply(c);
+        return ComplexMatrix.createMatrixWithData(new Complex[][]{
+            {m00, m01},
+            {m10, m11}});
+    }
 }

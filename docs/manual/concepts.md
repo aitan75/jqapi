@@ -87,6 +87,9 @@ directly. See the full [gate catalog](../api/gates.md). The essentials:
 - **Single-qubit:** `Identity`, `Hadamard`, `PauliX` (NOT), `PauliY`, `PauliZ`,
   `PauliS`, `PauliT`. Constructor takes one or more indexes:
   `new Hadamard(0)` or `new Hadamard(0, 1, 2)` (same gate on each).
+- **Parametric single-qubit:** `Rx(θ)`, `Ry(θ)`, `Rz(θ)`, `Phase(θ)`, and the
+  universal `U3(θ, φ, λ)`. The angle(s) come first, then the indexes:
+  `new Rx(Math.PI/2, 0)` or `new U3(θ, φ, λ, 0)`.
 - **Multi-qubit:** `ControlledNot(control, target)`, `ControlledY`,
   `ControlledZ`, `Swap(a, b)`, `ControlledSwap(control, a, b)`,
   `Toffoli(c1, c2, target)`.
