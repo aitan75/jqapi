@@ -67,6 +67,10 @@ public class LocalSimulator implements QuantumSimulator {
                         quantumRegister.measureQubitAtIndexes(gate.getIndexes());
                         return; //the measurement gate matrix is the identity: nothing else to apply
                     }
+                    if (gate.getType().equals(Constants.RESET)) {
+                        quantumRegister.resetQubitAtIndexes(gate.getIndexes());
+                        return; //non-unitary: handled at register level, nothing else to apply
+                    }
                     if (gate.getType().equals(Constants.IDENTITY)) {
                         return; //no-op
                     }
