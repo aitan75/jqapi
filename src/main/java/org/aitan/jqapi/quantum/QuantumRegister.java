@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.IntStream;
 import org.aitan.jqapi.JQAPIConfig;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.math.Complex;
@@ -22,6 +23,9 @@ import org.aitan.jqapi.utils.Utils;
 public class QuantumRegister {
 
     private static final SecureRandom RANDOM = new SecureRandom();
+
+    /** State-vector dimension at/above which applyOperator parallelizes the amplitude-group loop. */
+    private static final int PARALLEL_MIN_DIMENSION = 1 << 16;
 
     private final Qubit[] result;
     private final int size;
@@ -202,12 +206,27 @@ public class QuantumRegister {
     /**
      * Applies a 2^k x 2^k gate matrix (operator) to the k target qubits of the register state, in place.
      * For every group of 2^k amplitudes that differ only in the target-qubit bits, the group is multiplied
-     * by the operator matrix.
+     * by the operator matrix. Parallelizes the (independent) groups across cores when the state is large
+     * (dimension &ge; {@code PARALLEL_MIN_DIMENSION}).
      *
      * @param operator the 2^k x 2^k matrix operator to apply
      * @param targetQubits the list of target qubits
      */
     public void applyOperator(ComplexMatrix operator, List<Integer> targetQubits) {
+        boolean parallel = (this.registerState.length / 2) >= PARALLEL_MIN_DIMENSION;
+        applyOperator(operator, targetQubits, parallel);
+    }
+
+    /**
+     * As {@link #applyOperator(ComplexMatrix, List)} but with explicit control over
+     * multi-threading. Results are bit-for-bit identical regardless of {@code parallel}:
+     * the amplitude groups are independent and there is no cross-group reduction.
+     *
+     * @param operator the 2^k x 2^k matrix operator to apply
+     * @param targetQubits the list of target qubits
+     * @param parallel whether to spread the independent amplitude groups across cores
+     */
+    public void applyOperator(ComplexMatrix operator, List<Integer> targetQubits, boolean parallel) {
         int k = targetQubits.size();
         int localDimension = 1 << k;
         if (operator.getRowDimension() != localDimension) {
@@ -247,31 +266,54 @@ public class QuantumRegister {
             }
         }
 
+        if (parallel) {
+            final int fLocalDimension = localDimension;
+            final int fTargetMask = targetMask;
+            final int[] fOffsets = offsets;
+            final double[] fOpRe = opRe;
+            final double[] fOpIm = opIm;
+            final boolean[] fOpNonZero = opNonZero;
+            IntStream.range(0, dimension).parallel().forEach(base -> {
+                if ((base & fTargetMask) == 0) {
+                    applyOperatorGroup(base, fLocalDimension, fOffsets, fOpRe, fOpIm, fOpNonZero);
+                }
+            });
+        } else {
+            for (int base = 0; base < dimension; base++) {
+                if ((base & targetMask) == 0) {
+                    applyOperatorGroup(base, localDimension, offsets, opRe, opIm, opNonZero);
+                }
+            }
+        }
+    }
+
+    /**
+     * Applies the operator to the single amplitude group whose leader index is
+     * {@code base} (all target bits zero). Allocates its own scratch buffers, so
+     * it is safe to call concurrently for disjoint {@code base} values.
+     */
+    private void applyOperatorGroup(int base, int localDimension, int[] offsets,
+            double[] opRe, double[] opIm, boolean[] opNonZero) {
         double[] localRe = new double[localDimension];
         double[] localIm = new double[localDimension];
-        for (int base = 0; base < dimension; base++) {
-            if ((base & targetMask) != 0) {
-                continue; //visit each amplitude group once, starting from the index with all target bits at 0
-            }
-            for (int t = 0; t < localDimension; t++) {
-                int amplitudeIndex = base | offsets[t];
-                localRe[t] = this.registerState[2 * amplitudeIndex];
-                localIm[t] = this.registerState[2 * amplitudeIndex + 1];
-            }
-            for (int r = 0; r < localDimension; r++) {
-                double sumRe = 0.0;
-                double sumIm = 0.0;
-                for (int c = 0; c < localDimension; c++) {
-                    int flat = r * localDimension + c;
-                    if (opNonZero[flat]) {
-                        sumRe += opRe[flat] * localRe[c] - opIm[flat] * localIm[c];
-                        sumIm += opRe[flat] * localIm[c] + opIm[flat] * localRe[c];
-                    }
+        for (int t = 0; t < localDimension; t++) {
+            int amplitudeIndex = base | offsets[t];
+            localRe[t] = this.registerState[2 * amplitudeIndex];
+            localIm[t] = this.registerState[2 * amplitudeIndex + 1];
+        }
+        for (int r = 0; r < localDimension; r++) {
+            double sumRe = 0.0;
+            double sumIm = 0.0;
+            for (int c = 0; c < localDimension; c++) {
+                int flat = r * localDimension + c;
+                if (opNonZero[flat]) {
+                    sumRe += opRe[flat] * localRe[c] - opIm[flat] * localIm[c];
+                    sumIm += opRe[flat] * localIm[c] + opIm[flat] * localRe[c];
                 }
-                int amplitudeIndex = base | offsets[r];
-                this.registerState[2 * amplitudeIndex] = sumRe;
-                this.registerState[2 * amplitudeIndex + 1] = sumIm;
             }
+            int amplitudeIndex = base | offsets[r];
+            this.registerState[2 * amplitudeIndex] = sumRe;
+            this.registerState[2 * amplitudeIndex + 1] = sumIm;
         }
     }
 
