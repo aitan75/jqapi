@@ -113,3 +113,19 @@ Because the full level operator is never built, large circuits are feasible: a
 10-qubit GHZ circuit and a 16-qubit Hadamard-layer circuit both run without
 constructing the corresponding `1024x1024` / `65536x65536` operators. See the
 `StateVectorSimulatorTest` suite for verified large-circuit examples.
+
+## Parallelism
+
+Gate application is embarrassingly parallel: a gate on `k` qubits touches
+`2^k`-amplitude groups that never overlap. `QuantumRegister.applyOperator` spreads
+those independent groups across cores using the common `ForkJoinPool` when the
+state-vector dimension is at least `2^16` (16 qubits); smaller states stay on the
+sequential path (thread setup would outweigh the gain). Results are **bit-for-bit
+identical** to the sequential path regardless of thread count — the groups are
+independent and there is no cross-group reduction.
+
+- **Degree of parallelism:** set `-Djava.util.concurrent.ForkJoinPool.common.parallelism=N`.
+- **Explicit opt-out / opt-in:** `applyOperator(operator, targets, boolean parallel)`
+  forces the sequential (`false`) or parallel (`true`) path regardless of the threshold.
+- Only the work **inside** a single gate is parallelized; gate and level ordering in
+  `LocalSimulator.execute` remains sequential.
