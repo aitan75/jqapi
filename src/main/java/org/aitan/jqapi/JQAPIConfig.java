@@ -1,5 +1,6 @@
 package org.aitan.jqapi;
 
+import java.util.concurrent.ForkJoinPool;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
 
 /**
@@ -30,12 +31,23 @@ public final class JQAPIConfig {
 
     public static final String MAX_QUBITS_PROPERTY = "jqapi.max.qubits";
     public static final String MAX_SEARCH_QUBITS_PROPERTY = "jqapi.max.search.qubits";
+    public static final String PARALLEL_ENABLED_PROPERTY = "jqapi.parallel.enabled";
+    public static final String PARALLEL_THRESHOLD_PROPERTY = "jqapi.parallel.threshold";
 
     public static final int DEFAULT_MAX_QUBITS = 24;
     public static final int DEFAULT_MAX_SEARCH_QUBITS = 12;
+    public static final boolean DEFAULT_PARALLEL_ENABLED = true;
+    /** Default state-vector dimension at/above which applyOperator parallelizes (16 qubits). */
+    public static final int DEFAULT_PARALLEL_THRESHOLD = 1 << 16;
 
     /** Hard upper bound for both limits: {@code 1 << n} overflows {@code int} beyond 30. */
     public static final int ABSOLUTE_MAX_QUBITS = 30;
+
+    // Frozen at class initialization (declared before DEFAULT so it can read them).
+    private static final boolean RESOLVED_PARALLEL_ENABLED =
+            readBooleanProperty(PARALLEL_ENABLED_PROPERTY, DEFAULT_PARALLEL_ENABLED);
+    private static final int RESOLVED_PARALLEL_THRESHOLD =
+            readThresholdProperty(PARALLEL_THRESHOLD_PROPERTY, DEFAULT_PARALLEL_THRESHOLD);
 
     private static final JQAPIConfig DEFAULT = new JQAPIConfig(
             readBoundedProperty(MAX_QUBITS_PROPERTY, DEFAULT_MAX_QUBITS),
@@ -43,8 +55,16 @@ public final class JQAPIConfig {
 
     private final int maxQubits;
     private final int maxSearchQubits;
+    private final boolean parallelEnabled;
+    private final int parallelThreshold;
+    private final ForkJoinPool parallelExecutor;
 
     private JQAPIConfig(int maxQubits, int maxSearchQubits) {
+        this(maxQubits, maxSearchQubits, RESOLVED_PARALLEL_ENABLED, RESOLVED_PARALLEL_THRESHOLD, null);
+    }
+
+    private JQAPIConfig(int maxQubits, int maxSearchQubits, boolean parallelEnabled,
+            int parallelThreshold, ForkJoinPool parallelExecutor) {
         if (maxQubits <= 0) {
             throw new JQApiLimitException("maxQubits must be positive, was: " + maxQubits);
         }
@@ -57,8 +77,14 @@ public final class JQAPIConfig {
         if (maxSearchQubits > ABSOLUTE_MAX_QUBITS) {
             throw new JQApiLimitException("maxSearchQubits must be at most " + ABSOLUTE_MAX_QUBITS + ", was: " + maxSearchQubits);
         }
+        if (parallelThreshold < 1) {
+            throw new JQApiLimitException("parallelThreshold must be positive, was: " + parallelThreshold);
+        }
         this.maxQubits = maxQubits;
         this.maxSearchQubits = maxSearchQubits;
+        this.parallelEnabled = parallelEnabled;
+        this.parallelThreshold = parallelThreshold;
+        this.parallelExecutor = parallelExecutor;
     }
 
     /**
@@ -100,6 +126,16 @@ public final class JQAPIConfig {
         return (value > 0 && value <= ABSOLUTE_MAX_QUBITS) ? value : fallback;
     }
 
+    private static boolean readBooleanProperty(String property, boolean fallback) {
+        String value = System.getProperty(property);
+        return value == null ? fallback : Boolean.parseBoolean(value);
+    }
+
+    private static int readThresholdProperty(String property, int fallback) {
+        int value = Integer.getInteger(property, fallback);
+        return value >= 1 ? value : fallback;
+    }
+
     /** @return the maximum allowed qubits in circuits and registers */
     public int maxQubits() {
         return maxQubits;
@@ -108,5 +144,47 @@ public final class JQAPIConfig {
     /** @return the maximum allowed qubits for search algorithms (e.g. Grover's search) */
     public int maxSearchQubits() {
         return maxSearchQubits;
+    }
+
+    /** @return whether gate application may parallelize the amplitude-group loop */
+    public boolean parallelEnabled() {
+        return parallelEnabled;
+    }
+
+    /** @return the state-vector dimension at/above which gate application parallelizes */
+    public int parallelThreshold() {
+        return parallelThreshold;
+    }
+
+    /**
+     * @return the pool that gate application submits its parallel work to, or
+     *         {@code null} to use the common {@link ForkJoinPool}
+     */
+    public ForkJoinPool parallelExecutor() {
+        return parallelExecutor;
+    }
+
+    /**
+     * Returns a copy of this configuration with the given parallelism policy.
+     *
+     * @param enabled whether gate application may parallelize
+     * @param threshold the state-vector dimension at/above which to parallelize (&ge; 1)
+     * @return a new immutable configuration; this instance is unchanged
+     * @throws JQApiLimitException if {@code threshold < 1}
+     */
+    public JQAPIConfig withParallel(boolean enabled, int threshold) {
+        return new JQAPIConfig(maxQubits, maxSearchQubits, enabled, threshold, parallelExecutor);
+    }
+
+    /**
+     * Returns a copy of this configuration that submits parallel gate work to the
+     * given pool instead of the common {@link ForkJoinPool}. The caller owns the
+     * pool's lifecycle (jqapi never creates or shuts it down).
+     *
+     * @param executor the pool to use, or {@code null} for the common pool
+     * @return a new immutable configuration; this instance is unchanged
+     */
+    public JQAPIConfig withExecutor(ForkJoinPool executor) {
+        return new JQAPIConfig(maxQubits, maxSearchQubits, parallelEnabled, parallelThreshold, executor);
     }
 }
