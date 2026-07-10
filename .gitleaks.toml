@@ -1,0 +1,17 @@
+# gitleaks configuration for jqapi (issue #21).
+#
+# Extends the built-in default ruleset. Handle false positives by adding
+# entries to the [allowlist] below (paths / regexes / commit SHAs) — never by
+# disabling the scan.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "jqapi false-positive allowlist"
+paths = [
+  # The trusted-checksums lockfile is a list of SHA-256 hashes (not secrets);
+  # exclude it so high-entropy heuristics can never flag it.
+  '''\.mvn/checksums/checksums-central\.sha256''',
+]
+# Add regexes = [...] or commits = ["<sha>"] here for any future false positive.
