@@ -10,7 +10,6 @@ import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.utils.Constants;
-import org.aitan.jqapi.utils.Utils;
 
 /**
  * Holds the quantum state of {@code size} qubits as a {@code 2^size} complex
@@ -284,8 +283,10 @@ public class QuantumRegister {
         //Set indexCollapsed element of register state to 1
         this.registerState[2 * indexCollapsed] = 1.0;
         //The collapsed state is a computational basis state: read each qubit directly from its bit
+        //(qubit 0 is the most significant bit of the index).
         for (int i = 0; i < size; i++) {
-            result[i] = Utils.bitAtIndex(i, indexCollapsed, size) == 0 ? new QubitZero() : new QubitOne();
+            int bit = (indexCollapsed >> (size - 1 - i)) & 1;
+            result[i] = bit == 0 ? new QubitZero() : new QubitOne();
         }
     }
 
@@ -407,9 +408,9 @@ public class QuantumRegister {
         double oneProbability = 0;
 
         int dimension = this.registerState.length / 2;
+        int shift = size - 1 - qubitIndex; // qubit 0 is the most significant bit
         for (int i = 0; i < dimension; i++) {
-            String toBinary = Utils.toBinary(i, size);
-            int bitAtIndex = Integer.parseInt(toBinary.substring(qubitIndex, qubitIndex + 1));
+            int bitAtIndex = (i >> shift) & 1;
             double re = this.registerState[2 * i];
             double im = this.registerState[2 * i + 1];
             double probability = re * re + im * im;
@@ -423,9 +424,10 @@ public class QuantumRegister {
         //Probability of the branch we collapsed into: sum of |amplitude|^2 over
         //all basis states whose bit at qubitPos equals the measured value
         int dimension = this.registerState.length / 2;
+        int shift = size - 1 - qubitPos; // qubit 0 is the most significant bit
         double branchProbability = 0;
         for (int i = 0; i < dimension; i++) {
-            if (Utils.bitAtIndex(qubitPos, i, size) == collapsedValue) {
+            if (((i >> shift) & 1) == collapsedValue) {
                 double re = this.registerState[2 * i];
                 double im = this.registerState[2 * i + 1];
                 branchProbability += re * re + im * im;
@@ -438,7 +440,7 @@ public class QuantumRegister {
         //dividing by sqrt(p): this preserves the relative phases
         double norm = Math.sqrt(branchProbability);
         for (int i = 0; i < dimension; i++) {
-            if (Utils.bitAtIndex(qubitPos, i, size) == collapsedValue) {
+            if (((i >> shift) & 1) == collapsedValue) {
                 this.registerState[2 * i] /= norm;
                 this.registerState[2 * i + 1] /= norm;
             } else {
@@ -455,11 +457,18 @@ public class QuantumRegister {
      */
     private void verifySeparable(ComplexVector[] qubitMarginals) {
         int dimension = this.registerState.length / 2;
+        //Precompute the marginal probability of |0>/|1> for each qubit once, so the
+        //O(2^n) loop below reads doubles instead of boxing a Complex per amplitude.
+        double[][] marginalProbability = new double[size][2];
+        for (int q = 0; q < size; q++) {
+            marginalProbability[q][0] = Math.pow(qubitMarginals[q].getEntry(0).abs(), 2);
+            marginalProbability[q][1] = Math.pow(qubitMarginals[q].getEntry(1).abs(), 2);
+        }
         for (int i = 0; i < dimension; i++) {
             double product = 1;
             for (int q = 0; q < size; q++) {
-                int bit = Utils.bitAtIndex(q, i, size);
-                product *= Math.pow(qubitMarginals[q].getEntry(bit).abs(), 2);
+                int bit = (i >> (size - 1 - q)) & 1;
+                product *= marginalProbability[q][bit];
             }
             double re = this.registerState[2 * i];
             double im = this.registerState[2 * i + 1];
