@@ -113,3 +113,44 @@ Because the full level operator is never built, large circuits are feasible: a
 10-qubit GHZ circuit and a 16-qubit Hadamard-layer circuit both run without
 constructing the corresponding `1024x1024` / `65536x65536` operators. See the
 `StateVectorSimulatorTest` suite for verified large-circuit examples.
+
+## Parallelism
+
+Gate application is embarrassingly parallel: a gate on `k` qubits touches
+`2^k`-amplitude groups that never overlap. `QuantumRegister.applyOperator` spreads
+those independent groups across cores when the state-vector dimension is at least
+the configured threshold (default `2^16`, i.e. 16 qubits); smaller states stay on
+the sequential path (thread setup would outweigh the gain). Results are
+**bit-for-bit identical** to the sequential path regardless of thread count — the
+groups are independent and there is no cross-group reduction.
+
+### Configuring parallelism (`JQAPIConfig`)
+
+Parallelism *policy* is per-`JQAPIConfig`, so a project embedding jqapi controls it
+in code (no JVM flags required):
+
+- `config.withParallel(enabled, threshold)` — enable/disable, and set the dimension
+  threshold. Defaults: enabled, threshold `2^16`. Also readable from the
+  `jqapi.parallel.enabled` / `jqapi.parallel.threshold` system properties (frozen
+  at class initialization, like the qubit limits).
+- `config.withExecutor(forkJoinPool)` — submit the parallel work to a
+  **caller-supplied** `ForkJoinPool` instead of the shared common pool. This keeps
+  jqapi from contending with the host application's other parallel-stream work.
+  The caller owns the pool's lifecycle; passing `null` uses the common pool.
+
+```java
+ForkJoinPool pool = new ForkJoinPool(4);
+JQAPIConfig cfg = JQAPIConfig.of(24, 12)
+        .withParallel(true, 1 << 16)
+        .withExecutor(pool);
+QuantumRegister reg = new QuantumRegister(20, cfg); // gates run on `pool`
+```
+
+- **Degree of parallelism (common pool only):** if no executor is supplied,
+  `-Djava.util.concurrent.ForkJoinPool.common.parallelism=N` sizes the common pool.
+  For embedded use prefer `withExecutor(...)`, since the common-pool flag is a
+  JVM-wide launch option and cannot be set per computation from library code.
+- **Explicit per-call opt-out / opt-in:** `applyOperator(operator, targets, boolean parallel)`
+  forces the sequential (`false`) or parallel (`true`) path regardless of the config.
+- Only the work **inside** a single gate is parallelized; gate and level ordering in
+  `LocalSimulator.execute` remains sequential.
