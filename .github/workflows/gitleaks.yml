@@ -1,0 +1,30 @@
+name: Secret scanning
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0 # full history so gitleaks scans every commit, not just the tip
+          persist-credentials: false
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: ${{ github.workspace }}/.gitleaks.toml
+          GITLEAKS_ENABLE_COMMENTS: "false"        # no PR comments -> no pull-requests: write needed
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "true"  # keep the report as a build artifact
+          GITLEAKS_ENABLE_SUMMARY: "true"
