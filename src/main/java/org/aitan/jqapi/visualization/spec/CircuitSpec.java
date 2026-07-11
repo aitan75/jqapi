@@ -17,6 +17,11 @@ import java.util.List;
  */
 public record CircuitSpec(int version, int numQubits, List<LevelSpec> levels) {
 
+    /** Defensively copies the levels into an immutable list. */
+    public CircuitSpec {
+        levels = List.copyOf(levels);
+    }
+
     /** Current on-disk/format version. */
     public static final int CURRENT_VERSION = 1;
 

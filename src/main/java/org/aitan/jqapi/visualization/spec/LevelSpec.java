@@ -12,4 +12,9 @@ import java.util.List;
  * @author Gaetano Ferrara
  */
 public record LevelSpec(List<GateSpec> gates) {
+
+    /** Defensively copies the gates into an immutable list. */
+    public LevelSpec {
+        gates = List.copyOf(gates);
+    }
 }
