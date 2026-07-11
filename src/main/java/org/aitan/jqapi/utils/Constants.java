@@ -21,10 +21,9 @@ public class Constants {
     public static final String PSI_QUANTUM = "|ψ>";
     public static final String MEASUREMENT = "M";
     public static final String RESET = "RST";
-    public static final String PROBABILITIES = "P";
     public static final String ORACLE = "Oracle";
+    public static final String GENERIC_GATE = "Generic Gate";
     public static final String CZ = "CZ";
-    public static final String MCZ = "MCZ";
     public static final String CY = "CY";
     public static final String CNot = "CNot";
     public static final String PAULI_X = "X";
