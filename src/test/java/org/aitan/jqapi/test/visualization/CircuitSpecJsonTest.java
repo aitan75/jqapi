@@ -2,6 +2,7 @@ package org.aitan.jqapi.test.visualization;
 
 import java.util.List;
 import java.util.Map;
+import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.visualization.spec.CircuitSpec;
 import org.aitan.jqapi.visualization.spec.CircuitSpecJson;
 import org.aitan.jqapi.visualization.spec.ComplexCell;
@@ -66,5 +67,80 @@ public class CircuitSpecJsonTest {
                 new GateSpec(GateKind.RX, List.of(0), List.of(),
                         Map.of("theta", Double.NaN), null)))));
         assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.toJson(spec));
+    }
+
+    @Test
+    void roundTrip_bell() {
+        CircuitSpec spec = CircuitSpec.of(2, List.of(
+                new LevelSpec(List.of(GateSpec.of(GateKind.H, 0))),
+                new LevelSpec(List.of(cnot(0, 1)))));
+        assertEquals(spec, CircuitSpecJson.fromJson(CircuitSpecJson.toJson(spec)));
+    }
+
+    @Test
+    void roundTrip_parametricAndMatrix() {
+        List<List<ComplexCell>> m = List.of(
+                List.of(new ComplexCell(0.0, 0.0), new ComplexCell(1.0, 0.0)),
+                List.of(new ComplexCell(1.0, 0.0), new ComplexCell(0.0, 0.0)));
+        CircuitSpec spec = CircuitSpec.of(2, List.of(
+                new LevelSpec(List.of(
+                        new GateSpec(GateKind.RX, List.of(0), List.of(), Map.of("theta", 1.25), null),
+                        new GateSpec(GateKind.GENERIC, List.of(1), List.of(), Map.of(), m)))));
+        assertEquals(spec, CircuitSpecJson.fromJson(CircuitSpecJson.toJson(spec)));
+    }
+
+    @Test
+    void roundTrip_ignoresInsignificantWhitespace() {
+        CircuitSpec spec = CircuitSpecJson.fromJson(
+                "{ \"version\": 1, \"numQubits\": 1, \"levels\": [ "
+                + "{ \"gates\": [ { \"kind\": \"H\", \"targets\": [ 0 ], "
+                + "\"controls\": [], \"params\": {} } ] } ] }");
+        assertEquals(GateKind.H, spec.levels().get(0).gates().get(0).kind());
+    }
+
+    @Test
+    void fromJson_trailingGarbage_rejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> CircuitSpecJson.fromJson("{\"version\":1,\"numQubits\":1,\"levels\":[]} X"));
+    }
+
+    @Test
+    void fromJson_wrongType_rejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> CircuitSpecJson.fromJson("{\"version\":1,\"numQubits\":\"two\",\"levels\":[]}"));
+    }
+
+    @Test
+    void fromJson_unknownKind_rejected() {
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson(
+                "{\"version\":1,\"numQubits\":1,\"levels\":[{\"gates\":"
+                + "[{\"kind\":\"NOPE\",\"targets\":[0],\"controls\":[],\"params\":{}}]}]}"));
+    }
+
+    @Test
+    void fromJson_numQubitsOverMax_rejected() {
+        assertThrows(JQApiLimitException.class, () -> CircuitSpecJson.fromJson(
+                "{\"version\":1,\"numQubits\":9999,\"levels\":[]}"));
+    }
+
+    @Test
+    void fromJson_numQubitsNonPositive_rejected() {
+        assertThrows(JQApiLimitException.class, () -> CircuitSpecJson.fromJson(
+                "{\"version\":1,\"numQubits\":0,\"levels\":[]}"));
+    }
+
+    @Test
+    void fromJson_indexOutOfRange_rejected() {
+        assertThrows(JQApiLimitException.class, () -> CircuitSpecJson.fromJson(
+                "{\"version\":1,\"numQubits\":1,\"levels\":[{\"gates\":"
+                + "[{\"kind\":\"H\",\"targets\":[5],\"controls\":[],\"params\":{}}]}]}"));
+    }
+
+    @Test
+    void fromJson_matrixWrongDimension_rejected() {
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson(
+                "{\"version\":1,\"numQubits\":1,\"levels\":[{\"gates\":"
+                + "[{\"kind\":\"GENERIC\",\"targets\":[0],\"controls\":[],\"params\":{},"
+                + "\"matrix\":[[{\"re\":1.0,\"im\":0.0}]]}]}]}"));
     }
 }
