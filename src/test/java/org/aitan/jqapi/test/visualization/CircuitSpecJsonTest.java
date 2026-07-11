@@ -143,4 +143,20 @@ public class CircuitSpecJsonTest {
                 + "[{\"kind\":\"GENERIC\",\"targets\":[0],\"controls\":[],\"params\":{},"
                 + "\"matrix\":[[{\"re\":1.0,\"im\":0.0}]]}]}]}"));
     }
+
+    @Test
+    void fromJson_matrixGateWithOverflowingTargetCount_rejected() {
+        // 32 duplicate targets would overflow 1<<numTargets to 1 and wrongly accept a 1x1 matrix
+        StringBuilder targets = new StringBuilder();
+        for (int i = 0; i < 32; i++) {
+            if (i > 0) {
+                targets.append(',');
+            }
+            targets.append('0');
+        }
+        String json = "{\"version\":1,\"numQubits\":1,\"levels\":[{\"gates\":"
+                + "[{\"kind\":\"GENERIC\",\"targets\":[" + targets + "],\"controls\":[],\"params\":{},"
+                + "\"matrix\":[[{\"re\":1.0,\"im\":0.0}]]}]}]}";
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson(json));
+    }
 }

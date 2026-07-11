@@ -201,6 +201,9 @@ public final class CircuitSpecJson {
         if (o == null) {
             return null;
         }
+        if (numTargets > 30) {
+            throw new IllegalArgumentException("matrix gate acts on too many qubits: " + numTargets);
+        }
         List<Object> rows = asArray(o, "matrix");
         int expected = 1 << numTargets;
         if (rows.size() != expected) {
