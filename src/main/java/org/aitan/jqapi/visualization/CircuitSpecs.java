@@ -2,10 +2,13 @@ package org.aitan.jqapi.visualization;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.quantum.Circuit;
 import org.aitan.jqapi.quantum.CircuitLevel;
+import org.aitan.jqapi.utils.Constants;
+import org.aitan.jqapi.visualization.spec.GateKind;
 import org.aitan.jqapi.quantum.gates.ControlledNot;
 import org.aitan.jqapi.quantum.gates.ControlledSwap;
 import org.aitan.jqapi.quantum.gates.ControlledY;
@@ -122,5 +125,97 @@ public final class CircuitSpecs {
             }
         }
         return ComplexMatrix.createMatrixWithData(data);
+    }
+
+    /** Runtime {@code getType()} label → canonical {@link GateKind}. */
+    private static final Map<String, GateKind> KIND_BY_TYPE = Map.ofEntries(
+            Map.entry(Constants.HADAMARD, GateKind.H),
+            Map.entry(Constants.PAULI_X, GateKind.X),
+            Map.entry(Constants.PAULI_Y, GateKind.Y),
+            Map.entry(Constants.PAULI_Z, GateKind.Z),
+            Map.entry(Constants.PAULI_S, GateKind.S),
+            Map.entry(Constants.PAULI_T, GateKind.T),
+            Map.entry(Constants.IDENTITY, GateKind.IDENTITY),
+            Map.entry(Constants.MEASUREMENT, GateKind.MEASUREMENT),
+            Map.entry(Constants.RESET, GateKind.RESET),
+            Map.entry(Constants.CNot, GateKind.CNOT),
+            Map.entry(Constants.CZ, GateKind.CZ),
+            Map.entry(Constants.CY, GateKind.CY),
+            Map.entry(Constants.SWAP, GateKind.SWAP),
+            Map.entry(Constants.CONTROLLED_SWAP, GateKind.CSWAP),
+            Map.entry(Constants.TOFFOLI, GateKind.TOFFOLI),
+            Map.entry(Constants.RX, GateKind.RX),
+            Map.entry(Constants.RY, GateKind.RY),
+            Map.entry(Constants.RZ, GateKind.RZ),
+            Map.entry(Constants.PHASE, GateKind.PHASE),
+            Map.entry(Constants.U3, GateKind.U3),
+            Map.entry(Constants.MULTI_CONTROLLED, GateKind.MULTI_CONTROLLED),
+            Map.entry(Constants.ORACLE, GateKind.ORACLE),
+            Map.entry(Constants.GENERIC_GATE, GateKind.GENERIC));
+
+    /**
+     * Best-effort reflect-back of a runtime {@link Circuit} into a spec. The
+     * runtime model is lossy, so this cannot always be inverted:
+     * <ul>
+     *   <li>fixed-arity gates (single-qubit, CNOT/CY/CZ, Swap, CSwap, Toffoli)
+     *       reflect exactly, splitting {@code getIndexes()} into controls/targets
+     *       by the kind's known arity ({@code Oracle} likewise, matrix preserved);</li>
+     *   <li>parametric gates (RX/RY/RZ/PHASE/U3) lose their angle and
+     *       {@code MultiControlled} loses its control count, so both
+     *       <b>degrade to {@link GateKind#GENERIC}</b> carrying the raw unitary and
+     *       {@code getIndexes()} as targets — still renderable and executable.</li>
+     * </ul>
+     * Idle wires ({@code Identity}) are dropped. Lossless reflect-back is deferred
+     * to the accessor-enabler phase.
+     *
+     * @param circuit the runtime circuit
+     * @return an equivalent (best-effort) spec
+     */
+    public static CircuitSpec toSpec(Circuit circuit) {
+        List<LevelSpec> levels = new ArrayList<>();
+        for (CircuitLevel level : circuit.getLevels()) {
+            List<GateSpec> gates = new ArrayList<>();
+            for (Gate gate : level.getGates()) {
+                GateKind kind = KIND_BY_TYPE.get(gate.getType());
+                if (kind == GateKind.IDENTITY) {
+                    continue; // idle wires need not be listed
+                }
+                gates.add(toGateSpec(kind, gate));
+            }
+            levels.add(new LevelSpec(gates));
+        }
+        return CircuitSpec.of(circuit.getInputSize(), levels);
+    }
+
+    private static GateSpec toGateSpec(GateKind kind, Gate gate) {
+        List<Integer> idx = gate.getIndexes();
+        return switch (kind) {
+            case H, X, Y, Z, S, T, MEASUREMENT, RESET, SWAP ->
+                new GateSpec(kind, List.copyOf(idx), List.of(), Map.of(), null);
+            case CNOT, CZ, CY ->
+                new GateSpec(kind, List.of(idx.get(1)), List.of(idx.get(0)), Map.of(), null);
+            case CSWAP ->
+                new GateSpec(kind, List.of(idx.get(1), idx.get(2)), List.of(idx.get(0)), Map.of(), null);
+            case TOFFOLI ->
+                new GateSpec(kind, List.of(idx.get(2)), List.of(idx.get(0), idx.get(1)), Map.of(), null);
+            case ORACLE ->
+                new GateSpec(kind, List.copyOf(idx), List.of(), Map.of(), toCells(gate.getMatrix()));
+            // lossy: parametric angles and MultiControlled control-count are unrecoverable
+            default ->
+                new GateSpec(GateKind.GENERIC, List.copyOf(idx), List.of(), Map.of(), toCells(gate.getMatrix()));
+        };
+    }
+
+    private static ComplexCell[][] toCells(ComplexMatrix m) {
+        int rows = m.getRowDimension();
+        int cols = m.getColumnDimension();
+        ComplexCell[][] cells = new ComplexCell[rows][cols];
+        for (int r = 0; r < rows; r++) {
+            for (int col = 0; col < cols; col++) {
+                Complex e = m.getEntry(r, col);
+                cells[r][col] = new ComplexCell(e.getReal(), e.getImaginary());
+            }
+        }
+        return cells;
     }
 }
