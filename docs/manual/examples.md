@@ -96,6 +96,12 @@ level1.addGate(new Hadamard(0));
 level2.addGate(new ControlledNot(0, 1));
 circuit.addLevel(level1, level2);
 
+// Visualize it before running (see the Visualization reference):
+new AsciiCircuitRenderer().print(circuit);
+// q0: ─[H]──●─
+//           │
+// q1: ──────⊕─
+
 int both0 = 0, both1 = 0;
 for (int i = 0; i < 10_000; i++) {
     QuantumSimulator simulator = new LocalSimulator(circuit);
