@@ -159,4 +159,26 @@ public class CircuitSpecJsonTest {
                 + "\"matrix\":[[{\"re\":1.0,\"im\":0.0}]]}]}]}";
         assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson(json));
     }
+
+    @Test
+    void fromJson_controlTargetOverlap_rejected() {
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson(
+                "{\"version\":1,\"numQubits\":1,\"levels\":[{\"gates\":"
+                + "[{\"kind\":\"CNOT\",\"targets\":[0],\"controls\":[0],\"params\":{}}]}]}"));
+    }
+
+    @Test
+    void fromJson_tooManyGates_rejected() {
+        StringBuilder sb = new StringBuilder("{\"version\":1,\"numQubits\":1,\"levels\":[{\"gates\":[");
+        for (int i = 0; i <= CircuitSpecJson.MAX_GATES; i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append("{\"kind\":\"H\",\"targets\":[0],\"controls\":[],\"params\":{}}");
+        }
+        sb.append("]}]}");
+        String json = sb.toString();
+        assertThrows(org.aitan.jqapi.exceptions.JQApiLimitException.class,
+                () -> CircuitSpecJson.fromJson(json));
+    }
 }

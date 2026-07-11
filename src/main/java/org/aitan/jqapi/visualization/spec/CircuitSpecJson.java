@@ -145,11 +145,15 @@ public final class CircuitSpecJson {
         }
         List<Object> levelsJson = asArray(root.get("levels"), "levels");
         List<LevelSpec> levels = new ArrayList<>(levelsJson.size());
+        int gateCount = 0;
         for (Object lo : levelsJson) {
             Map<String, Object> lm = asObject(lo, "level");
             List<Object> gatesJson = asArray(lm.get("gates"), "gates");
             List<GateSpec> gates = new ArrayList<>(gatesJson.size());
             for (Object go : gatesJson) {
+                if (++gateCount > MAX_GATES) {
+                    throw new JQApiLimitException("too many gates (max " + MAX_GATES + ")");
+                }
                 gates.add(mapGate(go, numQubits));
             }
             levels.add(new LevelSpec(gates));
@@ -167,6 +171,11 @@ public final class CircuitSpecJson {
         }
         List<Integer> targets = mapIndexes(gm.get("targets"), numQubits, "targets");
         List<Integer> controls = mapIndexes(gm.get("controls"), numQubits, "controls");
+        for (int c : controls) {
+            if (targets.contains(c)) {
+                throw new IllegalArgumentException("control and target overlap on qubit " + c);
+            }
+        }
         Map<String, Double> params = mapParams(gm.get("params"));
         List<List<ComplexCell>> matrix = mapMatrix(gm.get("matrix"), targets.size());
         return new GateSpec(kind, targets, controls, params, matrix);
