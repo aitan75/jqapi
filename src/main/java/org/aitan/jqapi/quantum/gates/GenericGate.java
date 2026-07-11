@@ -10,7 +10,7 @@ import static org.aitan.jqapi.utils.Constants.*;
 public class GenericGate extends Gate {
 
     public GenericGate(ComplexMatrix matrix, int size,Integer...qubitIndex) {
-        super(size, matrix, "Generic Gate", qubitIndex);
+        super(size, matrix, GENERIC_GATE, qubitIndex);
     }
     
 }
