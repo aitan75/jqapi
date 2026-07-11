@@ -37,7 +37,7 @@ All records, immutable, primitive-typed (no dependency on the runtime `Complex`)
 | `GateKind` (enum) | `H, X, Y, Z, S, T, CNOT, CZ, CY, SWAP, CSWAP, TOFFOLI, RX, RY, RZ, PHASE, U3, MULTI_CONTROLLED, ORACLE, GENERIC, MEASUREMENT, RESET, IDENTITY` | Unambiguous discriminator — the layer never depends on runtime `getType()` strings. |
 | `CircuitSpec` | `(int version, int numQubits, List<LevelSpec> levels)` | The whole circuit. `CircuitSpec.of(numQubits, levels)` stamps `CURRENT_VERSION`. |
 | `LevelSpec` | `(List<GateSpec> gates)` | One time-step; idle wires need not be listed. |
-| `GateSpec` | `(GateKind kind, List<Integer> targets, List<Integer> controls, Map<String,Double> params, ComplexCell[][] matrix)` | One gate placement. `GateSpec.of(kind, targets…)` is the uncontrolled, non-parametric shortcut. |
+| `GateSpec` | `(GateKind kind, List<Integer> targets, List<Integer> controls, Map<String,Double> params, List<List<ComplexCell>> matrix)` | One gate placement (all components immutable, so equal specs compare equal). `GateSpec.of(kind, targets…)` is the uncontrolled, non-parametric shortcut. |
 | `ComplexCell` | `(double re, double im)` | One matrix entry, carried as primitives. |
 
 Conventions: `controls` are the most-significant qubits, so the runtime index

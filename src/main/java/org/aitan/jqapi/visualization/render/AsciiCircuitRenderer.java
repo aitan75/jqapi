@@ -20,6 +20,12 @@ import org.aitan.jqapi.visualization.spec.LevelSpec;
  * are drawn as plain wire ({@code ──}). Pass {@code asciiOnly} for a pure-ASCII
  * fallback ({@code ● → *}, {@code ⊕ → (+)}, {@code × → X}, box unchanged).
  *
+ * <p><b>Known limitation:</b> each level is drawn in a single column, so two
+ * multi-wire gates in the same level with interleaved spans (e.g. a control on
+ * q0→q2 alongside one on q1→q3) would draw their vertical connectors in the
+ * same column and visually merge. Such levels are rare and left for a later
+ * phase.
+ *
  * @author Gaetano Ferrara
  */
 public final class AsciiCircuitRenderer {

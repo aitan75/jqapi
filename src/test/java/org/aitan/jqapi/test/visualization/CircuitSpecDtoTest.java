@@ -3,6 +3,7 @@ package org.aitan.jqapi.test.visualization;
 import java.util.List;
 import java.util.Map;
 import org.aitan.jqapi.visualization.spec.CircuitSpec;
+import org.aitan.jqapi.visualization.spec.ComplexCell;
 import org.aitan.jqapi.visualization.spec.GateKind;
 import org.aitan.jqapi.visualization.spec.GateSpec;
 import org.aitan.jqapi.visualization.spec.LevelSpec;
@@ -10,6 +11,22 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 public class CircuitSpecDtoTest {
+
+    @Test
+    void matrixCarryingSpecs_haveValueEquality() {
+        // The matrix is a nested List, not an array, so structurally-equal
+        // matrix-carrying specs compare equal (needed for save/load round-trips).
+        List<List<ComplexCell>> m = List.of(
+                List.of(new ComplexCell(0, 0), new ComplexCell(1, 0)),
+                List.of(new ComplexCell(1, 0), new ComplexCell(0, 0)));
+        GateSpec a = new GateSpec(GateKind.GENERIC, List.of(0), List.of(), Map.of(), m);
+        GateSpec b = new GateSpec(GateKind.GENERIC, List.of(0), List.of(), Map.of(),
+                List.of(
+                        List.of(new ComplexCell(0, 0), new ComplexCell(1, 0)),
+                        List.of(new ComplexCell(1, 0), new ComplexCell(0, 0))));
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
+    }
 
     @Test
     void gateSpecOf_buildsUncontrolledNonParametricGate() {

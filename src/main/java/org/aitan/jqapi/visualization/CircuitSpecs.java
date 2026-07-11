@@ -96,9 +96,9 @@ public final class CircuitSpecs {
             case SWAP -> new Swap(t.get(0), t.get(1));
             case CSWAP -> new ControlledSwap(c.get(0), t.get(0), t.get(1));
             case TOFFOLI -> new Toffoli(c.get(0), c.get(1), t.get(0));
-            case MULTI_CONTROLLED -> new MultiControlled(toMatrix(g.matrix()), c.size(), controlsThenTargets(g));
-            case ORACLE -> new Oracle(toMatrix(g.matrix()), arr(t));
-            case GENERIC -> new GenericGate(toMatrix(g.matrix()), t.size(), arr(t));
+            case MULTI_CONTROLLED -> new MultiControlled(matrixOf(g), c.size(), controlsThenTargets(g));
+            case ORACLE -> new Oracle(matrixOf(g), arr(t));
+            case GENERIC -> new GenericGate(matrixOf(g), t.size(), arr(t));
         };
     }
 
@@ -117,11 +117,18 @@ public final class CircuitSpecs {
         return all.toArray(new Integer[0]);
     }
 
-    private static ComplexMatrix toMatrix(ComplexCell[][] cells) {
-        Complex[][] data = new Complex[cells.length][cells[0].length];
-        for (int r = 0; r < cells.length; r++) {
-            for (int col = 0; col < cells[r].length; col++) {
-                data[r][col] = new Complex(cells[r][col].re(), cells[r][col].im());
+    private static ComplexMatrix matrixOf(GateSpec g) {
+        if (g.matrix() == null) {
+            throw new IllegalArgumentException(g.kind() + " gate requires a matrix, but none was provided");
+        }
+        List<List<ComplexCell>> cells = g.matrix();
+        int rows = cells.size();
+        int cols = cells.get(0).size();
+        Complex[][] data = new Complex[rows][cols];
+        for (int r = 0; r < rows; r++) {
+            List<ComplexCell> row = cells.get(r);
+            for (int col = 0; col < cols; col++) {
+                data[r][col] = new Complex(row.get(col).re(), row.get(col).im());
             }
         }
         return ComplexMatrix.createMatrixWithData(data);
@@ -176,7 +183,7 @@ public final class CircuitSpecs {
         for (CircuitLevel level : circuit.getLevels()) {
             List<GateSpec> gates = new ArrayList<>();
             for (Gate gate : level.getGates()) {
-                GateKind kind = KIND_BY_TYPE.get(gate.getType());
+                GateKind kind = KIND_BY_TYPE.getOrDefault(gate.getType(), GateKind.GENERIC);
                 if (kind == GateKind.IDENTITY) {
                     continue; // idle wires need not be listed
                 }
@@ -206,15 +213,17 @@ public final class CircuitSpecs {
         };
     }
 
-    private static ComplexCell[][] toCells(ComplexMatrix m) {
+    private static List<List<ComplexCell>> toCells(ComplexMatrix m) {
         int rows = m.getRowDimension();
         int cols = m.getColumnDimension();
-        ComplexCell[][] cells = new ComplexCell[rows][cols];
+        List<List<ComplexCell>> cells = new ArrayList<>(rows);
         for (int r = 0; r < rows; r++) {
+            List<ComplexCell> row = new ArrayList<>(cols);
             for (int col = 0; col < cols; col++) {
                 Complex e = m.getEntry(r, col);
-                cells[r][col] = new ComplexCell(e.getReal(), e.getImaginary());
+                row.add(new ComplexCell(e.getReal(), e.getImaginary()));
             }
+            cells.add(row);
         }
         return cells;
     }
