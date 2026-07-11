@@ -70,6 +70,41 @@ circuit.addLevel(level);
 
 Conventions: qubit 0 is the most significant bit of the state index; in multi-qubit gates the first declared qubit is the most significant one (e.g. the control in `ControlledNot(control, target)`).
 
+## Visualizing a circuit
+
+Any `Circuit` can be drawn as a deterministic ASCII diagram — useful in the
+terminal, in tests, and in bug reports. Build a circuit as usual and hand it to
+`AsciiCircuitRenderer`:
+
+```java
+Circuit circuit = new Circuit(2);
+CircuitLevel level1 = new CircuitLevel();
+CircuitLevel level2 = new CircuitLevel();
+level1.addGate(new Hadamard(0));
+level2.addGate(new ControlledNot(0, 1));
+circuit.addLevel(level1, level2);
+
+AsciiCircuitRenderer renderer = new AsciiCircuitRenderer();
+System.out.println(renderer.draw(circuit)); // or renderer.print(circuit);
+```
+
+```
+q0: ─[H]──●─
+          │
+q1: ──────⊕─
+```
+
+Single-qubit gates are boxed (`[H]`), controls are `●`, CNOT targets `⊕`, Swap
+targets `×`, and non-adjacent wires are crossed with `┼`. A pure-ASCII fallback
+(`● → *`, `⊕ → (+)`, `× → X`) is available via `new AsciiCircuitRenderer(true)`
+for terminals without Unicode.
+
+Under the hood the renderer works on `CircuitSpec`, a lossless, serializable
+description of a circuit. `CircuitSpecs.toCircuit(spec)` builds a runnable
+`Circuit` from a spec and `CircuitSpecs.toSpec(circuit)` reflects one back — the
+foundation for the upcoming save/load and graphical editor. See the
+[visualization reference](docs/api/visualization.md) for details.
+
 ## Size limits
 
 State vectors grow as 2^n, so registers, circuits and searches are bounded by `JQAPIConfig` to protect against resource exhaustion:
