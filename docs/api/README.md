@@ -40,6 +40,7 @@ signatures below:
 | Gates | `org.aitan.jqapi.quantum.gates` | [gates.md](gates.md) |
 | Simulator | `org.aitan.jqapi.quantum.simulator` | [simulator.md](simulator.md) |
 | Linear algebra | `org.aitan.jqapi.math` | [math.md](math.md) |
+| Visualization (spec + ASCII renderer) | `org.aitan.jqapi.visualization` | [visualization.md](visualization.md) |
 | Algorithms & utilities | `org.aitan.jqapi`, `org.aitan.jqapi.utils`, `org.aitan.jqapi.exceptions` | (below) |
 
 ---
