@@ -181,4 +181,32 @@ public class CircuitSpecJsonTest {
         assertThrows(org.aitan.jqapi.exceptions.JQApiLimitException.class,
                 () -> CircuitSpecJson.fromJson(json));
     }
+
+    @Test
+    void fromJson_oversizedInput_rejected() {
+        String json = "x".repeat(CircuitSpecJson.MAX_JSON_LENGTH + 1);
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson(json));
+    }
+
+    @Test
+    void fromJson_deeplyNested_rejected() {
+        int n = CircuitSpecJson.MAX_JSON_DEPTH + 1;
+        String json = "[".repeat(n) + "]".repeat(n);
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson(json));
+    }
+
+    @Test
+    void fromJson_unterminatedEscape_rejected() {
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson("\"\\"));
+    }
+
+    @Test
+    void fromJson_truncatedUnicodeEscape_rejected() {
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson("\"\\u12"));
+    }
+
+    @Test
+    void fromJson_invalidUnicodeEscape_rejected() {
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson("\"\\uZZZZ\""));
+    }
 }
