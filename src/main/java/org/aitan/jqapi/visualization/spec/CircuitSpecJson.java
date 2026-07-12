@@ -137,18 +137,34 @@ public final class CircuitSpecJson {
      * @throws JQApiLimitException on out-of-range qubit counts/indexes
      */
     public static CircuitSpec fromJson(String json) {
+        return fromJson(json, JQAPIConfig.getDefault());
+    }
+
+    /**
+     * As {@link #fromJson(String)} but validating {@code numQubits} against an
+     * explicit configuration's {@code maxQubits}. Lets single-threaded runtimes
+     * (the WASM/JS build, issue #5 phase 2b) pass a {@link
+     * JQAPIConfig#sequential(int)} config so the default (parallel) configuration
+     * is never reached.
+     *
+     * @param json the JSON to parse
+     * @param config the configuration whose {@code maxQubits} bounds the spec
+     * @return the parsed, validated spec
+     * @throws IllegalArgumentException on malformed JSON or invalid structure
+     * @throws JQApiLimitException on out-of-range qubit counts/indexes
+     */
+    public static CircuitSpec fromJson(String json, JQAPIConfig config) {
         if (json.length() > MAX_JSON_LENGTH) {
             throw new IllegalArgumentException("JSON input too large: " + json.length() + " characters");
         }
         Object tree = new JsonParser(json).parse();
-        return mapCircuit(tree);
+        return mapCircuit(tree, config.maxQubits());
     }
 
-    private static CircuitSpec mapCircuit(Object tree) {
+    private static CircuitSpec mapCircuit(Object tree, int maxQubits) {
         Map<String, Object> root = asObject(tree, "root");
         int version = asInt(root.get("version"), "version");
         int numQubits = asInt(root.get("numQubits"), "numQubits");
-        int maxQubits = JQAPIConfig.getDefault().maxQubits();
         if (numQubits <= 0 || numQubits > maxQubits) {
             throw new JQApiLimitException("numQubits out of range (1.." + maxQubits + "): " + numQubits);
         }
