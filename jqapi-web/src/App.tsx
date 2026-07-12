@@ -1,122 +1,64 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useRef, useState } from 'react';
+import { CircuitModel } from './model/circuit';
+import { probabilities } from './model/results';
+import { run } from './wasm/bridge';
+import { GatePalette, type Tool } from './components/GatePalette';
+import { QubitSelector } from './components/QubitSelector';
+import { CircuitCanvas } from './components/CircuitCanvas';
+import { ResultsPanel } from './components/ResultsPanel';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const modelRef = useRef(new CircuitModel(2));
+  const [tool, setTool] = useState<Tool>('H');
+  const [version, setVersion] = useState(0); // bump to force canvas re-render
+  const [numQubits, setNumQubits] = useState(2);
+  const [probs, setProbs] = useState<number[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const bump = () => setVersion((v) => v + 1);
+
+  const onCellClick = (q: number, s: number) => {
+    const m = modelRef.current;
+    if (tool === 'erase') m.clear(q, s);
+    else if (tool === 'CNOT-control') m.place(q, s, { kind: 'CNOT', role: 'control' });
+    else if (tool === 'CNOT-target') m.place(q, s, { kind: 'CNOT', role: 'target' });
+    else m.place(q, s, { kind: tool });
+    bump();
+  };
+
+  const onQubits = (n: number) => {
+    setNumQubits(n);
+    modelRef.current.setNumQubits(n);
+    setProbs(null);
+    bump();
+  };
+
+  const onRun = () => {
+    try {
+      setError(null);
+      setProbs(probabilities(run(modelRef.current.toSpec()).amplitudes));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
+    <div className="app">
+      <h1>jqapi — circuit editor (MVP)</h1>
+      <div className="toolbar">
+        <QubitSelector value={numQubits} onChange={onQubits} />
+        <GatePalette tool={tool} onSelect={setTool} />
+        <button className="run" onClick={onRun}>
+          Run
         </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      </div>
+      {error && (
+        <div className="error" role="alert" onClick={() => setError(null)}>
+          {error}
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      )}
+      <CircuitCanvas model={modelRef.current} onCellClick={onCellClick} version={version} />
+      <ResultsPanel probs={probs} numQubits={numQubits} />
+    </div>
+  );
 }
-
-export default App
