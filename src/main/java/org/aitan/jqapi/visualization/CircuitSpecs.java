@@ -3,6 +3,7 @@ package org.aitan.jqapi.visualization;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.aitan.jqapi.JQAPIConfig;
 import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.quantum.Circuit;
@@ -58,7 +59,21 @@ public final class CircuitSpecs {
      * @return an equivalent runtime circuit
      */
     public static Circuit toCircuit(CircuitSpec spec) {
-        Circuit circuit = new Circuit(spec.numQubits());
+        return toCircuit(spec, JQAPIConfig.getDefault());
+    }
+
+    /**
+     * As {@link #toCircuit(CircuitSpec)} but binding the circuit to an explicit
+     * configuration. Lets single-threaded runtimes (the WASM/JS build, issue #5
+     * phase 2b) pass a {@link JQAPIConfig#sequential(int)} config so the default
+     * (parallel) configuration is never reached.
+     *
+     * @param spec the spec to convert
+     * @param config the configuration bounding the resulting circuit
+     * @return the equivalent circuit
+     */
+    public static Circuit toCircuit(CircuitSpec spec, JQAPIConfig config) {
+        Circuit circuit = new Circuit(spec.numQubits(), config);
         for (LevelSpec levelSpec : spec.levels()) {
             CircuitLevel level = new CircuitLevel();
             for (GateSpec gateSpec : levelSpec.gates()) {

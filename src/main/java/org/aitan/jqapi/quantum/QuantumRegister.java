@@ -4,8 +4,6 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ForkJoinPool;
-import java.util.stream.IntStream;
 import org.aitan.jqapi.JQAPIConfig;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.math.Complex;
@@ -258,22 +256,15 @@ public class QuantumRegister {
 
         if (parallel) {
             final int fLocalDimension = localDimension;
-            final int fTargetMask = targetMask;
             final int[] fOffsets = offsets;
             final double[] fOpRe = opRe;
             final double[] fOpIm = opIm;
             final boolean[] fOpNonZero = opNonZero;
-            Runnable task = () -> IntStream.range(0, dimension).parallel().forEach(base -> {
-                if ((base & fTargetMask) == 0) {
-                    applyOperatorGroup(base, fLocalDimension, fOffsets, fOpRe, fOpIm, fOpNonZero);
-                }
-            });
-            ForkJoinPool pool = config.parallelExecutor();
-            if (pool != null) {
-                pool.submit(task).join(); // run the parallel stream inside the caller-supplied pool
-            } else {
-                task.run(); // uses the common ForkJoinPool
-            }
+            // Delegate to the config's executor: keeps ForkJoinPool / parallel
+            // streams out of this class so the TeaVM build (issue #5 phase 2b)
+            // can dead-code-eliminate the parallel path.
+            config.operatorExecutor().applyGroups(dimension, targetMask, base ->
+                    applyOperatorGroup(base, fLocalDimension, fOffsets, fOpRe, fOpIm, fOpNonZero));
         } else {
             for (int base = 0; base < dimension; base++) {
                 if ((base & targetMask) == 0) {
