@@ -1,7 +1,7 @@
 
 *.properties
 .DS_Store
-/target/
+target/
 nbactions.xml
 .tokensave
 .aider*
