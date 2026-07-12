@@ -78,6 +78,29 @@ Lossless reflect-back is planned for a later (accessor-enabler) phase.
 
 ---
 
+## `CircuitSpecJson` — JSON serialization
+
+Zero-dependency, deterministic JSON for `CircuitSpec` — the shared format
+between the Java simulator and the browser editor (and for save/load and
+URL-sharing).
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `toJson(CircuitSpec)` | `String` | Compact, deterministic JSON (fixed key order; param keys sorted). Throws on non-finite numbers. |
+| `fromJson(String)` | `CircuitSpec` | Parses and **validates at the boundary**: `numQubits` in `1..maxQubits`, indexes in range, controls/targets disjoint, matrix `2^k × 2^k`, at most `MAX_GATES` gates, finite numbers, known `GateKind`. Throws `IllegalArgumentException`/`JQApiLimitException` on bad input. |
+
+```json
+{"version":1,"numQubits":2,"levels":[
+  {"gates":[{"kind":"H","targets":[0],"controls":[],"params":{}}]},
+  {"gates":[{"kind":"CNOT","targets":[1],"controls":[0],"params":{}}]}
+]}
+```
+
+`params` carries `theta`/`phi`/`lambda` for parametric kinds; `matrix` (nested
+`{"re":…,"im":…}` arrays) appears only for `GENERIC`/`ORACLE`/`MULTI_CONTROLLED`.
+
+---
+
 ## `AsciiCircuitRenderer`
 
 Deterministic text drawing of a circuit. Output uses `\n` separators and a
