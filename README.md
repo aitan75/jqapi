@@ -10,6 +10,70 @@ _**jqapi**_ is a Java Api library to test quantum computing concepts. At the mom
 
 ***
 
+## Installation
+
+jqapi ships in layers — install only what your use case needs.
+
+| Use case | What you install | Toolchain |
+|----------|------------------|-----------|
+| Embed the quantum simulator in a JVM application | the **library** (`org.aitan:jqapi`) | Java 21+, Maven 3.9+ |
+| Run or develop the browser **circuit editor** | the **full product** (`jqapi-web`, with the WASM engine already bundled) | Node.js 20.19+ (or 22+), npm |
+| Rebuild the WASM engine after changing the core | the **engine build** (`jqapi-wasm`) | JDK **21** (exactly), Node.js |
+
+### 1. The library only (JVM projects)
+
+The library is not yet published to a public Maven repository, so install it into
+your local repository first:
+
+```bash
+git clone https://github.com/aitan75/jqapi.git
+cd jqapi
+mvn -DskipTests install     # installs org.aitan:jqapi:1.0.1 into ~/.m2
+```
+
+Then depend on it from your project:
+
+```xml
+<dependency>
+    <groupId>org.aitan</groupId>
+    <artifactId>jqapi</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
+
+See [Getting Started](#getting-started) for a first program.
+
+### 2. The full product (browser circuit editor)
+
+The editor lives in [`jqapi-web/`](jqapi-web/) and **bundles a pre-compiled copy of
+the simulator** (the vendored `src/wasm/jqapi.js`), so running it needs only Node —
+no JVM, no backend:
+
+```bash
+cd jqapi-web
+npm ci --ignore-scripts
+npm run dev       # dev server at http://localhost:5173
+npm run build     # production bundle in jqapi-web/dist/ (static files)
+```
+
+MVP gate set: `H`, `X`, `Z`, `CNOT` on 1–8 qubits; results shown as outcome
+probabilities. (The full gate set and editor features are tracked in a follow-up
+feature issue.)
+
+### 3. Rebuilding the WASM engine (only if you change the core)
+
+`jqapi-web` runs on the TeaVM output of the `jqapi-wasm` module. Regenerate it only
+when you modify `jqapi-core` or the bridge. **TeaVM 0.12 must run under JDK 21** —
+newer JDKs (22/25) are not supported — even though the core targets Java 21:
+
+```bash
+mvn -DskipTests install                              # install the current core into ~/.m2
+JAVA_HOME=<path-to-jdk-21> mvn -f jqapi-wasm/pom.xml -B clean package
+cp jqapi-wasm/target/js/jqapi.js jqapi-web/src/wasm/jqapi.js
+```
+
+***
+
 ## Requirements
 
 - Java 21+
@@ -21,7 +85,7 @@ _**jqapi**_ is a Java Api library to test quantum computing concepts. At the mom
 mvn clean package
 ```
 
-The build produces `target/jqapi-1.0.0.jar`.
+The build produces `target/jqapi-1.0.1.jar`.
 
 ## Test coverage
 
