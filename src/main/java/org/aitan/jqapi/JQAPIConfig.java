@@ -2,6 +2,9 @@ package org.aitan.jqapi;
 
 import java.util.concurrent.ForkJoinPool;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
+import org.aitan.jqapi.quantum.OperatorExecutor;
+import org.aitan.jqapi.quantum.ParallelOperatorExecutor;
+import org.aitan.jqapi.quantum.SequentialOperatorExecutor;
 
 /**
  * Immutable configuration for JQAPI library limits to prevent unbounded memory
@@ -49,22 +52,33 @@ public final class JQAPIConfig {
     private static final int RESOLVED_PARALLEL_THRESHOLD =
             readThresholdProperty(PARALLEL_THRESHOLD_PROPERTY, DEFAULT_PARALLEL_THRESHOLD);
 
-    private static final JQAPIConfig DEFAULT = new JQAPIConfig(
-            readBoundedProperty(MAX_QUBITS_PROPERTY, DEFAULT_MAX_QUBITS),
-            readBoundedProperty(MAX_SEARCH_QUBITS_PROPERTY, DEFAULT_MAX_SEARCH_QUBITS));
+    /**
+     * Lazy holder for the process-wide default. Keeping the {@link
+     * ParallelOperatorExecutor} construction in this nested class's initializer
+     * (rather than {@code JQAPIConfig.<clinit>}) means it runs only when {@link
+     * #getDefault()} is actually called — so a build that never calls it (the
+     * TeaVM WASM build, issue #5 phase 2b) can dead-code-eliminate the whole
+     * parallel path. Still thread-safe and read-once (initialization-on-demand).
+     */
+    private static final class Default {
+        static final JQAPIConfig INSTANCE = new JQAPIConfig(
+                readBoundedProperty(MAX_QUBITS_PROPERTY, DEFAULT_MAX_QUBITS),
+                readBoundedProperty(MAX_SEARCH_QUBITS_PROPERTY, DEFAULT_MAX_SEARCH_QUBITS));
+    }
 
     private final int maxQubits;
     private final int maxSearchQubits;
     private final boolean parallelEnabled;
     private final int parallelThreshold;
-    private final ForkJoinPool parallelExecutor;
+    private final OperatorExecutor operatorExecutor;
 
     private JQAPIConfig(int maxQubits, int maxSearchQubits) {
-        this(maxQubits, maxSearchQubits, RESOLVED_PARALLEL_ENABLED, RESOLVED_PARALLEL_THRESHOLD, null);
+        this(maxQubits, maxSearchQubits, RESOLVED_PARALLEL_ENABLED, RESOLVED_PARALLEL_THRESHOLD,
+                new ParallelOperatorExecutor(null));
     }
 
     private JQAPIConfig(int maxQubits, int maxSearchQubits, boolean parallelEnabled,
-            int parallelThreshold, ForkJoinPool parallelExecutor) {
+            int parallelThreshold, OperatorExecutor operatorExecutor) {
         if (maxQubits <= 0) {
             throw new JQApiLimitException("maxQubits must be positive, was: " + maxQubits);
         }
@@ -84,7 +98,7 @@ public final class JQAPIConfig {
         this.maxSearchQubits = maxSearchQubits;
         this.parallelEnabled = parallelEnabled;
         this.parallelThreshold = parallelThreshold;
-        this.parallelExecutor = parallelExecutor;
+        this.operatorExecutor = operatorExecutor;
     }
 
     /**
@@ -118,7 +132,24 @@ public final class JQAPIConfig {
      * @return the immutable process-wide default configuration
      */
     public static JQAPIConfig getDefault() {
-        return DEFAULT;
+        return Default.INSTANCE;
+    }
+
+    /**
+     * Returns a sequential-only configuration: parallelism disabled and a
+     * single-threaded {@link OperatorExecutor}. Used by single-threaded runtimes
+     * such as the browser WASM/JS build (issue #5 phase 2b), where {@code
+     * ForkJoinPool} and parallel streams are unavailable. Constructs no {@link
+     * ParallelOperatorExecutor}, so it never pulls the parallel path into the
+     * reachable graph.
+     *
+     * @param maxQubits the maximum allowed qubits in circuits and registers
+     * @return a new immutable, sequential configuration
+     * @throws JQApiLimitException if {@code maxQubits} is not in {@code [1, ABSOLUTE_MAX_QUBITS]}
+     */
+    public static JQAPIConfig sequential(int maxQubits) {
+        return new JQAPIConfig(maxQubits, DEFAULT_MAX_SEARCH_QUBITS, false,
+                DEFAULT_PARALLEL_THRESHOLD, new SequentialOperatorExecutor());
     }
 
     private static int readBoundedProperty(String property, int fallback) {
@@ -156,12 +187,18 @@ public final class JQAPIConfig {
         return parallelThreshold;
     }
 
+    /** @return the executor gate application delegates its group loop to when parallelizing */
+    public OperatorExecutor operatorExecutor() {
+        return operatorExecutor;
+    }
+
     /**
      * @return the pool that gate application submits its parallel work to, or
-     *         {@code null} to use the common {@link ForkJoinPool}
+     *         {@code null} to use the common {@link ForkJoinPool} (also
+     *         {@code null} for a {@link #sequential(int)} configuration)
      */
     public ForkJoinPool parallelExecutor() {
-        return parallelExecutor;
+        return operatorExecutor instanceof ParallelOperatorExecutor p ? p.pool() : null;
     }
 
     /**
@@ -173,7 +210,7 @@ public final class JQAPIConfig {
      * @throws JQApiLimitException if {@code threshold < 1}
      */
     public JQAPIConfig withParallel(boolean enabled, int threshold) {
-        return new JQAPIConfig(maxQubits, maxSearchQubits, enabled, threshold, parallelExecutor);
+        return new JQAPIConfig(maxQubits, maxSearchQubits, enabled, threshold, operatorExecutor);
     }
 
     /**
@@ -185,6 +222,7 @@ public final class JQAPIConfig {
      * @return a new immutable configuration; this instance is unchanged
      */
     public JQAPIConfig withExecutor(ForkJoinPool executor) {
-        return new JQAPIConfig(maxQubits, maxSearchQubits, parallelEnabled, parallelThreshold, executor);
+        return new JQAPIConfig(maxQubits, maxSearchQubits, parallelEnabled, parallelThreshold,
+                new ParallelOperatorExecutor(executor));
     }
 }
