@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.aitan</groupId>
+    <artifactId>jqapi-wasm</artifactId>
+    <version>1.0.1</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <teavm.version>0.12.0</teavm.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.aitan</groupId>
+            <artifactId>jqapi</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+        <!-- TeaVM's java.* emulation, incl. the invokedynamic bootstrap shims
+             (LambdaMetafactory / StringConcatFactory) TeaVM substitutes. -->
+        <dependency>
+            <groupId>org.teavm</groupId>
+            <artifactId>teavm-classlib</artifactId>
+            <version>${teavm.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.15.0</version>
+                <configuration>
+                    <!-- TeaVM cannot translate invokedynamic StringConcatFactory. -->
+                    <compilerArgs>
+                        <arg>-XDstringConcat=inline</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.teavm</groupId>
+                <artifactId>teavm-maven-plugin</artifactId>
+                <version>${teavm.version}</version>
+                <executions>
+                    <execution>
+                        <id>compile-js</id>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                        <configuration>
+                            <mainClass>org.aitan.jqapi.wasm.JqapiBridge</mainClass>
+                            <targetType>JAVASCRIPT</targetType>
+                            <jsModuleType>COMMON_JS</jsModuleType>
+                            <targetDirectory>${project.build.directory}/js</targetDirectory>
+                            <targetFileName>jqapi.js</targetFileName>
+                            <minifying>false</minifying>
+                            <optimizationLevel>SIMPLE</optimizationLevel>
+                            <debugInformationGenerated>true</debugInformationGenerated>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
