@@ -57,13 +57,18 @@ standard library. (JUnit is used for tests only.)
 
 ## Installation & build
 
-Clone and build the library with Maven:
+jqapi ships in layers — install what your use case needs. This manual covers the
+**library**; the full-product (browser editor) path is summarised at the end.
+
+### The library (JVM projects)
+
+Clone and build with Maven:
 
 ```bash
 mvn clean package
 ```
 
-The build produces `target/jqapi-1.0.0.jar`.
+The build produces `target/jqapi-1.0.1.jar`.
 
 To use jqapi from another Maven project, install it to your local repository:
 
@@ -77,13 +82,29 @@ then add the dependency:
 <dependency>
     <groupId>org.aitan</groupId>
     <artifactId>jqapi</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
 > The `groupId`/`artifactId` above reflect the project coordinates
-> (`org.aitan:jqapi:1.0.0`). jqapi is not published to Maven Central, so build
+> (`org.aitan:jqapi:1.0.1`). jqapi is not published to Maven Central, so build
 > and install it locally first.
+
+### The full product (browser circuit editor)
+
+If instead you want the interactive web editor, it lives in `jqapi-web/` and
+bundles a pre-compiled copy of the simulator, so it runs with only Node.js —
+no JVM:
+
+```bash
+cd jqapi-web
+npm ci --ignore-scripts
+npm run dev       # http://localhost:5173
+```
+
+See the [Installation section of the top-level README](../../README.md#installation)
+for all three layers (library, full product, and rebuilding the WASM engine under
+JDK 21).
 
 ---
 
