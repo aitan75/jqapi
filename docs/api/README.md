@@ -1,6 +1,6 @@
 # jqapi API Reference
 
-Developer-facing reference for **jqapi** (Java Quantum API) `1.0.0`, a Java
+Developer-facing reference for **jqapi** (Java Quantum API) `1.0.1`, a Java
 library for building and simulating quantum-computing circuits with a local
 state-vector simulator.
 
