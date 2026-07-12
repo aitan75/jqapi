@@ -21,6 +21,12 @@ public final class CircuitSpecJson {
     /** Upper bound on total gate placements accepted from untrusted input. */
     public static final int MAX_GATES = 100_000;
 
+    /** Upper bound on raw JSON input length accepted from untrusted sources. */
+    public static final int MAX_JSON_LENGTH = 16 * 1024 * 1024;
+
+    /** Maximum JSON nesting depth (a valid CircuitSpec nests at most ~8 deep). */
+    public static final int MAX_JSON_DEPTH = 200;
+
     private CircuitSpecJson() {
     }
 
@@ -131,6 +137,9 @@ public final class CircuitSpecJson {
      * @throws JQApiLimitException on out-of-range qubit counts/indexes
      */
     public static CircuitSpec fromJson(String json) {
+        if (json.length() > MAX_JSON_LENGTH) {
+            throw new IllegalArgumentException("JSON input too large: " + json.length() + " characters");
+        }
         Object tree = new JsonParser(json).parse();
         return mapCircuit(tree);
     }
@@ -283,6 +292,7 @@ public final class CircuitSpecJson {
     private static final class JsonParser {
         private final String s;
         private int pos;
+        private int depth;
 
         JsonParser(String s) {
             this.s = s;
@@ -314,48 +324,62 @@ public final class CircuitSpecJson {
         }
 
         private Map<String, Object> parseObject() {
-            Map<String, Object> m = new LinkedHashMap<>();
-            pos++; // consume '{'
-            skipWs();
-            if (peek() == '}') {
-                pos++;
-                return m;
+            if (++depth > MAX_JSON_DEPTH) {
+                throw err("nesting too deep");
             }
-            while (true) {
+            try {
+                Map<String, Object> m = new LinkedHashMap<>();
+                pos++; // consume '{'
                 skipWs();
-                String key = parseString();
-                skipWs();
-                expect(':');
-                m.put(key, parseValue());
-                skipWs();
-                char c = nextChar();
-                if (c == '}') {
+                if (peek() == '}') {
+                    pos++;
                     return m;
                 }
-                if (c != ',') {
-                    throw err("expected ',' or '}'");
+                while (true) {
+                    skipWs();
+                    String key = parseString();
+                    skipWs();
+                    expect(':');
+                    m.put(key, parseValue());
+                    skipWs();
+                    char c = nextChar();
+                    if (c == '}') {
+                        return m;
+                    }
+                    if (c != ',') {
+                        throw err("expected ',' or '}'");
+                    }
                 }
+            } finally {
+                depth--;
             }
         }
 
         private List<Object> parseArray() {
-            List<Object> a = new ArrayList<>();
-            pos++; // consume '['
-            skipWs();
-            if (peek() == ']') {
-                pos++;
-                return a;
+            if (++depth > MAX_JSON_DEPTH) {
+                throw err("nesting too deep");
             }
-            while (true) {
-                a.add(parseValue());
+            try {
+                List<Object> a = new ArrayList<>();
+                pos++; // consume '['
                 skipWs();
-                char c = nextChar();
-                if (c == ']') {
+                if (peek() == ']') {
+                    pos++;
                     return a;
                 }
-                if (c != ',') {
-                    throw err("expected ',' or ']'");
+                while (true) {
+                    a.add(parseValue());
+                    skipWs();
+                    char c = nextChar();
+                    if (c == ']') {
+                        return a;
+                    }
+                    if (c != ',') {
+                        throw err("expected ',' or ']'");
+                    }
                 }
+            } finally {
+                depth--;
             }
         }
 
@@ -371,6 +395,9 @@ public final class CircuitSpecJson {
                     return sb.toString();
                 }
                 if (c == '\\') {
+                    if (pos >= s.length()) {
+                        throw err("unterminated escape");
+                    }
                     char e = s.charAt(pos++);
                     switch (e) {
                         case '"' -> sb.append('"');
@@ -382,7 +409,14 @@ public final class CircuitSpecJson {
                         case 'b' -> sb.append('\b');
                         case 'f' -> sb.append('\f');
                         case 'u' -> {
-                            sb.append((char) Integer.parseInt(s.substring(pos, pos + 4), 16));
+                            if (pos + 4 > s.length()) {
+                                throw err("truncated unicode escape");
+                            }
+                            try {
+                                sb.append((char) Integer.parseInt(s.substring(pos, pos + 4), 16));
+                            } catch (NumberFormatException nfe) {
+                                throw err("invalid unicode escape");
+                            }
                             pos += 4;
                         }
                         default -> throw err("invalid escape '\\" + e + "'");
