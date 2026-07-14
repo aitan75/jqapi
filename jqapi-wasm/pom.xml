@@ -69,7 +69,7 @@
                         <configuration>
                             <mainClass>org.aitan.jqapi.wasm.JqapiBridge</mainClass>
                             <targetType>JAVASCRIPT</targetType>
-                            <jsModuleType>COMMON_JS</jsModuleType>
+                            <jsModuleType>ES2015</jsModuleType>
                             <targetDirectory>${project.build.directory}/js</targetDirectory>
                             <targetFileName>jqapi.js</targetFileName>
                             <minifying>false</minifying>
