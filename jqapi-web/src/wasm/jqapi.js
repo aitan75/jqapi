@@ -9638,5 +9638,4 @@ let $rt_jso_marker = Symbol('jsoClass');
     c = otji_JSWrapper$Helper$_clinit_$lambda$_3_0.prototype;
     c.accept = $rt_callWithReceiver(otji_JSWrapper$Helper$_clinit_$lambda$_3_0_accept$exported$0);
 })();
-exports.main = $rt_export_main;
-exports.run = oajw_JqapiBridge_run$exported$0;
+export { $rt_export_main as main, oajw_JqapiBridge_run$exported$0 as run };
