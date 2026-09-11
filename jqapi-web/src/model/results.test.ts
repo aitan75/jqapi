@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { probabilities, basisLabel } from './results';
+import { probabilities, basisLabel, formatAmplitude } from './results';
 
 describe('results', () => {
   it('computes probabilities as re^2 + im^2', () => {
@@ -19,5 +19,10 @@ describe('results', () => {
   it('labels basis states big-endian', () => {
     expect(basisLabel(1, 2)).toBe('|01⟩');
     expect(basisLabel(2, 2)).toBe('|10⟩');
+  });
+
+  it('formats complex amplitudes with sign and i', () => {
+    expect(formatAmplitude({ re: 0.7071, im: 0 })).toBe('0.707 + 0.000i');
+    expect(formatAmplitude({ re: 0, im: -0.5 })).toBe('0.000 - 0.500i');
   });
 });
