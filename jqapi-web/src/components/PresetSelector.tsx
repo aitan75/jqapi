@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { PRESETS, type Preset } from '../model/presets';
+import type { Messages, PresetId } from '../i18n';
 
 interface PresetSelectorProps {
   onSelectPreset: (preset: Preset) => void;
   onClearCircuit: () => void;
+  messages: Messages;
 }
 
-export function PresetSelector({ onSelectPreset, onClearCircuit }: PresetSelectorProps) {
-  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+export function PresetSelector({ onSelectPreset, onClearCircuit, messages }: PresetSelectorProps) {
+  const [activePresetId, setActivePresetId] = useState<PresetId | null>(null);
   const [hoveredPreset, setHoveredPreset] = useState<Preset | null>(null);
 
   const handleSelect = (preset: Preset) => {
@@ -20,24 +22,23 @@ export function PresetSelector({ onSelectPreset, onClearCircuit }: PresetSelecto
     onClearCircuit();
   };
 
-  const currentDesc = hoveredPreset?.description || 
-    PRESETS.find((p) => p.id === activePresetId)?.description ||
-    'Choose a quantum state or a well-known algorithm to load and run instantly.';
+  const currentDesc = hoveredPreset ? messages.presets[hoveredPreset.id].description :
+    activePresetId ? messages.presets[activePresetId].description : messages.presetDescription;
 
   return (
     <div className="presets-container">
       <div className="presets-header">
         <div className="presets-title">
           <span style={{ color: 'var(--accent-purple)', fontSize: '1.1rem' }}>⚡</span>
-          <span>Preset Circuits</span>
+          <span>{messages.presetCircuits}</span>
         </div>
         <button
           type="button"
           className="btn-clear"
           onClick={handleClear}
-          title="Clear all gates from the circuit"
+          title={messages.clearCircuitTitle}
         >
-          <span>⌫</span> Clear Circuit
+          <span>⌫</span> {messages.clearCircuit}
         </button>
       </div>
 
@@ -52,10 +53,10 @@ export function PresetSelector({ onSelectPreset, onClearCircuit }: PresetSelecto
               onClick={() => handleSelect(preset)}
               onMouseEnter={() => setHoveredPreset(preset)}
               onMouseLeave={() => setHoveredPreset(null)}
-              title={preset.description}
+              title={messages.presets[preset.id].description}
             >
-              <span className="preset-name">{preset.name}</span>
-              <span className="preset-badge">{preset.badge}</span>
+              <span className="preset-name">{messages.presets[preset.id].name}</span>
+              <span className="preset-badge">{messages.qubitCount(preset.qubits)}</span>
             </button>
           );
         })}

@@ -20,6 +20,16 @@ export interface Amplitude {
   im: number;
 }
 
-export interface RunResult {
+export type EngineErrorCode = 'INPUT_LIMIT_EXCEEDED' | 'INVALID_CIRCUIT_SPEC' | 'SIMULATION_FAILED';
+
+export interface RunSuccess {
+  ok: true;
   amplitudes: Amplitude[];
 }
+
+export interface RunFailure {
+  ok: false;
+  error: { code: EngineErrorCode };
+}
+
+export type RunResult = RunSuccess | RunFailure;
