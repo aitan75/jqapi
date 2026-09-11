@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Stage, Layer, Line, Rect, Text, Circle, Group } from 'react-konva';
 import { COLUMNS, type CircuitModel } from '../model/circuit';
+import type { Messages } from '../i18n';
 
 const CELL = 60;
 const LABEL_W = 56;
@@ -30,10 +31,12 @@ export function CircuitCanvas({
   model,
   onCellClick,
   version,
+  messages,
 }: {
   model: CircuitModel;
   onCellClick: (qubit: number, step: number) => void;
   version: number;
+  messages: Messages;
 }) {
   const width = LABEL_W + COLUMNS * CELL + 20;
   const height = model.numQubits * CELL;
@@ -330,7 +333,7 @@ export function CircuitCanvas({
     <div className="canvas-wrapper">
       <div className="canvas-hint">
         <span style={{ color: 'var(--accent-cyan)' }}>✦</span>
-        <span>Click any cell to place the selected gate or erase. Multi-qubit gates connect automatically when placed on the same step.</span>
+        <span>{messages.canvasHint}</span>
       </div>
       <div className="canvas-inner">
         <Stage width={width} height={height} key={version}>

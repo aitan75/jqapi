@@ -70,6 +70,15 @@ public class BridgeCrossCheckTest {
         }
     }
 
+    @Test
+    void invalidSpec_returnsStableErrorCode() {
+        String invalid = "{\"version\":1,\"numQubits\":1,\"levels\":["
+                + "{\"gates\":[{\"kind\":\"UNKNOWN\",\"targets\":[0],\"controls\":[],\"params\":{}}]}]}";
+
+        assertEquals("{\"ok\":false,\"error\":{\"code\":\"INVALID_CIRCUIT_SPEC\"}}",
+                JqapiBridge.run(invalid));
+    }
+
     /** Minimal JSON string literal for embedding a value in the node script. */
     private static String jsonString(String s) {
         return '"' + s.replace("\\", "\\\\").replace("\"", "\\\"") + '"';
