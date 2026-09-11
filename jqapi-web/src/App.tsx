@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CircuitModel } from './model/circuit';
 import { probabilities } from './model/results';
 import { run } from './wasm/bridge';
@@ -9,6 +9,7 @@ import { QubitSelector } from './components/QubitSelector';
 import { PresetSelector } from './components/PresetSelector';
 import { CircuitCanvas } from './components/CircuitCanvas';
 import { ResultsPanel } from './components/ResultsPanel';
+import { initialLanguage, LANGUAGE_STORAGE_KEY, messages, type Language } from './i18n';
 import './App.css';
 
 export default function App() {
@@ -20,7 +21,13 @@ export default function App() {
   const [probs, setProbs] = useState<number[] | null>(null);
   const [amplitudes, setAmplitudes] = useState<Amplitude[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [language, setLanguage] = useState<Language>(initialLanguage);
+  const t = messages[language];
   const bump = () => setVersion((v) => v + 1);
+
+  useEffect(() => {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+  }, [language]);
 
   const onCellClick = (q: number, s: number) => {
     const m = modelRef.current;
@@ -60,6 +67,19 @@ export default function App() {
     bump();
   };
 
+  const simulate = (model: CircuitModel) => {
+    setError(null);
+    const result = run(model.toSpec());
+    if (!result.ok) {
+      setProbs(null);
+      setAmplitudes(null);
+      setError(t.errors[result.error.code]);
+      return;
+    }
+    setAmplitudes(result.amplitudes);
+    setProbs(probabilities(result.amplitudes));
+  };
+
   const onSelectPreset = (preset: Preset) => {
     setNumQubits(preset.qubits);
     const m = new CircuitModel(preset.qubits);
@@ -68,14 +88,7 @@ export default function App() {
     setError(null);
     bump();
 
-    // Automatically simulate the preset upon selection
-    try {
-      const res = run(m.toSpec());
-      setAmplitudes(res.amplitudes);
-      setProbs(probabilities(res.amplitudes));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
+    simulate(m);
   };
 
   const onClearCircuit = () => {
@@ -87,58 +100,58 @@ export default function App() {
   };
 
   const onRun = () => {
-    try {
-      setError(null);
-      const res = run(modelRef.current.toSpec());
-      setAmplitudes(res.amplitudes);
-      setProbs(probabilities(res.amplitudes));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
+    simulate(modelRef.current);
   };
 
   return (
     <div className="app">
       <header className="header">
         <div className="brand">
-          <img src="/favicon.svg" alt="jqapi logo" className="brand-logo" />
+          <img src="/favicon.svg" alt={t.logo} className="brand-logo" />
           <div className="brand-text">
-            <h1>jqapi studio</h1>
-            <p>Quantum Circuit Simulator</p>
+            <h1>{t.appName}</h1>
+            <p>{t.appSubtitle}</p>
           </div>
         </div>
         <div className="header-badges">
-          <span className="badge active">● WASM Engine</span>
-          <span className="badge">{numQubits} Qubits</span>
+          <span className="badge active">{t.wasmEngine}</span>
+          <span className="badge">{t.qubitCount(numQubits)}</span>
+          <label className="language-selector">
+            <span>{t.language}</span>
+            <select value={language} onChange={(event) => setLanguage(event.target.value as Language)}>
+              {Object.entries(t.languages).map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+            </select>
+          </label>
         </div>
       </header>
 
-      <PresetSelector onSelectPreset={onSelectPreset} onClearCircuit={onClearCircuit} />
+      <PresetSelector onSelectPreset={onSelectPreset} onClearCircuit={onClearCircuit} messages={t} />
 
       <div className="toolbar">
         <div className="toolbar-left">
-          <QubitSelector value={numQubits} onChange={onQubits} />
+          <QubitSelector value={numQubits} onChange={onQubits} messages={t} />
           <GatePalette
             tool={tool}
             onSelect={setTool}
             theta={theta}
             onChangeTheta={setTheta}
+            messages={t}
           />
         </div>
-        <button className="run" onClick={onRun} title="Simulate circuit on local engine">
-          <span>▶</span> Run Simulation
+        <button className="run" onClick={onRun} title={t.runSimulation}>
+          <span>▶</span> {t.runSimulation}
         </button>
       </div>
 
       {error && (
-        <div className="error" role="alert" onClick={() => setError(null)} title="Click to dismiss">
+        <div className="error" role="alert" onClick={() => setError(null)} title={t.clickToDismiss}>
           <span>⚠️ {error}</span>
-          <span style={{ opacity: 0.8, fontSize: '0.8rem' }}>✕ Dismiss</span>
+          <span style={{ opacity: 0.8, fontSize: '0.8rem' }}>✕ {t.dismiss}</span>
         </div>
       )}
 
-      <CircuitCanvas model={modelRef.current} onCellClick={onCellClick} version={version} />
-      <ResultsPanel probs={probs} amplitudes={amplitudes} numQubits={numQubits} />
+      <CircuitCanvas model={modelRef.current} onCellClick={onCellClick} version={version} messages={t} />
+      <ResultsPanel probs={probs} amplitudes={amplitudes} numQubits={numQubits} messages={t} />
     </div>
   );
 }

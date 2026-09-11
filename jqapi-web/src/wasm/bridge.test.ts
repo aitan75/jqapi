@@ -2,6 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { run } from './bridge';
 import type { CircuitSpec } from './types';
 
+function amplitudesOf(spec: CircuitSpec) {
+  const result = run(spec);
+  if (!result.ok) throw new Error(`Unexpected simulation error: ${result.error.code}`);
+  return result.amplitudes;
+}
+
 const bell: CircuitSpec = {
   version: 1,
   numQubits: 2,
@@ -13,7 +19,7 @@ const bell: CircuitSpec = {
 
 describe('wasm bridge', () => {
   it('runs a Bell circuit and returns 4 amplitudes with 1/√2 on |00> and |11>', () => {
-    const { amplitudes } = run(bell);
+    const amplitudes = amplitudesOf(bell);
     expect(amplitudes).toHaveLength(4);
     const inv = 1 / Math.sqrt(2);
     expect(amplitudes[0].re).toBeCloseTo(inv, 9);
@@ -24,16 +30,16 @@ describe('wasm bridge', () => {
 
   it('runs expanded gates (Y, CY, S, T, RX, SWAP, TOFFOLI, RESET)', () => {
     // 1. PauliY on |0> -> i|1>
-    const yResult = run({
+    const yResult = amplitudesOf({
       version: 1,
       numQubits: 1,
       levels: [{ gates: [{ kind: 'Y', targets: [0], controls: [], params: {} }] }],
     });
-    expect(yResult.amplitudes[0].re).toBeCloseTo(0, 7);
-    expect(yResult.amplitudes[1].im).toBeCloseTo(1, 7);
+    expect(yResult[0].re).toBeCloseTo(0, 7);
+    expect(yResult[1].im).toBeCloseTo(1, 7);
 
     // 2. Controlled-Y applies Y to the target when control is |1>.
-    const cyResult = run({
+    const cyResult = amplitudesOf({
       version: 1,
       numQubits: 2,
       levels: [
@@ -41,18 +47,18 @@ describe('wasm bridge', () => {
         { gates: [{ kind: 'CY', targets: [1], controls: [0], params: {} }] },
       ],
     });
-    expect(cyResult.amplitudes[3].im).toBeCloseTo(1, 7);
+    expect(cyResult[3].im).toBeCloseTo(1, 7);
 
     // 3. RX(pi) on |0> -> -i|1>
-    const rxResult = run({
+    const rxResult = amplitudesOf({
       version: 1,
       numQubits: 1,
       levels: [{ gates: [{ kind: 'RX', targets: [0], controls: [], params: { theta: Math.PI } }] }],
     });
-    expect(rxResult.amplitudes[1].im).toBeCloseTo(-1, 7);
+    expect(rxResult[1].im).toBeCloseTo(-1, 7);
 
     // 3. SWAP on |10> -> |01>
-    const swapResult = run({
+    const swapResult = amplitudesOf({
       version: 1,
       numQubits: 2,
       levels: [
@@ -60,10 +66,10 @@ describe('wasm bridge', () => {
         { gates: [{ kind: 'SWAP', targets: [0, 1], controls: [], params: {} }] },
       ],
     });
-    expect(swapResult.amplitudes[1].re).toBeCloseTo(1, 7); // index 1 is |01>
+    expect(swapResult[1].re).toBeCloseTo(1, 7); // index 1 is |01>
 
     // 4. TOFFOLI on |110> -> |111>
-    const toffoliResult = run({
+    const toffoliResult = amplitudesOf({
       version: 1,
       numQubits: 3,
       levels: [
@@ -72,10 +78,10 @@ describe('wasm bridge', () => {
         { gates: [{ kind: 'TOFFOLI', targets: [2], controls: [0, 1], params: {} }] },
       ],
     });
-    expect(toffoliResult.amplitudes[7].re).toBeCloseTo(1, 7); // index 7 is |111>
+    expect(toffoliResult[7].re).toBeCloseTo(1, 7); // index 7 is |111>
 
     // 5. RESET on |1> -> |0>
-    const resetResult = run({
+    const resetResult = amplitudesOf({
       version: 1,
       numQubits: 1,
       levels: [
@@ -83,6 +89,16 @@ describe('wasm bridge', () => {
         { gates: [{ kind: 'RESET', targets: [0], controls: [], params: {} }] },
       ],
     });
-    expect(resetResult.amplitudes[0].re).toBeCloseTo(1, 7); // back to |0>
+    expect(resetResult[0].re).toBeCloseTo(1, 7); // back to |0>
+  });
+
+  it('returns a stable code for an invalid circuit spec', () => {
+    const result = run({
+      version: 1,
+      numQubits: 1,
+      levels: [{ gates: [{ kind: 'UNKNOWN', targets: [0], controls: [], params: {} }] }],
+    });
+
+    expect(result).toEqual({ ok: false, error: { code: 'INVALID_CIRCUIT_SPEC' } });
   });
 });
