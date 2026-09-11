@@ -40,7 +40,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.15.0</version>
+                <version>3.16.0</version>
                 <configuration>
                     <!-- Emit classic StringBuilder concat instead of invokedynamic
                          StringConcatFactory, which TeaVM (WASM build, issue #5
