@@ -80,6 +80,32 @@ export class CircuitModel {
     return this.cells[qubit][step];
   }
 
+  /** Moves a gate as one unit, preserving every control and target placement. */
+  moveGate(fromQubit: number, fromStep: number, toQubit: number, toStep: number): boolean {
+    const source = this.cellAt(fromQubit, fromStep);
+    if (!source) return false;
+
+    const cells = 'role' in source
+      ? this.cells.flatMap((row, qubit) => {
+        const cell = row[fromStep];
+        return cell && 'role' in cell && cell.kind === source.kind ? [{ qubit, cell }] : [];
+      })
+      : [{ qubit: fromQubit, cell: source }];
+    const qubitOffset = toQubit - fromQubit;
+    const sources = new Set(cells.map(({ qubit }) => `${qubit}:${fromStep}`));
+
+    if (cells.some(({ qubit }) => {
+      const destinationQubit = qubit + qubitOffset;
+      if (destinationQubit < 0 || destinationQubit >= this.numQubits) return true;
+      const destination = this.cellAt(destinationQubit, toStep);
+      return Boolean(destination && !sources.has(`${destinationQubit}:${toStep}`));
+    })) return false;
+
+    cells.forEach(({ qubit }) => this.clear(qubit, fromStep));
+    cells.forEach(({ qubit, cell }) => this.place(qubit + qubitOffset, toStep, cell));
+    return true;
+  }
+
   snapshot(): EditorState {
     return structuredClone({ numQubits: this.numQubits, columns: this.columns, cells: this.cells });
   }
