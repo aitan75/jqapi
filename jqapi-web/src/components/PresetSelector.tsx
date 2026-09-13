@@ -19,7 +19,7 @@ export function PresetSelector({ onSelectPreset, messages }: PresetSelectorProps
   const currentDesc = hoveredPreset ? messages.presets[hoveredPreset.id].description : activePresetId ? messages.presets[activePresetId].description : messages.presetDescription;
 
   return (
-    <details className="editor-menu algorithms-menu" open>
+    <details className="editor-menu algorithms-menu">
       <summary>{messages.algorithms}</summary>
       <div className="presets-container">
       <div className="presets-list">

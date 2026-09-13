@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test';
 test('draws and simulates a Bell circuit', async ({ page }) => {
   await page.goto('/');
   const canvas = page.locator('canvas');
+  await page.getByText('Gates', { exact: true }).click();
+  await page.getByText('Single qubit', { exact: true }).click();
   await page.getByTitle('Drag or select H').click();
   await canvas.click({ position: { x: 86, y: 30 } });
   const box = await canvas.boundingBox();
@@ -12,6 +14,7 @@ test('draws and simulates a Bell circuit', async ({ page }) => {
   await page.mouse.move(box.x + 146, box.y + 30);
   await page.mouse.up();
   await expect(page.locator('.canvas-inner')).toHaveAttribute('data-pan', '0,0');
+  await page.getByText('Two qubits', { exact: true }).click();
   await page.getByTitle('Drag or select CNOT ctrl').click();
   await canvas.click({ position: { x: 206, y: 30 } });
   await page.getByTitle('Drag or select CNOT tgt').click();
@@ -25,6 +28,8 @@ test('draws and simulates a Bell circuit', async ({ page }) => {
 test('opens erase on click and removes a gate on double click', async ({ page }) => {
   await page.goto('/');
   const canvas = page.locator('canvas');
+  await page.getByText('Gates', { exact: true }).click();
+  await page.getByText('Single qubit', { exact: true }).click();
   await page.getByTitle('Drag or select H').click();
   await canvas.click({ position: { x: 86, y: 30 } });
   await canvas.click({ position: { x: 86, y: 30 } });
@@ -41,8 +46,9 @@ test('opens erase on click and removes a gate on double click', async ({ page })
 test('groups gates and presets in localized menus', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText('Gates', { exact: true })).toBeVisible();
-  await expect(page.getByText('Single qubit', { exact: true })).toBeVisible();
   await expect(page.getByText('Algorithms', { exact: true })).toBeVisible();
+  await page.getByText('Gates', { exact: true }).click();
+  await expect(page.getByText('Single qubit', { exact: true })).toBeVisible();
   await page.getByLabel('Language').selectOption('it');
   await expect(page.getByText('Porte', { exact: true })).toBeVisible();
   await expect(page.getByText('Algoritmi', { exact: true })).toBeVisible();
@@ -55,4 +61,11 @@ test('places the editor menu beside the circuit and shows system time', async ({
   await expect(page.getByText('Quantum Circuit Simulator')).toBeVisible();
   await expect(page.getByText(/System time:/)).toBeVisible();
   await expect(page.locator('.gate-group').nth(1)).not.toHaveAttribute('open', '');
+});
+
+test('starts with closed menus and no selected gate', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.editor-menu').first()).not.toHaveAttribute('open', '');
+  await page.getByText('Gates', { exact: true }).click();
+  await expect(page.locator('.gate-btn.selected')).toHaveCount(0);
 });
