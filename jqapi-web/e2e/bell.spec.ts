@@ -15,9 +15,9 @@ test('draws and simulates a Bell circuit', async ({ page }) => {
   await page.mouse.up();
   await expect(page.locator('.canvas-inner')).toHaveAttribute('data-pan', '0,0');
   await page.getByText('Two qubits', { exact: true }).click();
-  await page.getByTitle('Drag or select CNOT ctrl').click();
+  await page.getByTitle('Drag or select CNOT control').click();
   await canvas.click({ position: { x: 206, y: 30 } });
-  await page.getByTitle('Drag or select CNOT tgt').click();
+  await page.getByTitle('Drag or select CNOT target').click();
   await canvas.click({ position: { x: 206, y: 90 } });
   await page.getByRole('button', { name: /run simulation/i }).click();
   await expect(page.getByText('State Vector & Outcome Probabilities')).toBeVisible();
