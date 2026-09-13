@@ -43,6 +43,40 @@ test('opens erase on click and removes a gate on double click', async ({ page })
   await expect(page.getByText('100.0%')).toBeVisible();
 });
 
+test('highlights the valid canvas cell while dragging a palette gate', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Gates', { exact: true }).click();
+  await page.getByText('Single qubit', { exact: true }).click();
+  const canvas = page.locator('canvas');
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error('Circuit canvas is not visible');
+  const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+
+  await page.getByTitle('Drag or select H').dispatchEvent('dragstart', { dataTransfer });
+  await canvas.dispatchEvent('dragover', { dataTransfer, clientX: box.x + 86, clientY: box.y + 30 });
+  await expect(page.locator('.canvas-wrapper')).toHaveAttribute('data-drop-target', '0:0');
+
+  await canvas.dispatchEvent('dragleave', { relatedTarget: null });
+  await expect(page.locator('.canvas-wrapper')).not.toHaveAttribute('data-drop-target');
+});
+
+test('shows amplitude magnitude, phase, and a Bloch indicator on hover', async ({ page }) => {
+  await page.goto('/');
+  await page.getByLabel('Qubits:').fill('1');
+  await page.getByText('Gates', { exact: true }).click();
+  await page.getByText('Single qubit', { exact: true }).click();
+  await page.getByTitle('Drag or select H').click();
+  await page.locator('canvas').click({ position: { x: 86, y: 30 } });
+  await page.getByRole('button', { name: /run simulation/i }).click();
+
+  const row = page.locator('.bar-row').first();
+  await row.hover();
+  const tooltip = row.locator('.amplitude-tooltip');
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText('|cᵢ|');
+  await expect(tooltip).toContainText('r⃗ = (');
+});
+
 test('groups gates and presets in localized menus', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText('Gates', { exact: true })).toBeVisible();

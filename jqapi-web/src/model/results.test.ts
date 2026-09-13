@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { probabilities, basisLabel, formatAmplitude } from './results';
+import { amplitudeMagnitude, basisLabel, blochVector, formatAmplitude, phaseRadians, probabilities } from './results';
 
 describe('results', () => {
   it('computes probabilities as re^2 + im^2', () => {
@@ -24,5 +24,16 @@ describe('results', () => {
   it('formats complex amplitudes with sign and i', () => {
     expect(formatAmplitude({ re: 0.7071, im: 0 })).toBe('0.707 + 0.000i');
     expect(formatAmplitude({ re: 0, im: -0.5 })).toBe('0.000 - 0.500i');
+  });
+
+  it('derives magnitude, phase, and the one-qubit Bloch vector', () => {
+    expect(amplitudeMagnitude({ re: 3, im: 4 })).toBe(5);
+    expect(phaseRadians({ re: 0, im: 1 })).toBeCloseTo(Math.PI / 2, 9);
+    expect(phaseRadians({ re: 0, im: 0 })).toBeNull();
+    const vector = blochVector([{ re: Math.SQRT1_2, im: 0 }, { re: 0, im: Math.SQRT1_2 }]);
+    expect(vector?.x).toBeCloseTo(0, 9);
+    expect(vector?.y).toBeCloseTo(1, 9);
+    expect(vector?.z).toBeCloseTo(0, 9);
+    expect(blochVector([{ re: 1, im: 0 }])).toBeNull();
   });
 });
