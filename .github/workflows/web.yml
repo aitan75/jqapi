@@ -11,6 +11,8 @@ permissions:
 jobs:
   web:
     runs-on: ubuntu-latest
+    env:
+      SOCKET_API_KEY: ${{ secrets.SOCKET_API_KEY }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -26,10 +28,10 @@ jobs:
           cache: npm
           cache-dependency-path: jqapi-web/package-lock.json
       - uses: SocketDev/action@2d3f25590c6ed6ba11a9a14c064d962a3a04698f # v1.3.1
-        if: ${{ secrets.SOCKET_API_KEY != '' }}
+        if: ${{ env.SOCKET_API_KEY != '' }}
         with:
           mode: firewall-enterprise
-          socket-token: ${{ secrets.SOCKET_API_KEY }}
+          socket-token: ${{ env.SOCKET_API_KEY }}
       - run: npm ci --ignore-scripts
         working-directory: jqapi-web
       - name: Rebuild the vendored TeaVM bridge
