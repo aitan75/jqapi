@@ -534,6 +534,11 @@
 .run:active {
   transform: translateY(0) scale(0.98);
 }
+.run.running { animation: run-pulse 0.7s ease-in-out infinite alternate; background-size: 200% 200%; }
+@keyframes run-pulse {
+  from { background-position: 0% 50%; box-shadow: 0 0 16px rgba(0, 240, 255, 0.45), 0 0 28px rgba(147, 51, 234, 0.35); }
+  to { background-position: 100% 50%; box-shadow: 0 0 30px rgba(0, 240, 255, 0.85), 0 0 56px rgba(147, 51, 234, 0.65); }
+}
 
 /* Error Banner */
 .error {
@@ -705,6 +710,17 @@
   min-width: 100%;
   position: relative;
 }
+.canvas-wrapper.running .canvas-inner::after {
+  content: '';
+  position: absolute;
+  inset: 0 20px 0 56px;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg, transparent 0 24px, rgba(0, 240, 255, 0.85) 30px, transparent 36px 60px);
+  -webkit-mask-image: repeating-linear-gradient(180deg, transparent 0 29px, #000 29px 31px, transparent 31px 60px);
+  mask-image: repeating-linear-gradient(180deg, transparent 0 29px, #000 29px 31px, transparent 31px 60px);
+  animation: pipeline-flow 0.7s linear infinite;
+}
+@keyframes pipeline-flow { to { background-position: 60px 0; } }
 
 .gate-menu {
   position: absolute;
@@ -823,6 +839,37 @@
   color: var(--text-muted);
   font-size: 0.75rem;
 }
+
+.bar-row { position: relative; }
+.amplitude-tooltip {
+  position: absolute;
+  right: 0.85rem;
+  bottom: calc(100% + 0.45rem);
+  z-index: 2;
+  display: grid;
+  gap: 0.35rem;
+  min-width: 13rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  border-radius: 8px;
+  background: #101827;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: var(--text-main);
+  font-size: 0.75rem;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.bar-row:hover .amplitude-tooltip, .bar-row:focus .amplitude-tooltip { opacity: 1; transform: translateY(0); }
+.amplitude-tooltip > div { display: flex; justify-content: space-between; gap: 1rem; }
+.amplitude-tooltip > div > span:first-child { color: var(--text-muted); }
+.bloch-vector { align-items: center; }
+.bloch-vector svg { width: 2.3rem; height: 2.3rem; overflow: visible; }
+.bloch-vector circle:first-child { fill: rgba(0, 240, 255, 0.08); stroke: rgba(0, 240, 255, 0.65); stroke-width: 0.06; }
+.bloch-vector line { stroke: var(--accent-purple); stroke-width: 0.08; }
+.bloch-vector circle:last-child { fill: var(--accent-purple); }
+.bloch-vector.unavailable { color: var(--text-muted); }
 
 /* Empty state for results */
 .results-empty {

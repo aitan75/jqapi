@@ -37,6 +37,7 @@ export function CircuitCanvas({
   version,
   zoom,
   onZoom,
+  isRunning,
   messages,
 }: {
   model: CircuitModel;
@@ -47,10 +48,12 @@ export function CircuitCanvas({
   version: number;
   zoom: number;
   onZoom: (zoom: number) => void;
+  isRunning: boolean;
   messages: Messages;
 }) {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [menu, setMenu] = useState<{ qubit: number; step: number } | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ qubit: number; step: number } | null>(null);
   const width = LABEL_W + model.columns * CELL + 20;
   const height = model.numQubits * CELL;
   const nodes: ReactNode[] = [];
@@ -116,6 +119,7 @@ export function CircuitCanvas({
     for (let s = 0; s < model.columns; s++) {
       const x = LABEL_W + s * CELL + CELL / 2;
       const click = () => onCellClick(q, s);
+      const isDropTarget = dropTarget?.qubit === q && dropTarget.step === s;
 
       // Grid slot outline
       nodes.push(
@@ -126,9 +130,12 @@ export function CircuitCanvas({
           width={CELL - 8}
           height={CELL - 8}
           cornerRadius={8}
-          stroke="rgba(255, 255, 255, 0.05)"
-          strokeWidth={1}
-          fill="rgba(255, 255, 255, 0.015)"
+          stroke={isDropTarget ? '#00f0ff' : 'rgba(255, 255, 255, 0.05)'}
+          strokeWidth={isDropTarget ? 2 : 1}
+          fill={isDropTarget ? 'rgba(0, 240, 255, 0.12)' : 'rgba(255, 255, 255, 0.015)'}
+          shadowColor={isDropTarget ? '#00f0ff' : undefined}
+          shadowBlur={isDropTarget ? 12 : 0}
+          shadowOpacity={isDropTarget ? 0.6 : 0}
           onClick={click}
           onTap={click}
         />,
@@ -370,21 +377,30 @@ export function CircuitCanvas({
     }
   }
 
-  const drop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const tool = event.dataTransfer.getData('text/plain') as Tool;
+  const gridPosition = (event: DragEvent<HTMLDivElement>) => {
     const canvas = event.currentTarget.querySelector('canvas');
-    if (!tool || !canvas) return;
+    if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left - pan.x) / zoom;
     const y = (event.clientY - rect.top - pan.y) / zoom;
     const qubit = Math.floor(y / CELL);
     const step = Math.floor((x - LABEL_W) / CELL);
-    if (qubit >= 0 && qubit < model.numQubits && step >= 0 && step < model.columns) onDropCell(qubit, step, tool);
+    return qubit >= 0 && qubit < model.numQubits && step >= 0 && step < model.columns ? { qubit, step } : null;
+  };
+  const dragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setDropTarget(gridPosition(event));
+  };
+  const drop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const target = gridPosition(event);
+    setDropTarget(null);
+    const tool = event.dataTransfer.getData('text/plain') as Tool;
+    if (tool && target) onDropCell(target.qubit, target.step, tool);
   };
 
   return (
-    <div className="canvas-wrapper" onDragOver={(event) => event.preventDefault()} onDrop={drop}>
+    <div className={`canvas-wrapper${isRunning ? ' running' : ''}`} data-drop-target={dropTarget && `${dropTarget.qubit}:${dropTarget.step}`} onDragOver={dragOver} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropTarget(null); }} onDrop={drop}>
       <div className="canvas-hint">
         <span style={{ color: 'var(--accent-cyan)' }}>✦</span>
         <span>{messages.canvasHint}</span>
