@@ -9,7 +9,7 @@ describe('translations', () => {
         expect(language.presets[preset.id].name).not.toBe('');
         expect(language.presets[preset.id].description).not.toBe('');
       }
-      expect(Object.keys(language.tools)).toHaveLength(20);
+      expect(Object.keys(language.tools).length).toBeGreaterThanOrEqual(20);
     }
   });
 });

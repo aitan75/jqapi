@@ -3,7 +3,15 @@ export interface Gate {
   targets: number[];
   controls: number[];
   params: Record<string, number>;
+  matrix?: ComplexMatrix;
 }
+
+export interface ComplexCell {
+  re: number;
+  im: number;
+}
+
+export type ComplexMatrix = ComplexCell[][];
 
 export interface Level {
   gates: Gate[];
