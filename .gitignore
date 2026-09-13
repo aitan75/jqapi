@@ -4,8 +4,17 @@
 target/
 nbactions.xml
 .tokensave
+# Local tooling instructions and state
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+COPILOT.md
+.agents/
+.codex/
 .aider*
+.cursor/
+.cursorrules
 
-# agent-generated review artifacts
+# Local review artifacts
 review_report.md
 security_audit_report.md
