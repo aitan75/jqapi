@@ -41,3 +41,4 @@ fragments. Results show probabilities and complex amplitudes.
 once with `npx playwright install chromium`). CI rebuilds the TeaVM asset before
 the web checks and verifies that the committed bridge is current.
 The gate palette is grouped by arity (single, two, three, and multi-qubit), while the algorithms are in a separate menu. Both menu structures support English and Italian.
+The desktop editor keeps those menus in a left sidebar, with the circuit, actions, and results in the central workspace; the footer displays the current system time.

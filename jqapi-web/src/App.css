@@ -826,3 +826,22 @@
 .algorithms-menu .presets-header { justify-content: flex-end; }
 .language-selector { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--text-muted); font: 0.75rem var(--font-mono); }
 .language-selector select { border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.25rem; color: var(--text-main); background: var(--bg-surface); font: inherit; }
+
+.app { max-width: 1440px; min-height: 100vh; padding: 1.25rem; }
+.editor-layout { display: grid; grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); align-items: start; gap: 1.25rem; }
+.sidebar, .workspace { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.sidebar { position: sticky; top: 1rem; }
+.circuit-settings { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.75rem; border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--bg-card); }
+.workspace .canvas-wrapper { width: 100%; }
+.gate-group { display: block; width: 100%; margin: 0; }
+.gate-group + .gate-group { margin-top: 0.35rem; }
+.gate-group summary { cursor: pointer; padding: 0.4rem 0; color: var(--text-muted); font: 0.75rem var(--font-mono); }
+.gate-group-tools { display: flex; flex-wrap: wrap; gap: 0.35rem; padding: 0.2rem 0 0.4rem; }
+.sidebar .gate-btn { padding: 0.35rem 0.55rem; font-size: 0.75rem; }
+.footer { padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); color: var(--text-muted); font: 0.75rem var(--font-mono); text-align: right; }
+
+@media (max-width: 800px) {
+  .editor-layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; }
+  .circuit-settings { flex-wrap: wrap; }
+}

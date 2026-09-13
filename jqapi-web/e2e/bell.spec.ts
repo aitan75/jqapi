@@ -47,3 +47,12 @@ test('groups gates and presets in localized menus', async ({ page }) => {
   await expect(page.getByText('Porte', { exact: true })).toBeVisible();
   await expect(page.getByText('Algoritmi', { exact: true })).toBeVisible();
 });
+
+test('places the editor menu beside the circuit and shows system time', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.editor-layout > .sidebar')).toBeVisible();
+  await expect(page.locator('.editor-layout > .workspace')).toBeVisible();
+  await expect(page.getByText('Quantum Circuit Simulator')).toBeVisible();
+  await expect(page.getByText(/System time:/)).toBeVisible();
+  await expect(page.locator('.gate-group').nth(1)).not.toHaveAttribute('open', '');
+});

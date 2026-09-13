@@ -61,6 +61,7 @@ export default function App() {
   const [amplitudes, setAmplitudes] = useState<Amplitude[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState<Language>(initialLanguage);
+  const [now, setNow] = useState(() => new Date());
   const text = messages[language];
   const bump = () => setVersion((value) => value + 1);
 
@@ -94,6 +95,10 @@ export default function App() {
   }, []);
 
   useEffect(() => { localStorage.setItem(LANGUAGE_STORAGE_KEY, language); }, [language]);
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(new Date()), 1_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   const place = (qubit: number, step: number, selected = tool) => {
     try {
@@ -173,27 +178,29 @@ export default function App() {
   };
   return (
     <div className="app">
-      <header className="header"><div className="brand"><img src="/favicon.svg" alt="jqapi logo" className="brand-logo" /><div className="brand-text"><h1>jqapi studio</h1><p>Quantum Circuit Simulator</p></div></div><div className="header-badges"><span className="badge active">● WASM Engine</span><span className="badge">{numQubits} Qubits</span><label className="language-selector">{text.language}<select value={language} onChange={(event) => setLanguage(event.target.value as Language)}>{Object.entries(text.languages).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label></div></header>
-      <PresetSelector messages={text} onSelectPreset={onSelectPreset} />
-      <div className="toolbar">
-        <div className="toolbar-left">
-          <QubitSelector value={numQubits} onChange={(value) => mutate((model) => model.setNumQubits(value))} />
-          <div className="editor-actions"><button type="button" onClick={() => mutate((model) => model.setColumns(model.columns - 1))} disabled={columns <= 1}>− step</button><span>{columns} steps</span><button type="button" onClick={() => mutate((model) => model.setColumns(model.columns + 1))}>+ step</button></div>
+      <header className="header"><div className="brand"><img src="/favicon.svg" alt="jqapi logo" className="brand-logo" /><div className="brand-text"><h1>jqapi studio</h1><p>{text.simulator}</p></div></div><div className="header-badges"><span className="badge active">● {text.wasmEngine}</span><span className="badge">{text.qubits(numQubits)}</span><label className="language-selector">{text.language}<select value={language} onChange={(event) => setLanguage(event.target.value as Language)}>{Object.entries(text.languages).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label></div></header>
+      <div className="editor-layout">
+        <aside className="sidebar">
+          <div className="circuit-settings"><QubitSelector value={numQubits} onChange={(value) => mutate((model) => model.setNumQubits(value))} /><div className="editor-actions"><button type="button" onClick={() => mutate((model) => model.setColumns(model.columns - 1))} disabled={columns <= 1}>− step</button><span>{columns} steps</span><button type="button" onClick={() => mutate((model) => model.setColumns(model.columns + 1))}>+ step</button></div></div>
           <GatePalette messages={text} tool={tool} onSelect={setTool} theta={theta} phi={phi} lambda={lambda} matrixText={matrixText} onChangeTheta={setTheta} onChangePhi={setPhi} onChangeLambda={setLambda} onChangeMatrixText={setMatrixText} />
-        </div>
+          <PresetSelector messages={text} onSelectPreset={onSelectPreset} />
+        </aside>
+        <main className="workspace">
+          {error && <div className="error" role="alert" onClick={() => setError(null)}><span>⚠️ {error}</span><span>✕ Dismiss</span></div>}
+          <CircuitCanvas model={modelRef.current} onCellClick={place} onDropCell={place} onMoveCell={move} onRemoveCell={(qubit, step) => mutate((model) => model.clear(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} />
+          <div className="circuit-actions" role="toolbar" aria-label={text.circuitActions}>
+            <button className="run" type="button" onClick={onRun}>▶ {text.runSimulation}</button>
+            <button type="button" onClick={undo} disabled={!undoStack.length}>{text.undo}</button>
+            <button type="button" onClick={redo} disabled={!redoStack.length}>{text.redo}</button>
+            <button type="button" onClick={save}>{text.saveJson}</button>
+            <button type="button" onClick={() => fileInputRef.current?.click()}>{text.loadJson}</button>
+            <button type="button" className="clear-circuit" onClick={() => mutate((model) => model.reset())}>{text.clearCircuit}</button>
+            <input ref={fileInputRef} type="file" accept="application/json" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) loadFile(file); event.currentTarget.value = ''; }} />
+          </div>
+          <ResultsPanel probs={probs} amplitudes={amplitudes} numQubits={numQubits} />
+        </main>
       </div>
-      {error && <div className="error" role="alert" onClick={() => setError(null)}><span>⚠️ {error}</span><span>✕ Dismiss</span></div>}
-      <CircuitCanvas model={modelRef.current} onCellClick={place} onDropCell={place} onMoveCell={move} onRemoveCell={(qubit, step) => mutate((model) => model.clear(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} />
-      <div className="circuit-actions" role="toolbar" aria-label={text.circuitActions}>
-        <button className="run" type="button" onClick={onRun}>▶ {text.runSimulation}</button>
-        <button type="button" onClick={undo} disabled={!undoStack.length}>{text.undo}</button>
-        <button type="button" onClick={redo} disabled={!redoStack.length}>{text.redo}</button>
-        <button type="button" onClick={save}>{text.saveJson}</button>
-        <button type="button" onClick={() => fileInputRef.current?.click()}>{text.loadJson}</button>
-        <button type="button" className="clear-circuit" onClick={() => mutate((model) => model.reset())}>{text.clearCircuit}</button>
-        <input ref={fileInputRef} type="file" accept="application/json" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) loadFile(file); event.currentTarget.value = ''; }} />
-      </div>
-      <ResultsPanel probs={probs} amplitudes={amplitudes} numQubits={numQubits} />
+      <footer className="footer"><time dateTime={now.toISOString()}>{text.systemTime}: {now.toLocaleTimeString(language === 'it' ? 'it-IT' : 'en-GB')}</time></footer>
     </div>
   );
 }

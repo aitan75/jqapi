@@ -43,13 +43,13 @@ export function GatePalette(props: GatePaletteProps) {
     <details className="editor-menu" open>
       <summary>{messages.gates}</summary>
       <div className="palette" role="toolbar" aria-label={messages.gates}>
-        {(Object.entries(TOOLS) as [GateGroup, Tool[]][]).map(([group, tools]) => <section className="gate-group" key={group}>
-          <h3>{messages.groups[group]}</h3>
-          {tools.map((selected) => <button key={selected} type="button" draggable className={`gate-btn ${selected === tool ? 'selected' : ''}`} data-tool={selected}
+        {(Object.entries(TOOLS) as [GateGroup, Tool[]][]).map(([group, tools]) => <details className="gate-group" key={group} open={group === 'single'}>
+          <summary>{messages.groups[group]}</summary>
+          <div className="gate-group-tools">{tools.map((selected) => <button key={selected} type="button" draggable className={`gate-btn ${selected === tool ? 'selected' : ''}`} data-tool={selected}
             onClick={() => onSelect(selected)} onDragStart={(event) => setDrag(event, selected)} title={`Drag or select ${messages.tools[selected]}`}>
             {messages.tools[selected]}
-          </button>)}
-        </section>)}
+          </button>)}</div>
+        </details>)}
       </div>
     </details>
     {angleTools.includes(tool) && <div className="gate-config">{number('θ', theta, onChangeTheta)}{tool === 'U3' && <>{number('φ', phi, onChangePhi)}{number('λ', lambda, onChangeLambda)}</>}</div>}
