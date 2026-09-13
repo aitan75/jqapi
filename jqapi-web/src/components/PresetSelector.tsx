@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Messages } from '../i18n';
+import type { Messages, PresetId } from '../i18n';
 import { PRESETS, type Preset } from '../model/presets';
 
 interface PresetSelectorProps {
@@ -8,7 +8,7 @@ interface PresetSelectorProps {
 }
 
 export function PresetSelector({ onSelectPreset, messages }: PresetSelectorProps) {
-  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [activePresetId, setActivePresetId] = useState<PresetId | null>(null);
   const [hoveredPreset, setHoveredPreset] = useState<Preset | null>(null);
 
   const handleSelect = (preset: Preset) => {
@@ -16,9 +16,7 @@ export function PresetSelector({ onSelectPreset, messages }: PresetSelectorProps
     onSelectPreset(preset);
   };
 
-  const currentDesc = hoveredPreset?.description || 
-    PRESETS.find((p) => p.id === activePresetId)?.description ||
-    'Choose a quantum state or a well-known algorithm to load and run instantly.';
+  const currentDesc = hoveredPreset ? messages.presets[hoveredPreset.id].description : activePresetId ? messages.presets[activePresetId].description : messages.presetDescription;
 
   return (
     <details className="editor-menu algorithms-menu" open>
@@ -35,10 +33,10 @@ export function PresetSelector({ onSelectPreset, messages }: PresetSelectorProps
               onClick={() => handleSelect(preset)}
               onMouseEnter={() => setHoveredPreset(preset)}
               onMouseLeave={() => setHoveredPreset(null)}
-              title={messages.presets[preset.id]}
+              title={messages.presets[preset.id].description}
             >
-              <span className="preset-name">{messages.presets[preset.id]}</span>
-              <span className="preset-badge">{preset.badge}</span>
+              <span className="preset-name">{messages.presets[preset.id].name}</span>
+              <span className="preset-badge">{messages.qubitCount(preset.qubits)}</span>
             </button>
           );
         })}
