@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import { useState, type ComponentProps, type DragEvent, type ReactNode } from 'react';
 import { Stage, Layer, Line, Rect, Text, Circle, Group } from 'react-konva';
-import { COLUMNS, type CircuitModel } from '../model/circuit';
+import type { Tool } from './GatePalette';
+import type { CircuitModel } from '../model/circuit';
 import type { Messages } from '../i18n';
 
 const CELL = 60;
@@ -30,17 +31,48 @@ const GATE_THEMES: Record<string, GateTheme> = {
 export function CircuitCanvas({
   model,
   onCellClick,
+  onDropCell,
+  onMoveCell,
+  onRemoveCell,
   version,
+  zoom,
+  onZoom,
   messages,
 }: {
   model: CircuitModel;
   onCellClick: (qubit: number, step: number) => void;
+  onDropCell: (qubit: number, step: number, tool: Tool) => void;
+  onMoveCell: (fromQubit: number, fromStep: number, toQubit: number, toStep: number) => void;
+  onRemoveCell: (qubit: number, step: number) => void;
   version: number;
+  zoom: number;
+  onZoom: (zoom: number) => void;
   messages: Messages;
 }) {
-  const width = LABEL_W + COLUMNS * CELL + 20;
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [menu, setMenu] = useState<{ qubit: number; step: number } | null>(null);
+  const width = LABEL_W + model.columns * CELL + 20;
   const height = model.numQubits * CELL;
   const nodes: ReactNode[] = [];
+  const move = (fromQubit: number, fromStep: number, x: number, y: number) => {
+    const toQubit = Math.floor((fromQubit * CELL + CELL / 2 + y) / CELL);
+    const toStep = Math.floor((fromStep * CELL + CELL / 2 + x) / CELL);
+    if (toQubit >= 0 && toQubit < model.numQubits && toStep >= 0 && toStep < model.columns) onMoveCell(fromQubit, fromStep, toQubit, toStep);
+  };
+  const gateDragStart = (event: Parameters<NonNullable<ComponentProps<typeof Group>['onDragStart']>>[0]) => {
+    event.cancelBubble = true;
+    event.target.getStage()?.draggable(false);
+  };
+  const gateDragEnd = (qubit: number, step: number, event: Parameters<NonNullable<ComponentProps<typeof Group>['onDragEnd']>>[0]) => {
+    event.cancelBubble = true;
+    event.target.getStage()?.draggable(true);
+    move(qubit, step, event.target.x(), event.target.y());
+  };
+  const gateClick = (qubit: number, step: number) => setMenu({ qubit, step });
+  const gateDoubleClick = (qubit: number, step: number) => {
+    setMenu(null);
+    onRemoveCell(qubit, step);
+  };
 
   // Qubit wires and labels
   for (let q = 0; q < model.numQubits; q++) {
@@ -81,7 +113,7 @@ export function CircuitCanvas({
     );
 
     // Step cells
-    for (let s = 0; s < COLUMNS; s++) {
+    for (let s = 0; s < model.columns; s++) {
       const x = LABEL_W + s * CELL + CELL / 2;
       const click = () => onCellClick(q, s);
 
@@ -113,10 +145,15 @@ export function CircuitCanvas({
         cell.kind === 'Z' ||
         cell.kind === 'S' ||
         cell.kind === 'T' ||
+        cell.kind === 'MEASUREMENT' ||
         cell.kind === 'RESET' ||
         cell.kind === 'RX' ||
         cell.kind === 'RY' ||
-        cell.kind === 'RZ'
+        cell.kind === 'RZ' ||
+        cell.kind === 'PHASE' ||
+        cell.kind === 'U3' ||
+        cell.kind === 'ORACLE' ||
+        cell.kind === 'GENERIC'
       ) {
         const theme = GATE_THEMES[cell.kind] || {
           fill: '#1a1f36',
@@ -125,10 +162,10 @@ export function CircuitCanvas({
           textColor: '#ffffff',
         };
 
-        const displayLabel = cell.kind === 'RESET' ? '|0⟩' : cell.kind;
+        const displayLabel = cell.kind === 'RESET' ? '|0⟩' : cell.kind === 'MEASUREMENT' ? 'M' : cell.kind === 'ORACLE' ? 'O' : cell.kind === 'GENERIC' ? 'U' : cell.kind;
 
         nodes.push(
-          <Group key={`g_grp${q}-${s}`} onClick={click} onTap={click}>
+          <Group key={`g_grp${q}-${s}`} onClick={() => gateClick(q, s)} onTap={() => gateClick(q, s)} onDblClick={() => gateDoubleClick(q, s)} onDblTap={() => gateDoubleClick(q, s)} draggable onDragStart={gateDragStart} onDragEnd={(event) => gateDragEnd(q, s, event)}>
             <Rect
               x={x - GATE_SIZE / 2}
               y={y - GATE_SIZE / 2}
@@ -162,11 +199,13 @@ export function CircuitCanvas({
         cell.kind === 'CNOT' ||
         cell.kind === 'CZ' ||
         cell.kind === 'CY' ||
-        cell.kind === 'TOFFOLI'
+        cell.kind === 'TOFFOLI' ||
+        cell.kind === 'MULTI_CONTROLLED' ||
+        (cell.kind === 'CSWAP' && cell.role === 'control')
       ) {
         if (cell.role === 'control') {
           nodes.push(
-            <Group key={`ctrl_${q}-${s}`} onClick={click} onTap={click}>
+            <Group key={`ctrl_${q}-${s}`} onClick={() => gateClick(q, s)} onTap={() => gateClick(q, s)} onDblClick={() => gateDoubleClick(q, s)} onDblTap={() => gateDoubleClick(q, s)} draggable onDragStart={gateDragStart} onDragEnd={(event) => gateDragEnd(q, s, event)}>
               <Circle
                 x={x}
                 y={y}
@@ -187,9 +226,9 @@ export function CircuitCanvas({
           );
         } else {
           // Target
-          if (cell.kind === 'CNOT' || cell.kind === 'TOFFOLI') {
+          if (cell.kind === 'CNOT' || cell.kind === 'TOFFOLI' || cell.kind === 'MULTI_CONTROLLED') {
             nodes.push(
-              <Group key={`tgt_${q}-${s}`} onClick={click} onTap={click}>
+              <Group key={`tgt_${q}-${s}`} onClick={() => gateClick(q, s)} onTap={() => gateClick(q, s)} onDblClick={() => gateDoubleClick(q, s)} onDblTap={() => gateDoubleClick(q, s)} draggable onDragStart={gateDragStart} onDragEnd={(event) => gateDragEnd(q, s, event)}>
                 <Circle
                   x={x}
                   y={y}
@@ -207,7 +246,7 @@ export function CircuitCanvas({
             );
           } else if (cell.kind === 'CZ') {
             nodes.push(
-              <Group key={`tgt_cz_${q}-${s}`} onClick={click} onTap={click}>
+              <Group key={`tgt_cz_${q}-${s}`} onClick={() => gateClick(q, s)} onTap={() => gateClick(q, s)} onDblClick={() => gateDoubleClick(q, s)} onDblTap={() => gateDoubleClick(q, s)} draggable onDragStart={gateDragStart} onDragEnd={(event) => gateDragEnd(q, s, event)}>
                 <Rect
                   x={x - GATE_SIZE / 2}
                   y={y - GATE_SIZE / 2}
@@ -235,7 +274,7 @@ export function CircuitCanvas({
             );
           } else if (cell.kind === 'CY') {
             nodes.push(
-              <Group key={`tgt_cy_${q}-${s}`} onClick={click} onTap={click}>
+              <Group key={`tgt_cy_${q}-${s}`} onClick={() => gateClick(q, s)} onTap={() => gateClick(q, s)} onDblClick={() => gateDoubleClick(q, s)} onDblTap={() => gateDoubleClick(q, s)} draggable onDragStart={gateDragStart} onDragEnd={(event) => gateDragEnd(q, s, event)}>
                 <Rect
                   x={x - GATE_SIZE / 2}
                   y={y - GATE_SIZE / 2}
@@ -266,9 +305,9 @@ export function CircuitCanvas({
       }
 
       // 3. SWAP Gate
-      else if (cell.kind === 'SWAP') {
+      else if (cell.kind === 'SWAP' || (cell.kind === 'CSWAP' && cell.role === 'swap')) {
         nodes.push(
-          <Group key={`swap_${q}-${s}`} onClick={click} onTap={click}>
+          <Group key={`swap_${q}-${s}`} onClick={() => gateClick(q, s)} onTap={() => gateClick(q, s)} onDblClick={() => gateDoubleClick(q, s)} onDblTap={() => gateDoubleClick(q, s)} draggable onDragStart={gateDragStart} onDragEnd={(event) => gateDragEnd(q, s, event)}>
             <Line points={[x - 9, y - 9, x + 9, y + 9]} stroke="#00f0ff" strokeWidth={3} shadowColor="#00f0ff" shadowBlur={8} />
             <Line points={[x - 9, y + 9, x + 9, y - 9]} stroke="#00f0ff" strokeWidth={3} shadowColor="#00f0ff" shadowBlur={8} />
           </Group>,
@@ -278,7 +317,7 @@ export function CircuitCanvas({
   }
 
   // Vertical multi-qubit connector lines
-  for (let s = 0; s < COLUMNS; s++) {
+  for (let s = 0; s < model.columns; s++) {
     const multiQubits: number[] = [];
     let isSwap = false;
     for (let q = 0; q < model.numQubits; q++) {
@@ -288,7 +327,9 @@ export function CircuitCanvas({
           c.kind === 'CNOT' ||
           c.kind === 'CZ' ||
           c.kind === 'CY' ||
-          c.kind === 'TOFFOLI'
+          c.kind === 'TOFFOLI' ||
+          c.kind === 'MULTI_CONTROLLED' ||
+          c.kind === 'CSWAP'
         ) {
           multiQubits.push(q);
         } else if (c.kind === 'SWAP') {
@@ -329,16 +370,31 @@ export function CircuitCanvas({
     }
   }
 
+  const drop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const tool = event.dataTransfer.getData('text/plain') as Tool;
+    const canvas = event.currentTarget.querySelector('canvas');
+    if (!tool || !canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (event.clientX - rect.left - pan.x) / zoom;
+    const y = (event.clientY - rect.top - pan.y) / zoom;
+    const qubit = Math.floor(y / CELL);
+    const step = Math.floor((x - LABEL_W) / CELL);
+    if (qubit >= 0 && qubit < model.numQubits && step >= 0 && step < model.columns) onDropCell(qubit, step, tool);
+  };
+
   return (
-    <div className="canvas-wrapper">
+    <div className="canvas-wrapper" onDragOver={(event) => event.preventDefault()} onDrop={drop}>
       <div className="canvas-hint">
         <span style={{ color: 'var(--accent-cyan)' }}>✦</span>
         <span>{messages.canvasHint}</span>
+        <span className="canvas-zoom"><button type="button" onClick={() => onZoom(Math.max(0.5, zoom - 0.1))}>−</button>{Math.round(zoom * 100)}%<button type="button" onClick={() => onZoom(Math.min(2, zoom + 0.1))}>+</button></span>
       </div>
-      <div className="canvas-inner">
-        <Stage width={width} height={height} key={version}>
+      <div className="canvas-inner" data-pan={`${pan.x},${pan.y}`}>
+        <Stage width={width * zoom} height={height * zoom} key={version} x={pan.x} y={pan.y} scaleX={zoom} scaleY={zoom} draggable onDragEnd={(event) => setPan(event.target.position())}>
           <Layer>{nodes}</Layer>
         </Stage>
+        {menu && <div className="gate-menu" style={{ left: LABEL_W + menu.step * CELL, top: menu.qubit * CELL }}><button type="button" onClick={() => { onRemoveCell(menu.qubit, menu.step); setMenu(null); }}>{messages.tools.erase}</button></div>}
       </div>
     </div>
   );

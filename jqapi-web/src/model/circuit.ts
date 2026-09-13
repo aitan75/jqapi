@@ -1,123 +1,174 @@
-import type { CircuitSpec, Gate } from '../wasm/types';
+import type { CircuitSpec, ComplexMatrix, Gate } from '../wasm/types';
 
-export const COLUMNS = 8;
+export const DEFAULT_COLUMNS = 8;
 export const MAX_QUBITS = 8;
 
-export type SingleQubitFixedKind = 'H' | 'X' | 'Y' | 'Z' | 'S' | 'T' | 'RESET';
-export type RotationKind = 'RX' | 'RY' | 'RZ';
+export const PAULI_X_MATRIX: ComplexMatrix = [
+  [{ re: 0, im: 0 }, { re: 1, im: 0 }],
+  [{ re: 1, im: 0 }, { re: 0, im: 0 }],
+];
+
+export type SingleQubitFixedKind = 'H' | 'X' | 'Y' | 'Z' | 'S' | 'T' | 'MEASUREMENT' | 'RESET';
+export type RotationKind = 'RX' | 'RY' | 'RZ' | 'PHASE';
 export type ControlledKind = 'CNOT' | 'CZ' | 'CY';
+export type MatrixKind = 'ORACLE' | 'GENERIC';
 
 export type Placement =
   | { kind: SingleQubitFixedKind }
   | { kind: RotationKind; theta: number }
+  | { kind: 'U3'; theta: number; phi: number; lambda: number }
   | { kind: ControlledKind; role: 'control' | 'target' }
   | { kind: 'SWAP'; role: 'swap' }
-  | { kind: 'TOFFOLI'; role: 'control' | 'target' };
+  | { kind: 'CSWAP'; role: 'control' | 'swap' }
+  | { kind: 'TOFFOLI'; role: 'control' | 'target' }
+  | { kind: 'MULTI_CONTROLLED'; role: 'control' | 'target' }
+  | { kind: MatrixKind; matrix: ComplexMatrix };
 
-/** Grid model: cells[qubit][step] holds a placement or null. */
+export interface EditorState {
+  numQubits: number;
+  columns: number;
+  cells: (Placement | null)[][];
+}
+
+/** Mutable grid, kept separate from React so serialization stays CircuitSpec-compatible. */
 export class CircuitModel {
   numQubits: number;
+  columns: number;
   private cells: (Placement | null)[][];
 
-  constructor(numQubits: number) {
+  constructor(numQubits: number, columns = DEFAULT_COLUMNS) {
     this.numQubits = numQubits;
-    this.cells = CircuitModel.emptyGrid(numQubits);
+    this.columns = columns;
+    this.cells = CircuitModel.emptyGrid(numQubits, columns);
   }
 
-  private static emptyGrid(n: number): (Placement | null)[][] {
-    return Array.from({ length: n }, () => Array<Placement | null>(COLUMNS).fill(null));
+  private static emptyGrid(qubits: number, columns: number): (Placement | null)[][] {
+    return Array.from({ length: qubits }, () => Array<Placement | null>(columns).fill(null));
+  }
+
+  private resize(qubits: number, columns: number): void {
+    const next = CircuitModel.emptyGrid(qubits, columns);
+    for (let q = 0; q < Math.min(qubits, this.numQubits); q++) {
+      for (let step = 0; step < Math.min(columns, this.columns); step++) next[q][step] = this.cells[q][step];
+    }
+    this.numQubits = qubits;
+    this.columns = columns;
+    this.cells = next;
   }
 
   setNumQubits(n: number): void {
-    this.numQubits = n;
-    this.cells = CircuitModel.emptyGrid(n); // Resizing clears the grid
+    this.resize(n, this.columns);
   }
 
-  place(qubit: number, step: number, p: Placement): void {
-    this.cells[qubit][step] = p;
+  setColumns(n: number): void {
+    this.resize(this.numQubits, n);
+  }
+
+  place(qubit: number, step: number, placement: Placement): void {
+    this.cells[qubit][step] = placement;
   }
 
   clear(qubit: number, step: number): void {
     this.cells[qubit][step] = null;
   }
 
-  /** Clears all placed gates on the current grid. */
   reset(): void {
-    this.cells = CircuitModel.emptyGrid(this.numQubits);
+    this.cells = CircuitModel.emptyGrid(this.numQubits, this.columns);
   }
 
   cellAt(qubit: number, step: number): Placement | null {
     return this.cells[qubit][step];
   }
 
-  /** Walk columns → levels (dropping empty ones), emitting gates in qubit order. */
+  snapshot(): EditorState {
+    return structuredClone({ numQubits: this.numQubits, columns: this.columns, cells: this.cells });
+  }
+
+  restore(state: EditorState): void {
+    this.numQubits = state.numQubits;
+    this.columns = state.columns;
+    this.cells = structuredClone(state.cells);
+  }
+
+  /** Rebuilds the editable subset of CircuitSpec used by this editor. */
+  static fromSpec(spec: CircuitSpec): CircuitModel {
+    const model = new CircuitModel(spec.numQubits, Math.max(DEFAULT_COLUMNS, spec.levels.length));
+    spec.levels.forEach((level, step) => level.gates.forEach((gate) => model.placeGate(step, gate)));
+    return model;
+  }
+
+  private placeGate(step: number, gate: Gate): void {
+    const target = gate.targets[0];
+    if (target === undefined) throw new Error(`${gate.kind} requires a target`);
+    const putControls = (kind: 'CNOT' | 'CZ' | 'CY' | 'TOFFOLI' | 'MULTI_CONTROLLED') => {
+      gate.controls.forEach((q) => this.place(q, step, { kind, role: 'control' }));
+      this.place(target, step, { kind, role: 'target' });
+    };
+    if (gate.kind === 'CNOT' || gate.kind === 'CZ' || gate.kind === 'CY') return putControls(gate.kind);
+    if (gate.kind === 'TOFFOLI' || gate.kind === 'MULTI_CONTROLLED') return putControls(gate.kind);
+    if (gate.kind === 'SWAP') {
+      gate.targets.forEach((q) => this.place(q, step, { kind: 'SWAP', role: 'swap' }));
+      return;
+    }
+    if (gate.kind === 'CSWAP') {
+      gate.controls.forEach((q) => this.place(q, step, { kind: 'CSWAP', role: 'control' }));
+      gate.targets.forEach((q) => this.place(q, step, { kind: 'CSWAP', role: 'swap' }));
+      return;
+    }
+    if (gate.kind === 'RX' || gate.kind === 'RY' || gate.kind === 'RZ' || gate.kind === 'PHASE') {
+      this.place(target, step, { kind: gate.kind, theta: gate.params.theta });
+      return;
+    }
+    if (gate.kind === 'U3') {
+      this.place(target, step, { kind: 'U3', theta: gate.params.theta, phi: gate.params.phi, lambda: gate.params.lambda });
+      return;
+    }
+    if (gate.kind === 'ORACLE' || gate.kind === 'GENERIC') {
+      if (!gate.matrix) throw new Error(`${gate.kind} requires a matrix`);
+      this.place(target, step, { kind: gate.kind, matrix: gate.matrix });
+      return;
+    }
+    if (gate.targets.length !== 1) throw new Error(`${gate.kind} is not supported by the editor`);
+    this.place(target, step, { kind: gate.kind as SingleQubitFixedKind });
+  }
+
+  /** Walk columns → levels (dropping empty columns), emitting gates in qubit order. */
   toSpec(): CircuitSpec {
     const levels: { gates: Gate[] }[] = [];
-    for (let step = 0; step < COLUMNS; step++) {
+    for (let step = 0; step < this.columns; step++) {
       const gates: Gate[] = [];
-
-      const cnotControls: number[] = [];
-      const cnotTargets: number[] = [];
-      const czControls: number[] = [];
-      const czTargets: number[] = [];
-      const cyControls: number[] = [];
-      const cyTargets: number[] = [];
-      const swapNodes: number[] = [];
-      const toffoliControls: number[] = [];
-      const toffoliTargets: number[] = [];
+      const controls: Record<string, number[]> = { CNOT: [], CZ: [], CY: [], TOFFOLI: [], MULTI_CONTROLLED: [], CSWAP: [] };
+      const targets: Record<string, number[]> = { CNOT: [], CZ: [], CY: [], TOFFOLI: [], MULTI_CONTROLLED: [], CSWAP: [] };
+      const swaps: number[] = [];
 
       for (let q = 0; q < this.numQubits; q++) {
-        const c = this.cells[q][step];
-        if (!c) continue;
-
-        if (c.kind === 'CNOT') {
-          if (c.role === 'control') cnotControls.push(q);
-          else cnotTargets.push(q);
-        } else if (c.kind === 'CZ') {
-          if (c.role === 'control') czControls.push(q);
-          else czTargets.push(q);
-        } else if (c.kind === 'CY') {
-          if (c.role === 'control') cyControls.push(q);
-          else cyTargets.push(q);
-        } else if (c.kind === 'SWAP') {
-          swapNodes.push(q);
-        } else if (c.kind === 'TOFFOLI') {
-          if (c.role === 'control') toffoliControls.push(q);
-          else toffoliTargets.push(q);
-        } else if (c.kind === 'RX' || c.kind === 'RY' || c.kind === 'RZ') {
-          gates.push({ kind: c.kind, targets: [q], controls: [], params: { theta: c.theta } });
+        const cell = this.cells[q][step];
+        if (!cell) continue;
+        if (cell.kind === 'CNOT' || cell.kind === 'CZ' || cell.kind === 'CY' || cell.kind === 'TOFFOLI' || cell.kind === 'MULTI_CONTROLLED') {
+          (cell.role === 'control' ? controls[cell.kind] : targets[cell.kind]).push(q);
+        } else if (cell.kind === 'CSWAP') {
+          (cell.role === 'control' ? controls.CSWAP : targets.CSWAP).push(q);
+        } else if (cell.kind === 'SWAP') {
+          swaps.push(q);
+        } else if (cell.kind === 'RX' || cell.kind === 'RY' || cell.kind === 'RZ' || cell.kind === 'PHASE') {
+          gates.push({ kind: cell.kind, targets: [q], controls: [], params: { theta: cell.theta } });
+        } else if (cell.kind === 'U3') {
+          gates.push({ kind: 'U3', targets: [q], controls: [], params: { theta: cell.theta, phi: cell.phi, lambda: cell.lambda } });
+        } else if (cell.kind === 'ORACLE' || cell.kind === 'GENERIC') {
+          gates.push({ kind: cell.kind, targets: [q], controls: [], params: {}, matrix: cell.matrix });
         } else {
-          gates.push({ kind: c.kind, targets: [q], controls: [], params: {} });
+          gates.push({ kind: cell.kind, targets: [q], controls: [], params: {} });
         }
       }
 
-      // CNOT
-      if (cnotControls.length > 0 && cnotTargets.length > 0 && cnotControls[0] !== cnotTargets[0]) {
-        gates.push({ kind: 'CNOT', targets: [cnotTargets[0]], controls: [cnotControls[0]], params: {} });
+      for (const kind of ['CNOT', 'CZ', 'CY'] as const) {
+        if (controls[kind].length && targets[kind].length) gates.push({ kind, targets: [targets[kind][0]], controls: [controls[kind][0]], params: {} });
       }
-      // CZ
-      if (czControls.length > 0 && czTargets.length > 0 && czControls[0] !== czTargets[0]) {
-        gates.push({ kind: 'CZ', targets: [czTargets[0]], controls: [czControls[0]], params: {} });
-      }
-      // CY
-      if (cyControls.length > 0 && cyTargets.length > 0 && cyControls[0] !== cyTargets[0]) {
-        gates.push({ kind: 'CY', targets: [cyTargets[0]], controls: [cyControls[0]], params: {} });
-      }
-      // SWAP
-      if (swapNodes.length >= 2 && swapNodes[0] !== swapNodes[1]) {
-        gates.push({ kind: 'SWAP', targets: [swapNodes[0], swapNodes[1]], controls: [], params: {} });
-      }
-      // TOFFOLI
-      if (toffoliControls.length >= 2 && toffoliTargets.length >= 1) {
-        gates.push({
-          kind: 'TOFFOLI',
-          targets: [toffoliTargets[0]],
-          controls: [toffoliControls[0], toffoliControls[1]],
-          params: {},
-        });
-      }
-
-      if (gates.length > 0) levels.push({ gates });
+      if (swaps.length >= 2) gates.push({ kind: 'SWAP', targets: swaps.slice(0, 2), controls: [], params: {} });
+      if (controls.CSWAP.length && targets.CSWAP.length >= 2) gates.push({ kind: 'CSWAP', targets: targets.CSWAP.slice(0, 2), controls: [controls.CSWAP[0]], params: {} });
+      if (controls.TOFFOLI.length >= 2 && targets.TOFFOLI.length) gates.push({ kind: 'TOFFOLI', targets: [targets.TOFFOLI[0]], controls: controls.TOFFOLI.slice(0, 2), params: {} });
+      if (controls.MULTI_CONTROLLED.length && targets.MULTI_CONTROLLED.length) gates.push({ kind: 'MULTI_CONTROLLED', targets: [targets.MULTI_CONTROLLED[0]], controls: controls.MULTI_CONTROLLED, params: {}, matrix: PAULI_X_MATRIX });
+      if (gates.length) levels.push({ gates });
     }
     return { version: 1, numQubits: this.numQubits, levels };
   }
