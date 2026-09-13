@@ -28,6 +28,23 @@ describe('CircuitModel.toSpec', () => {
     });
   });
 
+  it('moves every part of a multi-qubit gate together or not at all', () => {
+    const m = new CircuitModel(3, 4);
+    m.place(0, 1, { kind: 'CNOT', role: 'control' });
+    m.place(1, 1, { kind: 'CNOT', role: 'target' });
+    m.place(2, 2, { kind: 'H' });
+
+    expect(m.moveGate(0, 1, 1, 2)).toBe(false);
+    expect(m.cellAt(0, 1)).toEqual({ kind: 'CNOT', role: 'control' });
+    expect(m.cellAt(1, 1)).toEqual({ kind: 'CNOT', role: 'target' });
+
+    expect(m.moveGate(0, 1, 1, 3)).toBe(true);
+    expect(m.cellAt(0, 1)).toBeNull();
+    expect(m.cellAt(1, 1)).toBeNull();
+    expect(m.cellAt(1, 3)).toEqual({ kind: 'CNOT', role: 'control' });
+    expect(m.cellAt(2, 3)).toEqual({ kind: 'CNOT', role: 'target' });
+  });
+
   it('builds spec for rotations, SWAP, controlled Y/Z, and Toffoli', () => {
     const m = new CircuitModel(3);
     m.place(0, 0, { kind: 'RX', theta: 1.57 });

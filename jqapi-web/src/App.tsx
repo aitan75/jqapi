@@ -60,6 +60,7 @@ export default function App() {
   const [probs, setProbs] = useState<number[] | null>(null);
   const [amplitudes, setAmplitudes] = useState<Amplitude[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
   const [language, setLanguage] = useState<Language>(initialLanguage);
   const [now, setNow] = useState(() => new Date());
   const text = messages[language];
@@ -72,11 +73,13 @@ export default function App() {
     setAmplitudes(null);
     bump();
   };
-  const mutate = (change: (model: CircuitModel) => void) => {
-    setUndoStack((history) => [...history.slice(-49), modelRef.current.snapshot()]);
+  const mutate = (change: (model: CircuitModel) => boolean | void) => {
+    const previous = modelRef.current.snapshot();
+    if (change(modelRef.current) === false) return false;
+    setUndoStack((history) => [...history.slice(-49), previous]);
     setRedoStack([]);
-    change(modelRef.current);
     syncModel();
+    return true;
   };
   const loadSpec = (spec: CircuitSpec) => {
     modelRef.current = CircuitModel.fromSpec(spec);
@@ -111,16 +114,9 @@ export default function App() {
   };
   const move = (fromQubit: number, fromStep: number, toQubit: number, toStep: number) => {
     if (fromQubit === toQubit && fromStep === toStep) return;
-    const placement = modelRef.current.cellAt(fromQubit, fromStep);
-    if (!placement) return;
-    if (modelRef.current.cellAt(toQubit, toStep)) {
+    if (!mutate((model) => model.moveGate(fromQubit, fromStep, toQubit, toStep))) {
       setError('Choose an empty wire position before moving a gate.');
-      return;
     }
-    mutate((model) => {
-      model.clear(fromQubit, fromStep);
-      model.place(toQubit, toStep, placement);
-    });
   };
   const undo = () => {
     const previous = undoStack.at(-1);
@@ -146,9 +142,12 @@ export default function App() {
     setRedoStack([]);
     syncModel();
   };
-  const onRun = () => {
+  const onRun = async () => {
+    if (isRunning) return;
+    setError(null);
+    setIsRunning(true);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     try {
-      setError(null);
       const result = run(modelRef.current.toSpec());
       if (!result.ok) {
         setError(text.errors[result.error.code]);
@@ -158,6 +157,8 @@ export default function App() {
       setProbs(probabilities(result.amplitudes));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setIsRunning(false);
     }
   };
   const save = () => {
@@ -192,9 +193,9 @@ export default function App() {
         </aside>
         <main className="workspace">
           {error && <div className="error" role="alert" onClick={() => setError(null)}><span>⚠️ {error}</span><span>✕ Dismiss</span></div>}
-          <CircuitCanvas messages={text} model={modelRef.current} onCellClick={place} onDropCell={place} onMoveCell={move} onRemoveCell={(qubit, step) => mutate((model) => model.clear(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} />
+          <CircuitCanvas messages={text} model={modelRef.current} onCellClick={place} onDropCell={place} onMoveCell={move} onRemoveCell={(qubit, step) => mutate((model) => model.clear(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} isRunning={isRunning} />
           <div className="circuit-actions" role="toolbar" aria-label={text.circuitActions}>
-            <button className="run" type="button" onClick={onRun}>▶ {text.runSimulation}</button>
+            <button className={`run${isRunning ? ' running' : ''}`} type="button" onClick={onRun} disabled={isRunning}>▶ {text.runSimulation}</button>
             <button type="button" onClick={undo} disabled={!undoStack.length}>{text.undo}</button>
             <button type="button" onClick={redo} disabled={!redoStack.length}>{text.redo}</button>
             <button type="button" onClick={save}>{text.saveJson}</button>
