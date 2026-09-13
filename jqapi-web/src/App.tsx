@@ -46,7 +46,7 @@ function specFromHash(): CircuitSpec | null {
 export default function App() {
   const modelRef = useRef(new CircuitModel(2));
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [tool, setTool] = useState<Tool>('H');
+  const [tool, setTool] = useState<Tool | null>(null);
   const [theta, setTheta] = useState(Math.PI / 2);
   const [phi, setPhi] = useState(0);
   const [lambda, setLambda] = useState(0);
@@ -101,6 +101,7 @@ export default function App() {
   }, []);
 
   const place = (qubit: number, step: number, selected = tool) => {
+    if (!selected) return;
     try {
       const placement = placementFor(selected, theta, phi, lambda, matrixText);
       mutate((model) => placement ? model.place(qubit, step, placement) : model.clear(qubit, step));
