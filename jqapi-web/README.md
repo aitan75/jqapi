@@ -29,8 +29,15 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
 cp jqapi-wasm/target/js/jqapi.js jqapi-web/src/wasm/jqapi.js
 ```
 
-## Scope
+## Editor features
 
-MVP gate set: `H`, `X`, `Z`, `CNOT`; 1–8 qubits; 8 fixed columns; probability
-bars. The full gate set, raw amplitudes, save/load, URL sharing, undo/redo,
-zoom/pan, and automated build wiring are tracked in the follow-up FEATURE issue.
+The palette supports single-qubit, parametric (`RX`, `RY`, `RZ`, `PHASE`, `U3`),
+controlled, swap, multi-control, measurement/reset, oracle and generic 2×2
+matrix gates. Circuits support drag-and-drop or click placement, dynamic wires
+and columns, undo/redo, zoom/pan, JSON/local-storage save-load and shareable URL
+fragments. Results show probabilities and complex amplitudes.
+
+`npm run test:e2e` runs the Playwright Bell-circuit smoke test (install Chromium
+once with `npx playwright install chromium`). CI rebuilds the TeaVM asset before
+the web checks and verifies that the committed bridge is current.
+The gate palette is grouped by arity (single, two, three, and multi-qubit), while the algorithms are in a separate menu. Both menu structures support English and Italian.

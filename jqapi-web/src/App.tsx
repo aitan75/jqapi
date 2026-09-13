@@ -1,143 +1,198 @@
-import { useRef, useState } from 'react';
-import { CircuitModel } from './model/circuit';
+import { useEffect, useRef, useState } from 'react';
+import { CircuitModel, PAULI_X_MATRIX, type EditorState, type Placement } from './model/circuit';
 import { probabilities } from './model/results';
 import { run } from './wasm/bridge';
-import type { Amplitude } from './wasm/types';
+import type { Amplitude, CircuitSpec, ComplexMatrix } from './wasm/types';
 import type { Preset } from './model/presets';
 import { GatePalette, type Tool } from './components/GatePalette';
 import { QubitSelector } from './components/QubitSelector';
 import { PresetSelector } from './components/PresetSelector';
 import { CircuitCanvas } from './components/CircuitCanvas';
 import { ResultsPanel } from './components/ResultsPanel';
+import { initialLanguage, LANGUAGE_STORAGE_KEY, messages, type Language } from './i18n';
 import './App.css';
+
+const DEFAULT_MATRIX = JSON.stringify(PAULI_X_MATRIX);
+
+function parseMatrix(text: string): ComplexMatrix {
+  // ponytail: matrix placement is 2×2 on one wire; add multi-wire matrix placement when that UI is needed.
+  const matrix = JSON.parse(text) as ComplexMatrix;
+  if (!Array.isArray(matrix) || matrix.length !== 2 || matrix.some((row) => !Array.isArray(row) || row.length !== 2 || row.some((cell) => !Number.isFinite(cell?.re) || !Number.isFinite(cell?.im)))) {
+    throw new Error('Matrix must be a 2×2 JSON array of {"re": number, "im": number} cells.');
+  }
+  return matrix;
+}
+
+function placementFor(tool: Tool, theta: number, phi: number, lambda: number, matrixText: string): Placement | null {
+  if (tool === 'erase') return null;
+  if (tool === 'CNOT-control' || tool === 'CNOT-target') return { kind: 'CNOT', role: tool.endsWith('control') ? 'control' : 'target' };
+  if (tool === 'CZ-control' || tool === 'CZ-target') return { kind: 'CZ', role: tool.endsWith('control') ? 'control' : 'target' };
+  if (tool === 'CY-control' || tool === 'CY-target') return { kind: 'CY', role: tool.endsWith('control') ? 'control' : 'target' };
+  if (tool === 'CSWAP-control' || tool === 'CSWAP-swap') return { kind: 'CSWAP', role: tool.endsWith('control') ? 'control' : 'swap' };
+  if (tool === 'TOFFOLI-control' || tool === 'TOFFOLI-target') return { kind: 'TOFFOLI', role: tool.endsWith('control') ? 'control' : 'target' };
+  if (tool === 'MCX-control' || tool === 'MCX-target') return { kind: 'MULTI_CONTROLLED', role: tool.endsWith('control') ? 'control' : 'target' };
+  if (tool === 'SWAP') return { kind: 'SWAP', role: 'swap' };
+  if (tool === 'RX' || tool === 'RY' || tool === 'RZ' || tool === 'PHASE') return { kind: tool, theta };
+  if (tool === 'U3') return { kind: 'U3', theta, phi, lambda };
+  if (tool === 'ORACLE' || tool === 'GENERIC') return { kind: tool, matrix: parseMatrix(matrixText) };
+  return { kind: tool };
+}
+
+function specFromHash(): CircuitSpec | null {
+  const value = new URLSearchParams(location.hash.slice(1)).get('circuit');
+  return value ? JSON.parse(atob(value)) as CircuitSpec : null;
+}
 
 export default function App() {
   const modelRef = useRef(new CircuitModel(2));
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [tool, setTool] = useState<Tool>('H');
-  const [theta, setTheta] = useState<number>(Math.PI / 2);
-  const [version, setVersion] = useState(0); // bump to force canvas re-render
+  const [theta, setTheta] = useState(Math.PI / 2);
+  const [phi, setPhi] = useState(0);
+  const [lambda, setLambda] = useState(0);
+  const [matrixText, setMatrixText] = useState(DEFAULT_MATRIX);
+  const [version, setVersion] = useState(0);
   const [numQubits, setNumQubits] = useState(2);
+  const [columns, setColumns] = useState(modelRef.current.columns);
+  const [zoom, setZoom] = useState(1);
+  const [undoStack, setUndoStack] = useState<EditorState[]>([]);
+  const [redoStack, setRedoStack] = useState<EditorState[]>([]);
   const [probs, setProbs] = useState<number[] | null>(null);
   const [amplitudes, setAmplitudes] = useState<Amplitude[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const bump = () => setVersion((v) => v + 1);
+  const [language, setLanguage] = useState<Language>(initialLanguage);
+  const text = messages[language];
+  const bump = () => setVersion((value) => value + 1);
 
-  const onCellClick = (q: number, s: number) => {
-    const m = modelRef.current;
-    if (tool === 'erase') {
-      m.clear(q, s);
-    } else if (tool === 'CNOT-control') {
-      m.place(q, s, { kind: 'CNOT', role: 'control' });
-    } else if (tool === 'CNOT-target') {
-      m.place(q, s, { kind: 'CNOT', role: 'target' });
-    } else if (tool === 'CZ-control') {
-      m.place(q, s, { kind: 'CZ', role: 'control' });
-    } else if (tool === 'CZ-target') {
-      m.place(q, s, { kind: 'CZ', role: 'target' });
-    } else if (tool === 'CY-control') {
-      m.place(q, s, { kind: 'CY', role: 'control' });
-    } else if (tool === 'CY-target') {
-      m.place(q, s, { kind: 'CY', role: 'target' });
-    } else if (tool === 'SWAP') {
-      m.place(q, s, { kind: 'SWAP', role: 'swap' });
-    } else if (tool === 'TOFFOLI-control') {
-      m.place(q, s, { kind: 'TOFFOLI', role: 'control' });
-    } else if (tool === 'TOFFOLI-target') {
-      m.place(q, s, { kind: 'TOFFOLI', role: 'target' });
-    } else if (tool === 'RX' || tool === 'RY' || tool === 'RZ') {
-      m.place(q, s, { kind: tool, theta });
-    } else {
-      m.place(q, s, { kind: tool });
-    }
-    bump();
-  };
-
-  const onQubits = (n: number) => {
-    setNumQubits(n);
-    modelRef.current.setNumQubits(n);
+  const syncModel = () => {
+    setNumQubits(modelRef.current.numQubits);
+    setColumns(modelRef.current.columns);
     setProbs(null);
     setAmplitudes(null);
     bump();
   };
+  const mutate = (change: (model: CircuitModel) => void) => {
+    setUndoStack((history) => [...history.slice(-49), modelRef.current.snapshot()]);
+    setRedoStack([]);
+    change(modelRef.current);
+    syncModel();
+  };
+  const loadSpec = (spec: CircuitSpec) => {
+    modelRef.current = CircuitModel.fromSpec(spec);
+    setUndoStack([]);
+    setRedoStack([]);
+    syncModel();
+  };
 
-  const onSelectPreset = (preset: Preset) => {
-    setNumQubits(preset.qubits);
-    const m = new CircuitModel(preset.qubits);
-    preset.load(m);
-    modelRef.current = m;
-    setError(null);
-    bump();
-
-    // Automatically simulate the preset upon selection
+  useEffect(() => {
     try {
-      const res = run(m.toSpec());
-      setAmplitudes(res.amplitudes);
-      setProbs(probabilities(res.amplitudes));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const shared = specFromHash();
+      if (shared) loadSpec(shared);
+    } catch {
+      setError('The shared circuit URL is invalid.');
+    }
+  }, []);
+
+  useEffect(() => { localStorage.setItem(LANGUAGE_STORAGE_KEY, language); }, [language]);
+
+  const place = (qubit: number, step: number, selected = tool) => {
+    try {
+      const placement = placementFor(selected, theta, phi, lambda, matrixText);
+      mutate((model) => placement ? model.place(qubit, step, placement) : model.clear(qubit, step));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   };
-
-  const onClearCircuit = () => {
-    modelRef.current.reset();
-    setProbs(null);
-    setAmplitudes(null);
-    setError(null);
-    bump();
+  const move = (fromQubit: number, fromStep: number, toQubit: number, toStep: number) => {
+    if (fromQubit === toQubit && fromStep === toStep) return;
+    const placement = modelRef.current.cellAt(fromQubit, fromStep);
+    if (!placement) return;
+    if (modelRef.current.cellAt(toQubit, toStep)) {
+      setError('Choose an empty wire position before moving a gate.');
+      return;
+    }
+    mutate((model) => {
+      model.clear(fromQubit, fromStep);
+      model.place(toQubit, toStep, placement);
+    });
   };
-
+  const undo = () => {
+    const previous = undoStack.at(-1);
+    if (!previous) return;
+    setRedoStack((history) => [...history, modelRef.current.snapshot()]);
+    setUndoStack((history) => history.slice(0, -1));
+    modelRef.current.restore(previous);
+    syncModel();
+  };
+  const redo = () => {
+    const next = redoStack.at(-1);
+    if (!next) return;
+    setUndoStack((history) => [...history, modelRef.current.snapshot()]);
+    setRedoStack((history) => history.slice(0, -1));
+    modelRef.current.restore(next);
+    syncModel();
+  };
+  const onSelectPreset = (preset: Preset) => {
+    const model = new CircuitModel(preset.qubits);
+    preset.load(model);
+    modelRef.current = model;
+    setUndoStack([]);
+    setRedoStack([]);
+    syncModel();
+  };
   const onRun = () => {
     try {
       setError(null);
-      const res = run(modelRef.current.toSpec());
-      setAmplitudes(res.amplitudes);
-      setProbs(probabilities(res.amplitudes));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const result = run(modelRef.current.toSpec());
+      setAmplitudes(result.amplitudes);
+      setProbs(probabilities(result.amplitudes));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   };
-
+  const save = () => {
+    const spec = modelRef.current.toSpec();
+    const blob = new Blob([JSON.stringify(spec, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'jqapi-circuit.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  const loadFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        loadSpec(JSON.parse(String(reader.result)) as CircuitSpec);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : 'Unable to load circuit JSON.');
+      }
+    };
+    reader.readAsText(file);
+  };
   return (
     <div className="app">
-      <header className="header">
-        <div className="brand">
-          <img src="/favicon.svg" alt="jqapi logo" className="brand-logo" />
-          <div className="brand-text">
-            <h1>jqapi studio</h1>
-            <p>Quantum Circuit Simulator</p>
-          </div>
-        </div>
-        <div className="header-badges">
-          <span className="badge active">● WASM Engine</span>
-          <span className="badge">{numQubits} Qubits</span>
-        </div>
-      </header>
-
-      <PresetSelector onSelectPreset={onSelectPreset} onClearCircuit={onClearCircuit} />
-
+      <header className="header"><div className="brand"><img src="/favicon.svg" alt="jqapi logo" className="brand-logo" /><div className="brand-text"><h1>jqapi studio</h1><p>Quantum Circuit Simulator</p></div></div><div className="header-badges"><span className="badge active">● WASM Engine</span><span className="badge">{numQubits} Qubits</span><label className="language-selector">{text.language}<select value={language} onChange={(event) => setLanguage(event.target.value as Language)}>{Object.entries(text.languages).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label></div></header>
+      <PresetSelector messages={text} onSelectPreset={onSelectPreset} />
       <div className="toolbar">
         <div className="toolbar-left">
-          <QubitSelector value={numQubits} onChange={onQubits} />
-          <GatePalette
-            tool={tool}
-            onSelect={setTool}
-            theta={theta}
-            onChangeTheta={setTheta}
-          />
+          <QubitSelector value={numQubits} onChange={(value) => mutate((model) => model.setNumQubits(value))} />
+          <div className="editor-actions"><button type="button" onClick={() => mutate((model) => model.setColumns(model.columns - 1))} disabled={columns <= 1}>− step</button><span>{columns} steps</span><button type="button" onClick={() => mutate((model) => model.setColumns(model.columns + 1))}>+ step</button></div>
+          <GatePalette messages={text} tool={tool} onSelect={setTool} theta={theta} phi={phi} lambda={lambda} matrixText={matrixText} onChangeTheta={setTheta} onChangePhi={setPhi} onChangeLambda={setLambda} onChangeMatrixText={setMatrixText} />
         </div>
-        <button className="run" onClick={onRun} title="Simulate circuit on local engine">
-          <span>▶</span> Run Simulation
-        </button>
       </div>
-
-      {error && (
-        <div className="error" role="alert" onClick={() => setError(null)} title="Click to dismiss">
-          <span>⚠️ {error}</span>
-          <span style={{ opacity: 0.8, fontSize: '0.8rem' }}>✕ Dismiss</span>
-        </div>
-      )}
-
-      <CircuitCanvas model={modelRef.current} onCellClick={onCellClick} version={version} />
+      {error && <div className="error" role="alert" onClick={() => setError(null)}><span>⚠️ {error}</span><span>✕ Dismiss</span></div>}
+      <CircuitCanvas model={modelRef.current} onCellClick={place} onDropCell={place} onMoveCell={move} onRemoveCell={(qubit, step) => mutate((model) => model.clear(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} />
+      <div className="circuit-actions" role="toolbar" aria-label={text.circuitActions}>
+        <button className="run" type="button" onClick={onRun}>▶ {text.runSimulation}</button>
+        <button type="button" onClick={undo} disabled={!undoStack.length}>{text.undo}</button>
+        <button type="button" onClick={redo} disabled={!redoStack.length}>{text.redo}</button>
+        <button type="button" onClick={save}>{text.saveJson}</button>
+        <button type="button" onClick={() => fileInputRef.current?.click()}>{text.loadJson}</button>
+        <button type="button" className="clear-circuit" onClick={() => mutate((model) => model.reset())}>{text.clearCircuit}</button>
+        <input ref={fileInputRef} type="file" accept="application/json" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) loadFile(file); event.currentTarget.value = ''; }} />
+      </div>
       <ResultsPanel probs={probs} amplitudes={amplitudes} numQubits={numQubits} />
     </div>
   );
