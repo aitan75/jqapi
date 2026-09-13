@@ -85,4 +85,20 @@ describe('wasm bridge', () => {
     });
     expect(resetResult.amplitudes[0].re).toBeCloseTo(1, 7); // back to |0>
   });
+
+  it('runs phase, U3, controlled swap, multi-control, measurement, and matrix gates', () => {
+    const xMatrix = [[{ re: 0, im: 0 }, { re: 1, im: 0 }], [{ re: 1, im: 0 }, { re: 0, im: 0 }]];
+    expect(run({ version: 1, numQubits: 1, levels: [{ gates: [{ kind: 'PHASE', targets: [0], controls: [], params: { theta: Math.PI } }] }] }).amplitudes[0].re).toBeCloseTo(1, 7);
+    expect(run({ version: 1, numQubits: 1, levels: [{ gates: [{ kind: 'U3', targets: [0], controls: [], params: { theta: 0, phi: 0, lambda: 0 } }] }] }).amplitudes[0].re).toBeCloseTo(1, 7);
+    expect(run({ version: 1, numQubits: 3, levels: [
+      { gates: [{ kind: 'X', targets: [0], controls: [], params: {} }, { kind: 'X', targets: [1], controls: [], params: {} }] },
+      { gates: [{ kind: 'CSWAP', targets: [1, 2], controls: [0], params: {} }] },
+    ] }).amplitudes[5].re).toBeCloseTo(1, 7);
+    expect(run({ version: 1, numQubits: 3, levels: [
+      { gates: [{ kind: 'X', targets: [0], controls: [], params: {} }, { kind: 'X', targets: [1], controls: [], params: {} }] },
+      { gates: [{ kind: 'MULTI_CONTROLLED', targets: [2], controls: [0, 1], params: {}, matrix: xMatrix }] },
+    ] }).amplitudes[7].re).toBeCloseTo(1, 7);
+    expect(run({ version: 1, numQubits: 1, levels: [{ gates: [{ kind: 'GENERIC', targets: [0], controls: [], params: {}, matrix: xMatrix }] }] }).amplitudes[1].re).toBeCloseTo(1, 7);
+    expect(run({ version: 1, numQubits: 1, levels: [{ gates: [{ kind: 'MEASUREMENT', targets: [0], controls: [], params: {} }] }] }).amplitudes[0].re).toBeCloseTo(1, 7);
+  });
 });

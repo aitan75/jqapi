@@ -1,12 +1,13 @@
 import { useState } from 'react';
+import type { Messages } from '../i18n';
 import { PRESETS, type Preset } from '../model/presets';
 
 interface PresetSelectorProps {
   onSelectPreset: (preset: Preset) => void;
-  onClearCircuit: () => void;
+  messages: Messages;
 }
 
-export function PresetSelector({ onSelectPreset, onClearCircuit }: PresetSelectorProps) {
+export function PresetSelector({ onSelectPreset, messages }: PresetSelectorProps) {
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [hoveredPreset, setHoveredPreset] = useState<Preset | null>(null);
 
@@ -15,32 +16,14 @@ export function PresetSelector({ onSelectPreset, onClearCircuit }: PresetSelecto
     onSelectPreset(preset);
   };
 
-  const handleClear = () => {
-    setActivePresetId(null);
-    onClearCircuit();
-  };
-
   const currentDesc = hoveredPreset?.description || 
     PRESETS.find((p) => p.id === activePresetId)?.description ||
     'Choose a quantum state or a well-known algorithm to load and run instantly.';
 
   return (
-    <div className="presets-container">
-      <div className="presets-header">
-        <div className="presets-title">
-          <span style={{ color: 'var(--accent-purple)', fontSize: '1.1rem' }}>⚡</span>
-          <span>Preset Circuits</span>
-        </div>
-        <button
-          type="button"
-          className="btn-clear"
-          onClick={handleClear}
-          title="Clear all gates from the circuit"
-        >
-          <span>⌫</span> Clear Circuit
-        </button>
-      </div>
-
+    <details className="editor-menu algorithms-menu" open>
+      <summary>{messages.algorithms}</summary>
+      <div className="presets-container">
       <div className="presets-list">
         {PRESETS.map((preset) => {
           const isSelected = preset.id === activePresetId;
@@ -52,9 +35,9 @@ export function PresetSelector({ onSelectPreset, onClearCircuit }: PresetSelecto
               onClick={() => handleSelect(preset)}
               onMouseEnter={() => setHoveredPreset(preset)}
               onMouseLeave={() => setHoveredPreset(null)}
-              title={preset.description}
+              title={messages.presets[preset.id]}
             >
-              <span className="preset-name">{preset.name}</span>
+              <span className="preset-name">{messages.presets[preset.id]}</span>
               <span className="preset-badge">{preset.badge}</span>
             </button>
           );
@@ -65,6 +48,7 @@ export function PresetSelector({ onSelectPreset, onClearCircuit }: PresetSelecto
         <span style={{ color: 'var(--accent-cyan)', opacity: 0.85 }}>ℹ</span>
         <span>{currentDesc}</span>
       </div>
-    </div>
+      </div>
+    </details>
   );
 }
