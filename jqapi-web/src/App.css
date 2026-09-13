@@ -66,6 +66,24 @@
   align-items: center;
 }
 
+.language-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.language-selector select {
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font: inherit;
+  padding: 0.25rem 0.4rem;
+}
+
 .badge {
   font-family: var(--font-mono);
   font-size: 0.75rem;

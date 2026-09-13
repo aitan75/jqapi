@@ -1,6 +1,7 @@
 package org.aitan.jqapi.wasm;
 
 import org.aitan.jqapi.JQAPIConfig;
+import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
@@ -35,28 +36,42 @@ public final class JqapiBridge {
 
     /**
      * Parses and validates a circuit spec, runs it on the local state-vector
-     * simulator, and returns the resulting amplitudes.
+     * simulator, and returns either the resulting amplitudes or a stable error
+     * code for the browser to localize.
      *
      * @param specJson the circuit as {@code CircuitSpec} JSON
-     * @return {@code {"amplitudes":[{"re":…,"im":…}, …]}}
+     * @return {@code {"ok":true,"amplitudes":[{"re":…,"im":…}, …]}} or
+     *         {@code {"ok":false,"error":{"code":"…"}}}
      */
     @JSExport
     public static String run(String specJson) {
-        JQAPIConfig config = JQAPIConfig.sequential(JQAPIConfig.DEFAULT_MAX_QUBITS);
-        CircuitSpec spec = CircuitSpecJson.fromJson(specJson, config);
-        Circuit circuit = CircuitSpecs.toCircuit(spec, config);
-        LocalSimulator sim = new LocalSimulator(circuit);
-        sim.execute();
-        ComplexVector state = sim.getQuantumRegister().getRegisterState();
-        StringBuilder sb = new StringBuilder("{\"amplitudes\":[");
-        for (int i = 0; i < state.getDimension(); i++) {
-            if (i > 0) {
-                sb.append(',');
+        try {
+            JQAPIConfig config = JQAPIConfig.sequential(JQAPIConfig.DEFAULT_MAX_QUBITS);
+            CircuitSpec spec = CircuitSpecJson.fromJson(specJson, config);
+            Circuit circuit = CircuitSpecs.toCircuit(spec, config);
+            LocalSimulator sim = new LocalSimulator(circuit);
+            sim.execute();
+            ComplexVector state = sim.getQuantumRegister().getRegisterState();
+            StringBuilder sb = new StringBuilder("{\"ok\":true,\"amplitudes\":[");
+            for (int i = 0; i < state.getDimension(); i++) {
+                if (i > 0) {
+                    sb.append(',');
+                }
+                Complex c = state.getEntry(i);
+                sb.append("{\"re\":").append(c.getReal())
+                        .append(",\"im\":").append(c.getImaginary()).append('}');
             }
-            Complex c = state.getEntry(i);
-            sb.append("{\"re\":").append(c.getReal())
-                    .append(",\"im\":").append(c.getImaginary()).append('}');
+            return sb.append("]}").toString();
+        } catch (JQApiLimitException e) {
+            return error("INPUT_LIMIT_EXCEEDED");
+        } catch (IllegalArgumentException e) {
+            return error("INVALID_CIRCUIT_SPEC");
+        } catch (RuntimeException e) {
+            return error("SIMULATION_FAILED");
         }
-        return sb.append("]}").toString();
+    }
+
+    private static String error(String code) {
+        return "{\"ok\":false,\"error\":{\"code\":\"" + code + "\"}}";
     }
 }

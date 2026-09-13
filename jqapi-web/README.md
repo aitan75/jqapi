@@ -13,6 +13,16 @@ npm run test     # vitest unit tests
 npm run build    # type-check + production build
 ```
 
+## Languages
+
+The editor supports English and Italian. Select the language from the header;
+the browser saves the choice locally. All user-visible copy lives in
+`src/i18n.ts`, including gate labels, tooltips, preset descriptions, and result
+messages.
+
+Simulation errors use stable codes from the WASM bridge and are translated by
+the same catalog; raw Java exception messages are never displayed in the UI.
+
 ## Vendored WASM bridge
 
 `src/wasm/jqapi.js` is the TeaVM output of the `jqapi-wasm` module (Phase 2b),

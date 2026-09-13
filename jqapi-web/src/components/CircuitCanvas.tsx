@@ -2,6 +2,7 @@ import { useState, type ComponentProps, type DragEvent, type ReactNode } from 'r
 import { Stage, Layer, Line, Rect, Text, Circle, Group } from 'react-konva';
 import type { Tool } from './GatePalette';
 import type { CircuitModel } from '../model/circuit';
+import type { Messages } from '../i18n';
 
 const CELL = 60;
 const LABEL_W = 56;
@@ -36,6 +37,7 @@ export function CircuitCanvas({
   version,
   zoom,
   onZoom,
+  messages,
 }: {
   model: CircuitModel;
   onCellClick: (qubit: number, step: number) => void;
@@ -45,6 +47,7 @@ export function CircuitCanvas({
   version: number;
   zoom: number;
   onZoom: (zoom: number) => void;
+  messages: Messages;
 }) {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [menu, setMenu] = useState<{ qubit: number; step: number } | null>(null);
@@ -384,14 +387,14 @@ export function CircuitCanvas({
     <div className="canvas-wrapper" onDragOver={(event) => event.preventDefault()} onDrop={drop}>
       <div className="canvas-hint">
         <span style={{ color: 'var(--accent-cyan)' }}>✦</span>
-        <span>Drag a gate to a cell or click a selected gate. Drag the circuit to pan.</span>
+        <span>{messages.canvasHint}</span>
         <span className="canvas-zoom"><button type="button" onClick={() => onZoom(Math.max(0.5, zoom - 0.1))}>−</button>{Math.round(zoom * 100)}%<button type="button" onClick={() => onZoom(Math.min(2, zoom + 0.1))}>+</button></span>
       </div>
       <div className="canvas-inner" data-pan={`${pan.x},${pan.y}`}>
         <Stage width={width * zoom} height={height * zoom} key={version} x={pan.x} y={pan.y} scaleX={zoom} scaleY={zoom} draggable onDragEnd={(event) => setPan(event.target.position())}>
           <Layer>{nodes}</Layer>
         </Stage>
-        {menu && <div className="gate-menu" style={{ left: LABEL_W + menu.step * CELL, top: menu.qubit * CELL }}><button type="button" onClick={() => { onRemoveCell(menu.qubit, menu.step); setMenu(null); }}>Erase</button></div>}
+        {menu && <div className="gate-menu" style={{ left: LABEL_W + menu.step * CELL, top: menu.qubit * CELL }}><button type="button" onClick={() => { onRemoveCell(menu.qubit, menu.step); setMenu(null); }}>{messages.tools.erase}</button></div>}
       </div>
     </div>
   );

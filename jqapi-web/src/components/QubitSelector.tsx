@@ -1,10 +1,11 @@
 import { MAX_QUBITS } from '../model/circuit';
+import type { Messages } from '../i18n';
 
 /** Number input for the qubit count, clamped to 1..MAX_QUBITS. */
-export function QubitSelector({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+export function QubitSelector({ value, onChange, messages }: { value: number; onChange: (n: number) => void; messages: Messages }) {
   return (
     <label className="qubits">
-      Qubits:{' '}
+      {messages.qubits}{' '}
       <input
         type="number"
         min={1}
