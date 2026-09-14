@@ -37,7 +37,7 @@ public final class MemoryLimitBenchmark {
 
     /** Hard cap on qubits for loop 1 (JQAPIConfig.ABSOLUTE_MAX_QUBITS; 2^30 amplitudes is already far past any sane heap). */
     private static final int MAX_QUBITS_CAP = 30;
-    /** Hard cap on search qubits for loop 2 (the dense oracle is O((2^n)^2)). */
+    /** Hard cap on search qubits for loop 2 (Grover evolves a 2^n state vector). */
     private static final int MAX_SEARCH_QUBITS_CAP = 20;
     /** Per-iteration wall-clock guard (ms): stop growing once one step gets this slow. */
     private static final long TIME_BUDGET_MS = 120_000L;
@@ -131,10 +131,10 @@ public final class MemoryLimitBenchmark {
     }
 
     // ------------------------------------------------------------------
-    // Loop 2 — max search size (Grover, dense oracle dominates)
+    // Loop 2 — max search size (Grover state-vector evolution)
     // ------------------------------------------------------------------
     private static SearchResult runSearchLoop() {
-        System.out.println("--- Loop 2: max search size (Grover, dense 2^n x 2^n oracle) ---");
+        System.out.println("--- Loop 2: max search size (Grover state-vector evolution) ---");
         System.out.printf("%-8s %-12s %-14s %-14s %-40s%n", "nQubit", "listSize", "elapsed(ms)", "usedHeap(MB)", "status");
 
         int lastQubit = 0;
