@@ -275,6 +275,48 @@ public class QuantumRegister {
     }
 
     /**
+     * Negates the amplitudes at the marked basis-state indexes in place.
+     * This is Grover's diagonal phase oracle and requires no operator matrix.
+     *
+     * @param markedIndexes one marker per basis state
+     * @throws IllegalArgumentException if the marker count differs from the state dimension
+     */
+    public void applyPhaseOracle(boolean[] markedIndexes) {
+        Objects.requireNonNull(markedIndexes, "markedIndexes");
+        int dimension = this.registerState.length / 2;
+        if (markedIndexes.length != dimension) {
+            throw new IllegalArgumentException("Phase oracle marker count " + markedIndexes.length
+                    + " does not match register dimension " + dimension);
+        }
+        for (int i = 0; i < dimension; i++) {
+            if (markedIndexes[i]) {
+                this.registerState[2 * i] = -this.registerState[2 * i];
+                this.registerState[2 * i + 1] = -this.registerState[2 * i + 1];
+            }
+        }
+    }
+
+    /**
+     * Applies Grover's inversion-about-the-mean diffusion operator in place.
+     * This is equivalent to {@code 2|s><s| - I} without materializing its dense matrix.
+     */
+    public void applyGroverDiffusion() {
+        int dimension = this.registerState.length / 2;
+        double meanRe = 0.0;
+        double meanIm = 0.0;
+        for (int i = 0; i < dimension; i++) {
+            meanRe += this.registerState[2 * i];
+            meanIm += this.registerState[2 * i + 1];
+        }
+        meanRe /= dimension;
+        meanIm /= dimension;
+        for (int i = 0; i < dimension; i++) {
+            this.registerState[2 * i] = 2 * meanRe - this.registerState[2 * i];
+            this.registerState[2 * i + 1] = 2 * meanIm - this.registerState[2 * i + 1];
+        }
+    }
+
+    /**
      * Applies the operator to the single amplitude group whose leader index is
      * {@code base} (all target bits zero). Allocates its own scratch buffers, so
      * it is safe to call concurrently for disjoint {@code base} values.

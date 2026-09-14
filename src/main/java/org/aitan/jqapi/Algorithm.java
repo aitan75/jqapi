@@ -6,18 +6,12 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.aitan.jqapi.exceptions.JQApiException;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
-import org.aitan.jqapi.math.Complex;
-import org.aitan.jqapi.math.ComplexMatrix;
-import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
 import org.aitan.jqapi.quantum.CircuitLevel;
 import org.aitan.jqapi.quantum.QuantumRegister;
 import org.aitan.jqapi.quantum.Qubit;
 import org.aitan.jqapi.quantum.QubitZero;
-import org.aitan.jqapi.quantum.gates.GenericGate;
 import org.aitan.jqapi.quantum.gates.Hadamard;
-import org.aitan.jqapi.quantum.gates.Oracle;
-import org.aitan.jqapi.quantum.gates.PauliX;
 import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 import org.aitan.jqapi.quantum.simulator.QuantumSimulator;
 
@@ -73,24 +67,8 @@ public class Algorithm {
         CircuitLevel level1 = new CircuitLevel();
         Integer[] qubitIndexes = IntStream.range(0, N_QUBIT).boxed().toArray(Integer[]::new);
         level1.addGate(new Hadamard(qubitIndexes));
-        Oracle oracle = createGroverOracle(N, list, function, qubitIndexes);
-        ComplexMatrix matrix = createGenericGateMatrix(N);
+        boolean[] markedIndexes = findMarkedIndexes(N, list, function);
         circuit.addLevel(level1);
-        for (int i = 1; i < count; i++) {
-            CircuitLevel levelS1 = new CircuitLevel();
-            CircuitLevel levelS2 = new CircuitLevel();
-            CircuitLevel levelS3 = new CircuitLevel();
-            CircuitLevel levelS4 = new CircuitLevel();
-            CircuitLevel levelS5 = new CircuitLevel();
-            CircuitLevel levelS6 = new CircuitLevel();
-            levelS1.addGate(oracle);
-            levelS2.addGate(new Hadamard(qubitIndexes));
-            levelS3.addGate(new PauliX(qubitIndexes));
-            levelS4.addGate(new GenericGate(matrix, N_QUBIT, qubitIndexes));
-            levelS5.addGate(new PauliX(qubitIndexes));
-            levelS6.addGate(new Hadamard(qubitIndexes));
-            circuit.addLevel(levelS1, levelS2, levelS3, levelS4, levelS5, levelS6);
-        }
         //Grover is probabilistic: the amplified solution is measured with high
         //but not unit probability. Verify the measured candidate classically
         //and retry the simulation on an unlucky outcome.
@@ -100,6 +78,10 @@ public class Algorithm {
             QuantumSimulator simulator = new LocalSimulator(circuit);
             simulator.execute();
             QuantumRegister qreg = simulator.getQuantumRegister();
+            for (int i = 1; i < count; i++) {
+                qreg.applyPhaseOracle(markedIndexes);
+                qreg.applyGroverDiffusion();
+            }
             qreg.measure();
             StringBuilder binaryString = new StringBuilder();
             for (int i = 0; i < N_QUBIT; i++) {
@@ -113,40 +95,17 @@ public class Algorithm {
         throw new JQApiException("Grover search did not converge after " + MAX_ATTEMPTS + " attempts");
     }
 
-    private static <T> Oracle createGroverOracle(int N, List<T> list, Function<T, Boolean> function, Integer[] qubitIndexes) throws JQApiException {
+    private static <T> boolean[] findMarkedIndexes(int N, List<T> list, Function<T, Boolean> function) throws JQApiException {
         int size=list.size();
-        Complex[][] matrix = new Complex[N][N];
+        boolean[] markedIndexes = new boolean[N];
         boolean found=false;
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                if (i != j) {
-                    matrix[i][j] = Complex.ZERO;
-                } else {
-                    if(i<size&&function.apply(list.get(i))) {
-                        matrix[i][j] = Complex.ONE.multiply(-1);
-                        found=true;
-                    } else {
-                        matrix[i][j] = Complex.ONE;
-                    }
-                }
+        for (int i = 0; i < size; i++) {
+            if (function.apply(list.get(i))) {
+                markedIndexes[i] = true;
+                found=true;
             }
         }
         if(!found) throw new JQApiException("No element found in the list of "+size+" elements with applied filter");
-        return new Oracle(ComplexMatrix.createMatrixWithData(matrix), qubitIndexes);
-    }
-
-    private static ComplexMatrix createGenericGateMatrix(int size) {
-        Complex[][] matrix = new Complex[size][size];
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                if (i != j) {
-                    matrix[i][j] = Complex.ZERO;
-                } else {
-                    matrix[i][j] = Complex.ONE;
-                }
-            }
-        }
-        matrix[size - 1][size - 1] = matrix[size - 1][size - 1].multiply(-1);
-        return ComplexMatrix.createMatrixWithData(matrix);
+        return markedIndexes;
     }
 }

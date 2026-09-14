@@ -63,4 +63,21 @@ public class QuantumRegisterTest {
         // The original state should not be affected by the mutation of state1
         assertEquals(Complex.ONE, state2.getEntry(0));
     }
+
+    @Test
+    public void testGroverStateVectorOperations() {
+        QuantumRegister qreg = new QuantumRegister(2);
+        ComplexMatrix hMatrix = new Hadamard(0).getMatrix();
+        qreg.applyOperator(hMatrix, Collections.singletonList(0));
+        qreg.applyOperator(hMatrix, Collections.singletonList(1));
+
+        qreg.applyPhaseOracle(new boolean[]{false, false, true, false});
+        qreg.applyGroverDiffusion();
+
+        ComplexVector state = qreg.getRegisterState();
+        assertEquals(0.0, state.getEntry(0).getReal(), EPS);
+        assertEquals(0.0, state.getEntry(1).getReal(), EPS);
+        assertEquals(1.0, state.getEntry(2).getReal(), EPS);
+        assertEquals(0.0, state.getEntry(3).getReal(), EPS);
+    }
 }
