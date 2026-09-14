@@ -34,10 +34,7 @@ export function basisLabel(index: number, numQubits: number): string {
   return '|' + index.toString(2).padStart(numQubits, '0') + '⟩';
 }
 
-/** Formats a complex amplitude into a clean string representation, e.g. "0.707 + 0.000i". */
+/** Formats the simulator's complete complex-amplitude values without display rounding. */
 export function formatAmplitude(amp: Amplitude): string {
-  const reStr = (Math.abs(amp.re) < 1e-6 ? 0 : amp.re).toFixed(3);
-  const imAbs = Math.abs(Math.abs(amp.im) < 1e-6 ? 0 : amp.im).toFixed(3);
-  const sign = amp.im < -1e-6 ? '-' : '+';
-  return `${reStr} ${sign} ${imAbs}i`;
+  return `${amp.re} ${amp.im < 0 ? '-' : '+'} ${Math.abs(amp.im)}i`;
 }

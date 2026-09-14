@@ -107,7 +107,7 @@ export default function App() {
     if (!selected) return;
     try {
       const placement = placementFor(selected, theta, phi, lambda, matrixText);
-      mutate((model) => placement ? model.place(qubit, step, placement) : model.clear(qubit, step));
+      mutate((model) => placement ? model.place(qubit, step, placement) : model.removeGate(qubit, step));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     }
@@ -184,7 +184,7 @@ export default function App() {
   };
   return (
     <div className="app">
-      <header className="header"><div className="brand"><img src="/favicon.svg" alt={text.logo} className="brand-logo" /><div className="brand-text"><h1>{text.appName}</h1><p>{text.appSubtitle}</p></div></div><div className="header-badges"><span className="badge active">{text.wasmEngine}</span><span className="badge">{text.qubitCount(numQubits)}</span><label className="language-selector">{text.language}<select value={language} onChange={(event) => setLanguage(event.target.value as Language)}>{Object.entries(text.languages).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label></div></header>
+      <header className="header"><div className="brand"><img src="/bloch-sphere.svg" alt={text.logo} className="brand-logo" /><div className="brand-text"><h1>{text.appName}</h1><p>{text.appSubtitle}</p></div></div><div className="header-badges"><span className="badge active">{text.wasmEngine}</span><span className="badge">{text.qubitCount(numQubits)}</span><label className="language-selector">{text.language}<select value={language} onChange={(event) => setLanguage(event.target.value as Language)}>{Object.entries(text.languages).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label></div></header>
       <div className="editor-layout">
         <aside className="sidebar">
           <div className="circuit-settings"><QubitSelector messages={text} value={numQubits} onChange={(value) => mutate((model) => model.setNumQubits(value))} /><div className="editor-actions"><button type="button" onClick={() => mutate((model) => model.setColumns(model.columns - 1))} disabled={columns <= 1}>− step</button><span>{columns} steps</span><button type="button" onClick={() => mutate((model) => model.setColumns(model.columns + 1))}>+ step</button></div></div>
@@ -193,7 +193,7 @@ export default function App() {
         </aside>
         <main className="workspace">
           {error && <div className="error" role="alert" onClick={() => setError(null)}><span>⚠️ {error}</span><span>✕ Dismiss</span></div>}
-          <CircuitCanvas messages={text} model={modelRef.current} onCellClick={place} onDropCell={place} onMoveCell={move} onRemoveCell={(qubit, step) => mutate((model) => model.clear(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} isRunning={isRunning} />
+          <CircuitCanvas messages={text} model={modelRef.current} onDropCell={place} onMoveCell={move} onRemoveGate={(qubit, step) => mutate((model) => model.removeGate(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} isRunning={isRunning} />
           <div className="circuit-actions" role="toolbar" aria-label={text.circuitActions}>
             <button className={`run${isRunning ? ' running' : ''}`} type="button" onClick={onRun} disabled={isRunning}>▶ {text.runSimulation}</button>
             <button type="button" onClick={undo} disabled={!undoStack.length}>{text.undo}</button>

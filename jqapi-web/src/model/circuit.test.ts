@@ -45,6 +45,16 @@ describe('CircuitModel.toSpec', () => {
     expect(m.cellAt(2, 3)).toEqual({ kind: 'CNOT', role: 'target' });
   });
 
+  it('removes every part of a multi-qubit gate together', () => {
+    const m = new CircuitModel(2);
+    m.place(0, 1, { kind: 'CNOT', role: 'control' });
+    m.place(1, 1, { kind: 'CNOT', role: 'target' });
+
+    expect(m.removeGate(1, 1)).toBe(true);
+    expect(m.cellAt(0, 1)).toBeNull();
+    expect(m.cellAt(1, 1)).toBeNull();
+  });
+
   it('builds spec for rotations, SWAP, controlled Y/Z, and Toffoli', () => {
     const m = new CircuitModel(3);
     m.place(0, 0, { kind: 'RX', theta: 1.57 });

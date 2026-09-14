@@ -80,17 +80,29 @@ export class CircuitModel {
     return this.cells[qubit][step];
   }
 
+  private cellsForGate(qubit: number, step: number): { qubit: number; cell: Placement }[] {
+    const source = this.cellAt(qubit, step);
+    if (!source) return [];
+    return 'role' in source
+      ? this.cells.flatMap((row, sourceQubit) => {
+        const cell = row[step];
+        return cell && 'role' in cell && cell.kind === source.kind ? [{ qubit: sourceQubit, cell }] : [];
+      })
+      : [{ qubit, cell: source }];
+  }
+
+  /** Removes a gate as one unit, including every control and target. */
+  removeGate(qubit: number, step: number): boolean {
+    const cells = this.cellsForGate(qubit, step);
+    if (!cells.length) return false;
+    cells.forEach(({ qubit: sourceQubit }) => this.clear(sourceQubit, step));
+    return true;
+  }
+
   /** Moves a gate as one unit, preserving every control and target placement. */
   moveGate(fromQubit: number, fromStep: number, toQubit: number, toStep: number): boolean {
-    const source = this.cellAt(fromQubit, fromStep);
-    if (!source) return false;
-
-    const cells = 'role' in source
-      ? this.cells.flatMap((row, qubit) => {
-        const cell = row[fromStep];
-        return cell && 'role' in cell && cell.kind === source.kind ? [{ qubit, cell }] : [];
-      })
-      : [{ qubit: fromQubit, cell: source }];
+    const cells = this.cellsForGate(fromQubit, fromStep);
+    if (!cells.length) return false;
     const qubitOffset = toQubit - fromQubit;
     const sources = new Set(cells.map(({ qubit }) => `${qubit}:${fromStep}`));
 
