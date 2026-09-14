@@ -419,12 +419,22 @@ public class ConfigLimitsTest {
         @Test
         @DisplayName("a small valid search returns the expected element")
         void smallValidSearchReturnsExpectedElement() throws JQApiException {
-            // 4 elements -> N_QUBIT = 2 (dense 4x4 oracle, fast). Single marked
+            // 4 elements -> N_QUBIT = 2. Single marked
             // element => one Grover iteration converges with high probability.
             List<Integer> list = Arrays.asList(10, 20, 30, 40);
             Function<Integer, Boolean> isTarget = (Integer x) -> x.equals(30);
             Integer found = Algorithm.search(list, isTarget);
             assertEquals(30, found);
+        }
+
+        @Test
+        @DisplayName("a 17-qubit search completes without a dense operator matrix")
+        void largeSearchAvoidsDenseOperatorMatrices() throws JQApiException {
+            // A 2^17-by-2^17 matrix cannot fit in a 256 MiB heap; the direct
+            // state-vector implementation needs only the 2^17 amplitudes.
+            List<Integer> list = IntStream.range(0, 1 << 17).boxed().toList();
+            assertEquals((1 << 17) - 1,
+                    Algorithm.search(list, value -> value == (1 << 17) - 1, JQAPIConfig.of(24, 17)));
         }
     }
 

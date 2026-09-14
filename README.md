@@ -198,7 +198,9 @@ The defaults are conservative theoretical values; the real ceiling depends on th
 | Max search qubits completed | **14** (list of 16384, ~146 s — over the 120 s/step budget) |
 | Search at the default (12 qubits) | list of 4096 in ~5.4 s |
 
-Search memory is dominated by the dense 2^n x 2^n Grover oracle, not by the state vector (tracked in [#15](https://github.com/aitan75/jqapi/issues/15)). The benchmark is excluded from `mvn test` on purpose; re-run it on your machine with:
+Grover search applies its oracle and diffusion steps directly to the state vector,
+so its memory is O(2^n), like the simulator. The benchmark is excluded from
+`mvn test` on purpose; re-run it on your machine with:
 
 ```bash
 mvn test-compile

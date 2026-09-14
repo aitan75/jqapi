@@ -151,6 +151,8 @@ constructors only for manual state setup.
 | `getSize()` | `int` | Number of qubits. |
 | `getRegisterState()` | `ComplexVector` | The full `2^size` complex amplitude vector (defensive copy, read-only). |
 | `applyOperator(ComplexMatrix, List<Integer>)` | `void` | Applies a gate matrix (operator) to the listed target qubits. |
+| `applyPhaseOracle(boolean[])` | `void` | Negates amplitudes at marked basis-state indexes without creating an operator matrix. |
+| `applyGroverDiffusion()` | `void` | Applies Grover's inversion-about-the-mean operator in place. |
 | `setRegisterState(ComplexVector)` | `void` | **Deprecated.** Replaces the amplitude vector. Throws `IllegalArgumentException` on dimension mismatch. |
 | `getInput()` | `Qubit[]` | The per-qubit states the register was initialized with. |
 | `getResult()` | `Qubit[]` | The measured qubits; populated by `measure()` / `measureQubitAtIndexes(...)`. |
@@ -163,6 +165,13 @@ constructors only for manual state setup.
 Applies a $2^k \times 2^k$ matrix operator directly to the target qubits of the register state, in place. The amplitude manipulation is encapsulated entirely within this method, keeping the register's internal representation hidden.
 
 - **Throws** `IllegalArgumentException` if the operator matrix dimension does not match the target qubit size.
+
+### Grover state-vector operations
+
+`applyPhaseOracle(boolean[] markedIndexes)` negates each marked amplitude; its
+array must have one entry for every basis state. `applyGroverDiffusion()` maps
+each amplitude to `2 * mean - amplitude`. Together they implement a Grover
+iteration in `O(2^n)` time without a `2^n × 2^n` operator matrix.
 
 ### `measure()`
 
