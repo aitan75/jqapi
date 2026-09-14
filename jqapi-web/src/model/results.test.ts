@@ -21,9 +21,9 @@ describe('results', () => {
     expect(basisLabel(2, 2)).toBe('|10⟩');
   });
 
-  it('formats complex amplitudes with sign and i', () => {
-    expect(formatAmplitude({ re: 0.7071, im: 0 })).toBe('0.707 + 0.000i');
-    expect(formatAmplitude({ re: 0, im: -0.5 })).toBe('0.000 - 0.500i');
+  it('formats complete complex amplitudes with sign and i', () => {
+    expect(formatAmplitude({ re: 0.7071, im: 0 })).toBe('0.7071 + 0i');
+    expect(formatAmplitude({ re: 0, im: -0.5 })).toBe('0 - 0.5i');
   });
 
   it('derives magnitude, phase, and the one-qubit Bloch vector', () => {
