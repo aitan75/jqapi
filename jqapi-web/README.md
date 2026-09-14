@@ -43,9 +43,11 @@ cp jqapi-wasm/target/js/jqapi.js jqapi-web/src/wasm/jqapi.js
 
 The palette supports single-qubit, parametric (`RX`, `RY`, `RZ`, `PHASE`, `U3`),
 controlled, swap, multi-control, measurement/reset, oracle and generic 2×2
-matrix gates. Circuits support drag-and-drop or click placement, dynamic wires
-and columns, undo/redo, zoom/pan, JSON/local-storage save-load and shareable URL
-fragments. Results show probabilities and complex amplitudes.
+matrix gates. Drag a palette gate onto the grid to place it; dragging a placed
+gate moves every component of that operation together, while dropping it outside
+the grid removes it. Circuits support dynamic wires and columns, undo/redo,
+zoom/pan, JSON/local-storage save-load and shareable URL fragments. Results show
+probabilities, complete complex amplitudes, and magnitude/phase/Bloch details.
 
 `npm run test:e2e` runs the Playwright Bell-circuit smoke test (install Chromium
 once with `npx playwright install chromium`). CI rebuilds the TeaVM asset before
