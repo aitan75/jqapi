@@ -60,6 +60,15 @@ MVP gate set: `H`, `X`, `Z`, `CNOT` on 1–8 qubits; results shown as outcome
 probabilities. (The full gate set and editor features are tracked in a follow-up
 feature issue.)
 
+### Bell-state editor demo
+
+The 20-second walkthrough creates a Bell state: on two qubits, drag `H` to
+qubit 0 in the first column, add the `CNOT` control and target in the next
+column, then run the circuit. The local WASM simulator shows equal probability
+for `|00⟩` and `|11⟩`.
+
+![Animated walkthrough of the visual editor: it adds H to qubit 0, connects a CNOT to qubit 1, runs the circuit, and shows 50 percent probability for the 00 and 11 outcomes.](docs/assets/visual-editor-bell-demo.gif)
+
 ### 3. Rebuilding the WASM engine (only if you change the core)
 
 `jqapi-web` runs on the TeaVM output of the `jqapi-wasm` module. Regenerate it only
