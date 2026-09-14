@@ -54,15 +54,15 @@ jobs:
         continue-on-error: true # non-blocking: report visibility without gating the merge
         # The shared dependency-check-data cache is kept warm by the scheduled
         # nvd-cache-warm workflow, so this should normally only need a fast
-        # incremental update. Still capped in case NVD is degraded.
-        timeout-minutes: 15
+        # incremental update. Use coreutils rather than timeout-minutes: a
+        # runner cancellation bypasses continue-on-error and fails the job.
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
           if [ -z "$NVD_API_KEY" ]; then
             echo "::warning::NVD_API_KEY not set — NVD downloads are rate-limited, SCA report may be degraded"
           fi
-          mvn -B org.owasp:dependency-check-maven:12.2.2:check \
+          timeout 15m mvn -B org.owasp:dependency-check-maven:12.2.2:check \
             -DfailBuildOnCVSS=7 \
             -DfailOnError=true \
             ${NVD_API_KEY:+-DnvdApiKey=$NVD_API_KEY}
