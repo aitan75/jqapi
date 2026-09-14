@@ -182,7 +182,7 @@
 }
 
 .gate-btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.03);
   background: rgba(255, 255, 255, 0.08);
 }
 

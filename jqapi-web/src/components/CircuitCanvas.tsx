@@ -30,10 +30,9 @@ const GATE_THEMES: Record<string, GateTheme> = {
 
 export function CircuitCanvas({
   model,
-  onCellClick,
   onDropCell,
   onMoveCell,
-  onRemoveCell,
+  onRemoveGate,
   version,
   zoom,
   onZoom,
@@ -41,10 +40,9 @@ export function CircuitCanvas({
   messages,
 }: {
   model: CircuitModel;
-  onCellClick: (qubit: number, step: number) => void;
   onDropCell: (qubit: number, step: number, tool: Tool) => void;
   onMoveCell: (fromQubit: number, fromStep: number, toQubit: number, toStep: number) => void;
-  onRemoveCell: (qubit: number, step: number) => void;
+  onRemoveGate: (qubit: number, step: number) => void;
   version: number;
   zoom: number;
   onZoom: (zoom: number) => void;
@@ -60,7 +58,11 @@ export function CircuitCanvas({
   const move = (fromQubit: number, fromStep: number, x: number, y: number) => {
     const toQubit = Math.floor((fromQubit * CELL + CELL / 2 + y) / CELL);
     const toStep = Math.floor((fromStep * CELL + CELL / 2 + x) / CELL);
-    if (toQubit >= 0 && toQubit < model.numQubits && toStep >= 0 && toStep < model.columns) onMoveCell(fromQubit, fromStep, toQubit, toStep);
+    if (toQubit >= 0 && toQubit < model.numQubits && toStep >= 0 && toStep < model.columns) {
+      onMoveCell(fromQubit, fromStep, toQubit, toStep);
+    } else {
+      onRemoveGate(fromQubit, fromStep);
+    }
   };
   const gateDragStart = (event: Parameters<NonNullable<ComponentProps<typeof Group>['onDragStart']>>[0]) => {
     event.cancelBubble = true;
@@ -74,7 +76,7 @@ export function CircuitCanvas({
   const gateClick = (qubit: number, step: number) => setMenu({ qubit, step });
   const gateDoubleClick = (qubit: number, step: number) => {
     setMenu(null);
-    onRemoveCell(qubit, step);
+    onRemoveGate(qubit, step);
   };
 
   // Qubit wires and labels
@@ -118,7 +120,6 @@ export function CircuitCanvas({
     // Step cells
     for (let s = 0; s < model.columns; s++) {
       const x = LABEL_W + s * CELL + CELL / 2;
-      const click = () => onCellClick(q, s);
       const isDropTarget = dropTarget?.qubit === q && dropTarget.step === s;
 
       // Grid slot outline
@@ -136,8 +137,6 @@ export function CircuitCanvas({
           shadowColor={isDropTarget ? '#00f0ff' : undefined}
           shadowBlur={isDropTarget ? 12 : 0}
           shadowOpacity={isDropTarget ? 0.6 : 0}
-          onClick={click}
-          onTap={click}
         />,
       );
 
@@ -410,7 +409,7 @@ export function CircuitCanvas({
         <Stage width={width * zoom} height={height * zoom} key={version} x={pan.x} y={pan.y} scaleX={zoom} scaleY={zoom} draggable onDragEnd={(event) => setPan(event.target.position())}>
           <Layer>{nodes}</Layer>
         </Stage>
-        {menu && <div className="gate-menu" style={{ left: LABEL_W + menu.step * CELL, top: menu.qubit * CELL }}><button type="button" onClick={() => { onRemoveCell(menu.qubit, menu.step); setMenu(null); }}>{messages.tools.erase}</button></div>}
+        {menu && <div className="gate-menu" style={{ left: LABEL_W + menu.step * CELL, top: menu.qubit * CELL }}><button type="button" onClick={() => { onRemoveGate(menu.qubit, menu.step); setMenu(null); }}>{messages.tools.erase}</button></div>}
       </div>
     </div>
   );
