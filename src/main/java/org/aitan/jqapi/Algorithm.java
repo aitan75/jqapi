@@ -62,7 +62,7 @@ public class Algorithm {
             throw new JQApiLimitException("Search requires " + N_QUBIT + " qubits, exceeds maximum allowed search qubits (" + config.maxSearchQubits() + ")");
         }
         int N = 1 << N_QUBIT;
-        final double count = Math.PI * Math.sqrt(N) / 4;
+        final int iterations = (int) Math.floor(Math.PI * Math.sqrt(N) / 4);
         Circuit circuit = new Circuit(N_QUBIT, config);
         CircuitLevel level1 = new CircuitLevel();
         Integer[] qubitIndexes = IntStream.range(0, N_QUBIT).boxed().toArray(Integer[]::new);
@@ -78,7 +78,7 @@ public class Algorithm {
             QuantumSimulator simulator = new LocalSimulator(circuit);
             simulator.execute();
             QuantumRegister qreg = simulator.getQuantumRegister();
-            for (int i = 1; i < count; i++) {
+            for (int i = 0; i < iterations; i++) {
                 qreg.applyPhaseOracle(markedIndexes);
                 qreg.applyGroverDiffusion();
             }
