@@ -68,7 +68,7 @@ Clone and build with Maven:
 mvn clean package
 ```
 
-The build produces `target/jqapi-1.0.1.jar`.
+The build produces `target/jqapi-1.1.0.jar`.
 
 To use jqapi from another Maven project, install it to your local repository:
 
@@ -82,12 +82,12 @@ then add the dependency:
 <dependency>
     <groupId>org.aitan</groupId>
     <artifactId>jqapi</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
 > The `groupId`/`artifactId` above reflect the project coordinates
-> (`org.aitan:jqapi:1.0.1`). jqapi is not published to Maven Central, so build
+> (`org.aitan:jqapi:1.1.0`). jqapi is not published to Maven Central, so build
 > and install it locally first.
 
 ### The full product (browser circuit editor)
