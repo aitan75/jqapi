@@ -2,6 +2,12 @@ import type { CircuitSpec, ComplexMatrix, Gate } from '../wasm/types';
 
 export const DEFAULT_COLUMNS = 8;
 export const MAX_QUBITS = 8;
+/** CircuitSpec format version supported by the editor (mirrors `CircuitSpec.CURRENT_VERSION`). */
+export const CURRENT_VERSION = 1;
+/** Mirrors `CircuitSpecJson.MAX_GATES`: total gate placements accepted from untrusted input. */
+export const MAX_GATES = 100_000;
+/** Upper bound on levels accepted from untrusted input; bounds the editor grid before it is built. */
+export const MAX_LEVELS = 100_000;
 
 export const PAULI_X_MATRIX: ComplexMatrix = [
   [{ re: 0, im: 0 }, { re: 1, im: 0 }],
@@ -130,6 +136,7 @@ export class CircuitModel {
 
   /** Rebuilds the editable subset of CircuitSpec used by this editor. */
   static fromSpec(spec: CircuitSpec): CircuitModel {
+    if (!isCircuitSpec(spec)) throw new Error('Invalid CircuitSpec');
     const model = new CircuitModel(spec.numQubits, Math.max(DEFAULT_COLUMNS, spec.levels.length));
     spec.levels.forEach((level, step) => level.gates.forEach((gate) => model.placeGate(step, gate)));
     return model;
@@ -208,6 +215,93 @@ export class CircuitModel {
       if (controls.MULTI_CONTROLLED.length && targets.MULTI_CONTROLLED.length) gates.push({ kind: 'MULTI_CONTROLLED', targets: [targets.MULTI_CONTROLLED[0]], controls: controls.MULTI_CONTROLLED, params: {}, matrix: PAULI_X_MATRIX });
       if (gates.length) levels.push({ gates });
     }
-    return { version: 1, numQubits: this.numQubits, levels };
+    return { version: CURRENT_VERSION, numQubits: this.numQubits, levels };
   }
+}
+
+const SINGLE_QUBIT_KINDS = new Set(['H', 'X', 'Y', 'Z', 'S', 'T', 'MEASUREMENT', 'RESET']);
+const ROTATION_KINDS = new Set(['RX', 'RY', 'RZ', 'PHASE']);
+const CONTROLLED_KINDS = new Set(['CNOT', 'CZ', 'CY']);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function isIndex(value: unknown, numQubits: number): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < numQubits;
+}
+
+function isIndexArray(value: unknown, numQubits: number): value is number[] {
+  return Array.isArray(value) && value.every((index) => isIndex(index, numQubits));
+}
+
+function isComplexMatrix(value: unknown, dimension: number): boolean {
+  if (!Array.isArray(value) || value.length !== dimension) return false;
+  return value.every((row) => Array.isArray(row)
+    && row.length === dimension
+    && row.every((cell) => isRecord(cell) && isFiniteNumber(cell.re) && isFiniteNumber(cell.im)));
+}
+
+function hasUniqueIndexes(indexes: number[]): boolean {
+  return new Set(indexes).size === indexes.length;
+}
+
+function areDisjoint(a: number[], b: number[]): boolean {
+  const seen = new Set(a);
+  return b.every((index) => !seen.has(index));
+}
+
+function isGate(value: unknown, numQubits: number): boolean {
+  if (!isRecord(value)) return false;
+  const { kind, targets, controls, params, matrix } = value;
+  if (typeof kind !== 'string') return false;
+  if (!isIndexArray(targets, numQubits) || !isIndexArray(controls, numQubits)) return false;
+  if (!hasUniqueIndexes(targets) || !hasUniqueIndexes(controls) || !areDisjoint(targets, controls)) return false;
+  if (!isRecord(params) || !Object.values(params).every(isFiniteNumber)) return false;
+
+  if (CONTROLLED_KINDS.has(kind)) return targets.length === 1 && controls.length === 1;
+  if (kind === 'SWAP') return targets.length === 2 && controls.length === 0;
+  if (kind === 'CSWAP') return targets.length === 2 && controls.length === 1;
+  if (kind === 'TOFFOLI') return targets.length === 1 && controls.length === 2;
+  if (kind === 'MULTI_CONTROLLED') {
+    return targets.length === 1 && controls.length >= 1 && isComplexMatrix(matrix, 2 ** targets.length);
+  }
+  if (ROTATION_KINDS.has(kind)) return targets.length === 1 && controls.length === 0 && isFiniteNumber(params.theta);
+  if (kind === 'U3') {
+    return targets.length === 1 && controls.length === 0
+      && isFiniteNumber(params.theta) && isFiniteNumber(params.phi) && isFiniteNumber(params.lambda);
+  }
+  if (kind === 'ORACLE' || kind === 'GENERIC') {
+    return targets.length === 1 && controls.length === 0 && isComplexMatrix(matrix, 2 ** targets.length);
+  }
+  if (SINGLE_QUBIT_KINDS.has(kind)) return targets.length === 1 && controls.length === 0;
+  return false;
+}
+
+/**
+ * Structural guard for untrusted `CircuitSpec` payloads (shared-circuit URL
+ * fragments and loaded JSON files). Validates shape, qubit bounds, unique and
+ * disjoint indexes, per-kind arity, `2^n × 2^n` matrices, and the level/gate
+ * limits, so a malformed payload is rejected before it can build a
+ * `CircuitModel` or reach the WASM bridge as a trusted spec.
+ */
+export function isCircuitSpec(value: unknown): value is CircuitSpec {
+  if (!isRecord(value)) return false;
+  const { version, numQubits, levels } = value;
+  if (version !== CURRENT_VERSION || !Number.isInteger(numQubits)) return false;
+  const qubits = numQubits as number;
+  if (qubits < 1 || qubits > MAX_QUBITS) return false;
+  if (!Array.isArray(levels) || levels.length > MAX_LEVELS) return false;
+  let gateCount = 0;
+  for (const level of levels) {
+    if (!isRecord(level) || !Array.isArray(level.gates)) return false;
+    gateCount += level.gates.length;
+    if (gateCount > MAX_GATES) return false;
+    if (!level.gates.every((gate) => isGate(gate, qubits))) return false;
+  }
+  return true;
 }

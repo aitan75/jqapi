@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Security audit L-1: style-src keeps 'unsafe-inline' because the editor sets
+      dynamic inline style attributes (the gate menu position and the result-bar
+      widths). CSP nonces/hashes apply to <style> elements, not to style
+      attributes, so removing 'unsafe-inline' would require replacing those
+      overlays with class-only styling. The follow-up is tracked in issue #103 and
+      documented in jqapi-web/README.md.
+    -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws:; object-src 'none'; base-uri 'self'; form-action 'self'" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

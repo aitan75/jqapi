@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CircuitModel, PAULI_X_MATRIX } from './circuit';
+import { CircuitModel, isCircuitSpec, MAX_GATES, MAX_LEVELS, MAX_QUBITS, PAULI_X_MATRIX } from './circuit';
 
 describe('CircuitModel.toSpec', () => {
   it('builds the Bell CircuitSpec from a drawn circuit', () => {
@@ -112,5 +112,79 @@ describe('CircuitModel.toSpec', () => {
     source.place(1, 1, { kind: 'CNOT', role: 'target' });
     source.place(1, 2, { kind: 'ORACLE', matrix: PAULI_X_MATRIX });
     expect(CircuitModel.fromSpec(source.toSpec()).toSpec()).toEqual(source.toSpec());
+  });
+});
+
+describe('isCircuitSpec', () => {
+  const valid = {
+    version: 1,
+    numQubits: 2,
+    levels: [
+      { gates: [{ kind: 'H', targets: [0], controls: [], params: {} }] },
+      { gates: [{ kind: 'CNOT', targets: [1], controls: [0], params: {} }] },
+    ],
+  };
+
+  it('accepts a structurally valid spec and editor output', () => {
+    expect(isCircuitSpec(valid)).toBe(true);
+    const model = new CircuitModel(2, 2);
+    model.place(0, 0, { kind: 'RX', theta: 1 });
+    model.place(0, 1, { kind: 'GENERIC', matrix: PAULI_X_MATRIX });
+    expect(isCircuitSpec(model.toSpec())).toBe(true);
+  });
+
+  it('rejects non-objects and missing fields', () => {
+    expect(isCircuitSpec(null)).toBe(false);
+    expect(isCircuitSpec('spec')).toBe(false);
+    expect(isCircuitSpec([])).toBe(false);
+    expect(isCircuitSpec({ version: 1, numQubits: 2 })).toBe(false);
+    expect(isCircuitSpec({ version: 1, numQubits: 2, levels: 'nope' })).toBe(false);
+  });
+
+  it('rejects out-of-range qubit counts and indexes', () => {
+    expect(isCircuitSpec({ ...valid, numQubits: 0 })).toBe(false);
+    expect(isCircuitSpec({ ...valid, numQubits: MAX_QUBITS + 1 })).toBe(false);
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'H', targets: [5], controls: [], params: {} }] }] })).toBe(false);
+  });
+
+  it('rejects unsupported format versions', () => {
+    expect(isCircuitSpec({ ...valid, version: 2 })).toBe(false);
+    expect(isCircuitSpec({ ...valid, version: '1' })).toBe(false);
+  });
+
+  it('rejects unknown kinds, missing or non-finite params', () => {
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'NOPE', targets: [0], controls: [], params: {} }] }] })).toBe(false);
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'RX', targets: [0], controls: [], params: {} }] }] })).toBe(false);
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'RX', targets: [0], controls: [], params: { theta: Infinity } }] }] })).toBe(false);
+  });
+
+  it('rejects wrong control/target arity', () => {
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'CNOT', targets: [1], controls: [], params: {} }] }] })).toBe(false);
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'H', targets: [0, 1], controls: [], params: {} }] }] })).toBe(false);
+  });
+
+  it('rejects a missing or malformed matrix', () => {
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'GENERIC', targets: [0], controls: [], params: {} }] }] })).toBe(false);
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'GENERIC', targets: [0], controls: [], params: {}, matrix: [[{ re: 1 }]] }] }] })).toBe(false);
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'GENERIC', targets: [0], controls: [], params: {}, matrix: [[1, 0]] }] }] })).toBe(false);
+  });
+
+  it('rejects a matrix whose dimension does not match the target count', () => {
+    // One target requires a 2x2 matrix; 1x1 and 3x3 are rejected.
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'GENERIC', targets: [0], controls: [], params: {}, matrix: [[{ re: 1, im: 0 }]] }] }] })).toBe(false);
+    const threeByThree = Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => ({ re: 0, im: 0 })));
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'GENERIC', targets: [0], controls: [], params: {}, matrix: threeByThree }] }] })).toBe(false);
+  });
+
+  it('rejects duplicate or overlapping indexes', () => {
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'SWAP', targets: [0, 0], controls: [], params: {} }] }] })).toBe(false);
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'TOFFOLI', targets: [1], controls: [0, 0], params: {} }] }] })).toBe(false);
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: [{ kind: 'CNOT', targets: [0], controls: [0], params: {} }] }] })).toBe(false);
+  });
+
+  it('rejects unbounded level and gate counts', () => {
+    const gate = { kind: 'H', targets: [0], controls: [], params: {} };
+    expect(isCircuitSpec({ ...valid, levels: [{ gates: Array.from({ length: MAX_GATES + 1 }, () => gate) }] })).toBe(false);
+    expect(isCircuitSpec({ ...valid, levels: Array.from({ length: MAX_LEVELS + 1 }, () => ({ gates: [] })) })).toBe(false);
   });
 });

@@ -168,6 +168,33 @@ public class CircuitSpecJsonTest {
     }
 
     @Test
+    void fromJson_duplicateTargets_rejected() {
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson(
+                "{\"version\":1,\"numQubits\":2,\"levels\":[{\"gates\":"
+                + "[{\"kind\":\"SWAP\",\"targets\":[0,0],\"controls\":[],\"params\":{}}]}]}"));
+    }
+
+    @Test
+    void fromJson_duplicateControls_rejected() {
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson(
+                "{\"version\":1,\"numQubits\":2,\"levels\":[{\"gates\":"
+                + "[{\"kind\":\"TOFFOLI\",\"targets\":[1],\"controls\":[0,0],\"params\":{}}]}]}"));
+    }
+
+    @Test
+    void fromJson_tooManyLevels_rejected() {
+        StringBuilder sb = new StringBuilder("{\"version\":1,\"numQubits\":1,\"levels\":[");
+        for (int i = 0; i <= CircuitSpecJson.MAX_LEVELS; i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append("{\"gates\":[]}");
+        }
+        sb.append("]}");
+        assertThrows(JQApiLimitException.class, () -> CircuitSpecJson.fromJson(sb.toString()));
+    }
+
+    @Test
     void fromJson_tooManyGates_rejected() {
         StringBuilder sb = new StringBuilder("{\"version\":1,\"numQubits\":1,\"levels\":[{\"gates\":[");
         for (int i = 0; i <= CircuitSpecJson.MAX_GATES; i++) {
@@ -208,5 +235,59 @@ public class CircuitSpecJsonTest {
     @Test
     void fromJson_invalidUnicodeEscape_rejected() {
         assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson("\"\\uZZZZ\""));
+    }
+
+    @Test
+    void fromJson_signedUnicodeEscape_rejected() {
+        // Integer.parseInt("+123", 16) would otherwise accept the sign prefix.
+        assertThrows(IllegalArgumentException.class,
+                () -> CircuitSpecJson.fromJson(specWithParamKey("\"\\u+123\"")));
+    }
+
+    @Test
+    void fromJson_loneHighSurrogateEscape_rejected() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> CircuitSpecJson.fromJson(specWithParamKey("\"\\uD800\"")));
+        assertTrue(e.getMessage().contains("surrogate"), e.getMessage());
+    }
+
+    @Test
+    void fromJson_loneLowSurrogateEscape_rejected() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> CircuitSpecJson.fromJson(specWithParamKey("\"\\uDC00\"")));
+        assertTrue(e.getMessage().contains("surrogate"), e.getMessage());
+    }
+
+    @Test
+    void fromJson_highSurrogateEscapeWithoutLowSurrogate_rejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> CircuitSpecJson.fromJson(specWithParamKey("\"\\uD83Dx\"")));
+    }
+
+    @Test
+    void fromJson_rawLoneSurrogate_rejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> CircuitSpecJson.fromJson(specWithParamKey("\"a" + (char) 0xD800 + "\"")));
+    }
+
+    @Test
+    void fromJson_validSurrogatePairEscape_accepted() {
+        CircuitSpec spec = CircuitSpecJson.fromJson(specWithParamKey("\"\\uD83D\\uDE00\""));
+        Map<String, Double> params = spec.levels().get(0).gates().get(0).params();
+        assertTrue(params.containsKey("\uD83D\uDE00"), params.keySet().toString());
+    }
+
+    @Test
+    void fromJson_supportedEscapes_retainBehavior() {
+        CircuitSpec spec = CircuitSpecJson.fromJson(
+                specWithParamKey("\"line\\nbreak\\ttab\\\"quote\\/slash\""));
+        Map<String, Double> params = spec.levels().get(0).gates().get(0).params();
+        assertTrue(params.containsKey("line\nbreak\ttab\"quote/slash"), params.keySet().toString());
+    }
+
+    /** A minimal schema-valid spec whose single gate carries the given JSON key. */
+    private static String specWithParamKey(String jsonKey) {
+        return "{\"version\":1,\"numQubits\":1,\"levels\":[{\"gates\":"
+                + "[{\"kind\":\"H\",\"targets\":[0],\"controls\":[],\"params\":{" + jsonKey + ":1.0}}]}]}";
     }
 }
