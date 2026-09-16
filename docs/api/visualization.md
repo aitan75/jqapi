@@ -87,7 +87,7 @@ URL-sharing).
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `toJson(CircuitSpec)` | `String` | Compact, deterministic JSON (fixed key order; param keys sorted). Throws on non-finite numbers. |
-| `fromJson(String)` | `CircuitSpec` | Parses and **validates at the boundary**: `numQubits` in `1..maxQubits`, indexes in range, controls/targets disjoint, matrix `2^k × 2^k`, at most `MAX_GATES` gates, finite numbers, known `GateKind`. Throws `IllegalArgumentException`/`JQApiLimitException` on bad input. |
+| `fromJson(String)` | `CircuitSpec` | Parses and **validates at the boundary**: `numQubits` in `1..maxQubits`, indexes in range and unique, controls/targets disjoint, matrix `2^k × 2^k`, at most `MAX_GATES` gates and `MAX_LEVELS` levels, finite numbers, known `GateKind`. String escapes are decoded to Unicode scalar values, so lone UTF-16 surrogates (raw or `\uXXXX`-escaped) are rejected per RFC 8259 §8.2. Throws `IllegalArgumentException`/`JQApiLimitException` on bad input. |
 
 ```json
 {"version":1,"numQubits":2,"levels":[

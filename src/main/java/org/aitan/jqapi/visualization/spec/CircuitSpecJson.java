@@ -1,9 +1,11 @@
 package org.aitan.jqapi.visualization.spec;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import org.aitan.jqapi.JQAPIConfig;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
@@ -20,6 +22,9 @@ public final class CircuitSpecJson {
 
     /** Upper bound on total gate placements accepted from untrusted input. */
     public static final int MAX_GATES = 100_000;
+
+    /** Upper bound on levels accepted from untrusted input (bounds empty-level floods). */
+    public static final int MAX_LEVELS = 100_000;
 
     /** Upper bound on raw JSON input length accepted from untrusted sources. */
     public static final int MAX_JSON_LENGTH = 16 * 1024 * 1024;
@@ -169,6 +174,9 @@ public final class CircuitSpecJson {
             throw new JQApiLimitException("numQubits out of range (1.." + maxQubits + "): " + numQubits);
         }
         List<Object> levelsJson = asArray(root.get("levels"), "levels");
+        if (levelsJson.size() > MAX_LEVELS) {
+            throw new JQApiLimitException("too many levels (max " + MAX_LEVELS + ")");
+        }
         List<LevelSpec> levels = new ArrayList<>(levelsJson.size());
         int gateCount = 0;
         for (Object lo : levelsJson) {
@@ -209,10 +217,14 @@ public final class CircuitSpecJson {
     private static List<Integer> mapIndexes(Object o, int numQubits, String field) {
         List<Object> arr = asArray(o, field);
         List<Integer> out = new ArrayList<>(arr.size());
+        Set<Integer> seen = new HashSet<>();
         for (Object x : arr) {
             int idx = asInt(x, field + " element");
             if (idx < 0 || idx >= numQubits) {
                 throw new JQApiLimitException(field + " index out of range [0," + numQubits + "): " + idx);
+            }
+            if (!seen.add(idx)) {
+                throw new IllegalArgumentException("duplicate " + field + " index: " + idx);
             }
             out.add(idx);
         }
@@ -424,23 +436,83 @@ public final class CircuitSpecJson {
                         case 'r' -> sb.append('\r');
                         case 'b' -> sb.append('\b');
                         case 'f' -> sb.append('\f');
-                        case 'u' -> {
-                            if (pos + 4 > s.length()) {
-                                throw err("truncated unicode escape");
-                            }
-                            try {
-                                sb.append((char) Integer.parseInt(s.substring(pos, pos + 4), 16));
-                            } catch (NumberFormatException nfe) {
-                                throw err("invalid unicode escape");
-                            }
-                            pos += 4;
-                        }
+                        case 'u' -> appendUnicodeEscape(sb);
                         default -> throw err("invalid escape '\\" + e + "'");
                     }
+                } else if (Character.isHighSurrogate(c)) {
+                    //A raw high surrogate must be followed by a raw low surrogate;
+                    //an unpaired one is not a valid Unicode scalar value (RFC 8259 8.2).
+                    if (pos >= s.length() || !Character.isLowSurrogate(s.charAt(pos))) {
+                        throw err("lone high surrogate character");
+                    }
+                    sb.append(c).append(s.charAt(pos++));
+                } else if (Character.isLowSurrogate(c)) {
+                    throw err("lone low surrogate character");
                 } else {
                     sb.append(c);
                 }
             }
+        }
+
+        /**
+         * Reads and appends the body of a {@code \\uXXXX} escape (the leading
+         * {@code \\u} has already been consumed). A high surrogate must be
+         * immediately followed by an escaped low surrogate so the pair decodes to
+         * a single Unicode scalar value; an unpaired surrogate is rejected because
+         * RFC 8259 section 8.2 does not permit it.
+         */
+        private void appendUnicodeEscape(StringBuilder sb) {
+            char ch = (char) readHexCodeUnit();
+            if (Character.isHighSurrogate(ch)) {
+                if (pos + 2 > s.length() || s.charAt(pos) != '\\' || s.charAt(pos + 1) != 'u') {
+                    throw err("lone high surrogate escape");
+                }
+                pos += 2;
+                char low = (char) readHexCodeUnit();
+                if (!Character.isLowSurrogate(low)) {
+                    throw err("high surrogate escape not followed by a low surrogate");
+                }
+                sb.append(ch).append(low);
+            } else if (Character.isLowSurrogate(ch)) {
+                throw err("lone low surrogate escape");
+            } else {
+                sb.append(ch);
+            }
+        }
+
+        /**
+         * Reads exactly four ASCII hexadecimal digits. Unlike
+         * {@link Integer#parseInt(String, int)} this rejects sign prefixes and
+         * any non-hex character, and unlike {@link Character#digit(char, int)}
+         * it rejects non-ASCII Unicode digits.
+         */
+        private int readHexCodeUnit() {
+            if (pos + 4 > s.length()) {
+                throw err("truncated unicode escape");
+            }
+            int value = 0;
+            for (int i = 0; i < 4; i++) {
+                int digit = asciiHexDigit(s.charAt(pos + i));
+                if (digit < 0) {
+                    throw err("invalid unicode escape");
+                }
+                value = (value << 4) | digit;
+            }
+            pos += 4;
+            return value;
+        }
+
+        private static int asciiHexDigit(char c) {
+            if (c >= '0' && c <= '9') {
+                return c - '0';
+            }
+            if (c >= 'a' && c <= 'f') {
+                return c - 'a' + 10;
+            }
+            if (c >= 'A' && c <= 'F') {
+                return c - 'A' + 10;
+            }
+            return -1;
         }
 
         private Double parseNumber() {

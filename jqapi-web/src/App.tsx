@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CircuitModel, PAULI_X_MATRIX, type EditorState, type Placement } from './model/circuit';
+import { CircuitModel, isCircuitSpec, PAULI_X_MATRIX, type EditorState, type Placement } from './model/circuit';
 import { probabilities } from './model/results';
 import { run } from './wasm/bridge';
 import type { Amplitude, CircuitSpec, ComplexMatrix } from './wasm/types';
@@ -40,7 +40,14 @@ function placementFor(tool: Tool, theta: number, phi: number, lambda: number, ma
 
 function specFromHash(): CircuitSpec | null {
   const value = new URLSearchParams(location.hash.slice(1)).get('circuit');
-  return value ? JSON.parse(atob(value)) as CircuitSpec : null;
+  if (!value) return null;
+  try {
+    const parsed: unknown = JSON.parse(atob(value));
+    return isCircuitSpec(parsed) ? parsed : null;
+  } catch {
+    // A malformed base64/JSON fragment is ignored, never loaded.
+    return null;
+  }
 }
 
 export default function App() {
@@ -89,12 +96,9 @@ export default function App() {
   };
 
   useEffect(() => {
-    try {
-      const shared = specFromHash();
-      if (shared) loadSpec(shared);
-    } catch {
-      setError('The shared circuit URL is invalid.');
-    }
+    // Structurally invalid shared-circuit fragments are ignored safely.
+    const shared = specFromHash();
+    if (shared) loadSpec(shared);
   }, []);
 
   useEffect(() => { localStorage.setItem(LANGUAGE_STORAGE_KEY, language); }, [language]);
@@ -175,7 +179,9 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        loadSpec(JSON.parse(String(reader.result)) as CircuitSpec);
+        const parsed: unknown = JSON.parse(String(reader.result));
+        if (!isCircuitSpec(parsed)) throw new Error('Unable to load circuit JSON.');
+        loadSpec(parsed);
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : 'Unable to load circuit JSON.');
       }

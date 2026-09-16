@@ -177,6 +177,12 @@ Samples a basis state according to `|amplitude|^2`, sets the state vector to
 that basis state, and fills `getResult()` with `QubitZero`/`QubitOne` per bit.
 After this call the state is a definite computational basis state.
 
+Sampling uses a cryptographic `SecureRandom` shared by all registers. The
+instance is thread-safe; the security audit (issue #103, finding M-2) retained
+it after `SecureRandomContentionBenchmark` showed a measurement draws once per
+`O(2^n)` state-vector scan, so the shared instance is not a throughput
+bottleneck. No non-cryptographic RNG is used.
+
 ### `measureQubitAtIndexes(List<Integer> indexes)`
 
 Measures only the given qubit positions. If `indexes.size() >= size` it delegates

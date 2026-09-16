@@ -54,3 +54,21 @@ once with `npx playwright install chromium`). CI rebuilds the TeaVM asset before
 the web checks and verifies that the committed bridge is current.
 The gate palette is grouped by arity (single, two, three, and multi-qubit), while the algorithms are in a separate menu. Both menu structures support English and Italian.
 The desktop editor keeps those menus in a left sidebar, with the circuit, actions, and results in the central workspace; the footer displays the current system time.
+
+## Security hardening
+
+The 2026-09-16 audit (issue #103) hardened the editor's untrusted-input paths:
+
+- **Shared-circuit URL fragments.** A decoded `#circuit=…` payload is passed
+  through `isCircuitSpec` (`src/model/circuit.ts`) before it can build a
+  `CircuitModel`. The same structural guard validates loaded JSON files, so a
+  malformed or out-of-range spec is ignored and never reaches the WASM bridge as
+  a trusted `CircuitSpec`. The guard checks the format version, shape, qubit
+  bounds, unique and disjoint indexes, gate kinds, per-kind arity, `2^n × 2^n`
+  matrices, and the level/gate limits (`MAX_LEVELS`/`MAX_GATES`).
+- **Content-Security-Policy.** `index.html` keeps `'unsafe-inline'` for
+  `style-src`. The editor relies on dynamic inline style attributes (gate-menu
+  position and result-bar widths), which CSP nonces/hashes cannot cover because
+  they apply to `<style>` elements rather than to style attributes. Removing it
+  would require rendering those overlays with class-only styling; that refactor
+  is the recorded follow-up for audit finding L-1.

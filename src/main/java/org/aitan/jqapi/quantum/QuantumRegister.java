@@ -20,6 +20,15 @@ import org.aitan.jqapi.utils.Constants;
  */
 public class QuantumRegister {
 
+    /**
+     * Shared source of measurement randomness. {@link SecureRandom} is
+     * thread-safe and cryptographically strong, so one instance is reused rather
+     * than allocated per register. The security audit (issue #103, finding M-2)
+     * kept this implementation: {@code SecureRandomContentionBenchmark} shows a
+     * measurement draws once per {@code O(2^n)} state-vector scan, so the shared
+     * instance is not a throughput bottleneck. Do not replace it with a
+     * non-cryptographic RNG.
+     */
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final Qubit[] result;
