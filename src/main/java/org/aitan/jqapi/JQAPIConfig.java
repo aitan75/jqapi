@@ -12,8 +12,8 @@ import org.aitan.jqapi.quantum.SequentialOperatorExecutor;
  * <p>
  * A configuration holds two limits: the maximum number of qubits allowed in
  * circuits and registers, and the maximum number of qubits allowed for search
- * algorithms (e.g. Grover's search), which is typically lower because the dense
- * oracle matrix grows as {@code 2^n x 2^n}.
+ * algorithms (e.g. Grover's search), which is typically lower because the state
+ * vector grows exponentially as {@code 2^n}.
  * <p>
  * Both limits are hard-capped at {@link #ABSOLUTE_MAX_QUBITS}: state vector
  * dimensions are computed as {@code 1 << n}, which overflows {@code int} beyond

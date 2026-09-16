@@ -56,9 +56,9 @@ npm run dev       # dev server at http://localhost:5173
 npm run build     # production bundle in jqapi-web/dist/ (static files)
 ```
 
-MVP gate set: `H`, `X`, `Z`, `CNOT` on 1–8 qubits; results shown as outcome
-probabilities. (The full gate set and editor features are tracked in a follow-up
-feature issue.)
+The editor supports `H`, `X`, `Z`, and `CNOT` on 1–8 qubits, with results shown as
+outcome probabilities. The full gate set is shipped with the library — see
+[Supported gates](#supported-gates) below.
 
 ### Bell-state editor demo
 
@@ -184,23 +184,21 @@ State vectors grow as 2^n, so registers, circuits and searches are bounded by `J
 
 - defaults: `maxQubits` = 24, `maxSearchQubits` = 12; both hard-capped at 30 (`ABSOLUTE_MAX_QUBITS`, where `1 << n` would overflow `int`)
 - override at JVM startup with `-Djqapi.max.qubits=N` / `-Djqapi.max.search.qubits=N` (read once at class initialization; invalid or out-of-range values fall back to the defaults, and later `System.setProperty` calls have no effect)
-- per-instance: build a config with `JQAPIConfig.of(maxQubits, maxSearchQubits)` and pass it to `new Circuit(size, config)`, `QuantumRegister.forSimulation(size, config)` or `Algorithm.search(list, filter, config)`
+- per-instance: build a config with `JQAPIConfig.of(maxQubits, maxSearchQubits)` and pass it to `new Circuit(size, config)` or `Algorithm.search(list, filter, config)`
 - exceeding a limit throws the unchecked `JQApiLimitException`
 
-### Measured ceilings (benchmark)
+### Historical benchmark (pre-#15 search)
 
-The defaults are conservative theoretical values; the real ceiling depends on the machine. Values measured with `MemoryLimitBenchmark` on a MacBook Pro (Apple M2, 8 cores, 24 GB RAM), macOS/aarch64, OpenJDK 25, default JVM max heap 6144 MB:
+These values were measured with `MemoryLimitBenchmark` on a MacBook Pro (Apple M2, 8 cores, 24 GB RAM), macOS/aarch64, OpenJDK 25, and the default JVM max heap of 6144 MB. The search values use the pre-#15 dense-oracle implementation, so they are historical results, not current search ceilings:
 
 | Metric | Measured |
 |--------|----------|
 | Max register qubits completed | **26** (2^26 amplitudes; n=27 → `OutOfMemoryError`) |
 | 3-level circuit at the default (24 qubits) | ~20 s |
-| Max search qubits completed | **14** (list of 16384, ~146 s — over the 120 s/step budget) |
-| Search at the default (12 qubits) | list of 4096 in ~5.4 s |
+| Historical max search qubits completed | **14** (list of 16384, ~146 s — over the 120 s/step budget) |
+| Historical search at the default (12 qubits) | list of 4096 in ~5.4 s |
 
-Grover search applies its oracle and diffusion steps directly to the state vector,
-so its memory is O(2^n), like the simulator. The benchmark is excluded from
-`mvn test` on purpose; re-run it on your machine with:
+Since #15, `Algorithm.search` applies the phase oracle and diffusion operator in place on the state vector, so its memory profile matches the simulator (O(2^n)). Re-run the benchmark on your machine before treating a search limit as current:
 
 ```bash
 mvn test-compile
@@ -234,11 +232,7 @@ We accept issues that are **properly documented**: state the issue type and use 
 | Bug | `[BUG] - ` | `bug` | Defects and robustness/edge-case fixes |
 | Security | `[SECURITY] - ` | `security` | Security hardening / DevSecOps |
 
-A good issue includes: a short **Summary**, the **Motivation** (or the findings/steps to reproduce), a **Proposed solution**, **Acceptance criteria** (checklist), and **References** to affected code (`file:line`). See the open issues for ready-to-follow templates:
-
-- Feature — [#2 initial size-limit configuration](https://github.com/aitan75/jqapi/issues/2)
-- Bug — [#3 harden input handling](https://github.com/aitan75/jqapi/issues/3)
-- Security — [#4 non-blocking CI/supply-chain hardening](https://github.com/aitan75/jqapi/issues/4)
+A good issue includes: a short **Summary**, the **Motivation** (or the findings/steps to reproduce), a **Proposed solution**, **Acceptance criteria** (checklist), and **References** to affected code (`file:line`). Use the tables above to choose the right type, prefix, and label; the issue body should follow the same structure.
 
 ## License
 [MIT](LICENSE)

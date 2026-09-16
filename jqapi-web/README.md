@@ -1,4 +1,4 @@
-# jqapi-web — MVP circuit editor
+# jqapi-web — quantum circuit editor
 
 A zero-backend Vite + React + TypeScript app: draw a small quantum circuit on a
 grid, run it through the vendored WebAssembly/JS simulator bridge (Phase 2b),
