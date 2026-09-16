@@ -18,3 +18,10 @@ COPILOT.md
 # Local review artifacts
 review_report.md
 security_audit_report.md
+reports/
+
+# LinkedIn marketing assets (not part of the library source)
+linkedin-assets/
+
+# Internal planning and design docs (not part of the public API contract)
+docs/superpowers/
