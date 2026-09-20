@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+const theoreticalResults = (page: Page) => page.locator('.results > .results-grid');
+
 async function dropPaletteGate(page: Page, title: string, position: { x: number; y: number }) {
   const canvas = page.locator('canvas');
   const box = await canvas.boundingBox();
@@ -28,8 +30,8 @@ test('draws and simulates a Bell circuit', async ({ page }) => {
   await dropPaletteGate(page, 'Drag or select CNOT target', { x: 206, y: 90 });
   await page.getByRole('button', { name: /run simulation/i }).click();
   await expect(page.getByText('State Vector & Outcome Probabilities')).toBeVisible();
-  await expect(page.getByText('|00⟩')).toBeVisible();
-  await expect(page.getByText('|11⟩')).toBeVisible();
+  await expect(theoreticalResults(page).getByText('|00⟩')).toBeVisible();
+  await expect(theoreticalResults(page).getByText('|11⟩')).toBeVisible();
 });
 
 test('opens erase on click and removes a gate on double click', async ({ page }) => {
@@ -46,7 +48,7 @@ test('opens erase on click and removes a gate on double click', async ({ page })
   await canvas.click({ position: { x: 86, y: 30 } });
   await canvas.dblclick({ position: { x: 86, y: 30 } });
   await page.getByRole('button', { name: /run simulation/i }).click();
-  await expect(page.getByText('100.0%')).toBeVisible();
+  await expect(theoreticalResults(page).getByText('100.0%')).toBeVisible();
 });
 
 test('highlights the valid canvas cell while dragging a palette gate', async ({ page }) => {
@@ -73,7 +75,7 @@ test('does not place a selected gate with a canvas click', async ({ page }) => {
   await page.getByTitle('Drag or select H').click();
   await page.locator('canvas').click({ position: { x: 86, y: 30 } });
   await page.getByRole('button', { name: /run simulation/i }).click();
-  await expect(page.getByText('100.0%')).toBeVisible();
+  await expect(theoreticalResults(page).getByText('100.0%')).toBeVisible();
 });
 
 test('removes a gate dropped outside the grid', async ({ page }) => {
@@ -89,7 +91,7 @@ test('removes a gate dropped outside the grid', async ({ page }) => {
   await page.mouse.move(box.x + 20, box.y + 30);
   await page.mouse.up();
   await page.getByRole('button', { name: /run simulation/i }).click();
-  await expect(page.getByText('100.0%')).toBeVisible();
+  await expect(theoreticalResults(page).getByText('100.0%')).toBeVisible();
 });
 
 test('shows amplitude magnitude, phase, and a Bloch indicator on hover', async ({ page }) => {

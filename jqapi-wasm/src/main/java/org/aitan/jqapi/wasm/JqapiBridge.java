@@ -5,6 +5,7 @@ import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
+import org.aitan.jqapi.quantum.QubitOne;
 import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 import org.aitan.jqapi.visualization.CircuitSpecs;
 import org.aitan.jqapi.visualization.spec.CircuitSpec;
@@ -25,6 +26,10 @@ import org.teavm.jso.JSExport;
  * @author Gaetano Ferrara
  */
 public final class JqapiBridge {
+
+    /** Keep browser sampling bounded: every shot executes a complete simulation. */
+    public static final int MAX_SHOTS = 10_000;
+    private static final QubitOne ONE = new QubitOne();
 
     private JqapiBridge() {
     }
@@ -60,6 +65,54 @@ public final class JqapiBridge {
                 Complex c = state.getEntry(i);
                 sb.append("{\"re\":").append(c.getReal())
                         .append(",\"im\":").append(c.getImaginary()).append('}');
+            }
+            return sb.append("]}").toString();
+        } catch (JQApiLimitException e) {
+            return error("INPUT_LIMIT_EXCEEDED");
+        } catch (IllegalArgumentException e) {
+            return error("INVALID_CIRCUIT_SPEC");
+        } catch (RuntimeException e) {
+            return error("SIMULATION_FAILED");
+        }
+    }
+
+    /**
+     * Runs independently initialized simulations and returns a full
+     * computational-basis histogram. The circuit JSON stays unchanged because
+     * the number of shots is an execution option.
+     *
+     * @param specJson the circuit as {@code CircuitSpec} JSON
+     * @param shots number of independent measurements, from 1 to {@value MAX_SHOTS}
+     * @return {@code {"ok":true,"shots":…,"counts":[…]}} or a stable error code
+     */
+    @JSExport
+    public static String sample(String specJson, int shots) {
+        if (shots < 1 || shots > MAX_SHOTS) {
+            return error("INVALID_SHOT_COUNT");
+        }
+        try {
+            JQAPIConfig config = JQAPIConfig.sequential(JQAPIConfig.DEFAULT_MAX_QUBITS);
+            CircuitSpec spec = CircuitSpecJson.fromJson(specJson, config);
+            Circuit circuit = CircuitSpecs.toCircuit(spec, config);
+            int[] counts = new int[1 << spec.numQubits()];
+            for (int shot = 0; shot < shots; shot++) {
+                LocalSimulator sim = new LocalSimulator(circuit);
+                sim.execute();
+                sim.getQuantumRegister().measure();
+                int outcome = 0;
+                for (int qubit = 0; qubit < spec.numQubits(); qubit++) {
+                    if (sim.getQuantumRegister().getResult()[qubit].equals(ONE)) {
+                        outcome |= 1 << (spec.numQubits() - 1 - qubit);
+                    }
+                }
+                counts[outcome]++;
+            }
+            StringBuilder sb = new StringBuilder("{\"ok\":true,\"shots\":").append(shots).append(",\"counts\":[");
+            for (int i = 0; i < counts.length; i++) {
+                if (i > 0) {
+                    sb.append(',');
+                }
+                sb.append(counts[i]);
             }
             return sb.append("]}").toString();
         } catch (JQApiLimitException e) {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { run } from './bridge';
+import { run, sample } from './bridge';
 import type { CircuitSpec } from './types';
 
 function amplitudesOf(spec: CircuitSpec) {
@@ -100,6 +100,18 @@ describe('wasm bridge', () => {
     });
 
     expect(result).toEqual({ ok: false, error: { code: 'INVALID_CIRCUIT_SPEC' } });
+  });
+
+  it('samples Bell outcomes and validates the shot count', () => {
+    const result = sample(bell, 1_000);
+    if (!result.ok) throw new Error(`Unexpected simulation error: ${result.error.code}`);
+    expect(result.counts).toHaveLength(4);
+    expect(result.counts[1]).toBe(0);
+    expect(result.counts[2]).toBe(0);
+    expect(result.counts[0] + result.counts[3]).toBe(1_000);
+    expect(result.counts[0] / result.shots).toBeGreaterThan(0.35);
+    expect(result.counts[0] / result.shots).toBeLessThan(0.65);
+    expect(sample(bell, 0)).toEqual({ ok: false, error: { code: 'INVALID_SHOT_COUNT' } });
   });
 
   it('runs phase, U3, controlled swap, multi-control, measurement, and matrix gates', () => {

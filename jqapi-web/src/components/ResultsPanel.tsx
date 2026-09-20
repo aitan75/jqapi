@@ -5,6 +5,7 @@ import type { Messages } from '../i18n';
 interface ResultsPanelProps {
   probs: number[] | null;
   amplitudes?: Amplitude[] | null;
+  sampled?: { shots: number; counts: number[] } | null;
   numQubits: number;
   messages: Messages;
 }
@@ -12,7 +13,7 @@ interface ResultsPanelProps {
 /**
  * Rich outcome probabilities & complex state vector visualization.
  */
-export function ResultsPanel({ probs, amplitudes, numQubits, messages }: ResultsPanelProps) {
+export function ResultsPanel({ probs, amplitudes, sampled, numQubits, messages }: ResultsPanelProps) {
   if (!probs || probs.length === 0) {
     return (
       <div className="results">
@@ -66,6 +67,20 @@ export function ResultsPanel({ probs, amplitudes, numQubits, messages }: Results
           );
         })}
       </div>
+      {sampled && <section className="sampled-results" aria-label={messages.observedOutcomes(sampled.shots)}>
+        <h3>{messages.observedOutcomes(sampled.shots)}</h3>
+        <div className="results-grid">
+          {sampled.counts.map((count, i) => {
+            const pct = (count / sampled.shots * 100).toFixed(1);
+            return <div className="sample-row" key={i}>
+              <span className="bar-label">{basisLabel(i, numQubits)}</span>
+              <div className="bar-container"><div className="bar-fill" style={{ width: `${pct}%` }} /></div>
+              <span className="bar-val">{pct}%</span>
+              <span className="sample-count">{messages.count}: {count}</span>
+            </div>;
+          })}
+        </div>
+      </section>}
     </div>
   );
 }

@@ -396,6 +396,24 @@
   color: #fda4af;
 }
 
+.shots-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font: 0.8rem var(--font-mono);
+}
+
+.shots-input input {
+  width: 5.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0.45rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+  font: inherit;
+}
+
 .gate-config-field,
 .matrix-config {
   display: flex;
@@ -785,6 +803,35 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+}
+
+.sampled-results {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.sampled-results h3 {
+  margin: 0;
+  color: var(--text-main);
+  font: 600 1rem var(--font-heading);
+}
+
+.sample-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 70px 140px;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  font: 0.85rem var(--font-mono);
+}
+
+.sample-count {
+  text-align: right;
+  color: var(--text-muted);
+  font-size: 0.75rem;
 }
 
 .bar-row {
