@@ -67,7 +67,7 @@ export default function App() {
   const [probs, setProbs] = useState<number[] | null>(null);
   const [amplitudes, setAmplitudes] = useState<Amplitude[] | null>(null);
   const [sampled, setSampled] = useState<{ shots: number; counts: number[] } | null>(null);
-  const [shots, setShots] = useState('1000');
+  const [shots, setShots] = useState(1000);
   const [error, setError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [language, setLanguage] = useState<Language>(initialLanguage);
@@ -151,11 +151,7 @@ export default function App() {
   };
   const onRun = async () => {
     if (isRunning) return;
-    const shotCount = Number(shots);
-    if (!Number.isInteger(shotCount) || shotCount < 1 || shotCount > 10_000) {
-      setError(text.errors.INVALID_SHOT_COUNT);
-      return;
-    }
+    const shotCount = shots;
     setError(null);
     setIsRunning(true);
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
@@ -215,7 +211,7 @@ export default function App() {
           {error && <div className="error" role="alert" onClick={() => setError(null)}><span>⚠️ {error}</span><span>✕ Dismiss</span></div>}
           <CircuitCanvas messages={text} model={modelRef.current} onDropCell={place} onMoveCell={move} onRemoveGate={(qubit, step) => mutate((model) => model.removeGate(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} isRunning={isRunning} />
           <div className="circuit-actions" role="toolbar" aria-label={text.circuitActions}>
-            <label className="shots-input">{text.shots}<input type="number" min="1" max="10000" step="1" value={shots} onChange={(event) => setShots(event.target.value)} disabled={isRunning} /></label>
+            <label className="shots-input">{text.shots}<input type="number" min="1" max="10000" step="1" value={shots} onChange={(event) => setShots(Math.max(1, Math.min(10_000, Math.trunc(Number(event.target.value) || 1))))} disabled={isRunning} /></label>
             <button className={`run${isRunning ? ' running' : ''}`} type="button" onClick={onRun} disabled={isRunning}>▶ {text.runSimulation}</button>
             <button type="button" onClick={undo} disabled={!undoStack.length}>{text.undo}</button>
             <button type="button" onClick={redo} disabled={!redoStack.length}>{text.redo}</button>
