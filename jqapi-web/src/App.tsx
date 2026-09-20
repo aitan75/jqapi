@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CircuitModel, isCircuitSpec, PAULI_X_MATRIX, type EditorState, type Placement } from './model/circuit';
 import { probabilities } from './model/results';
-import { run } from './wasm/bridge';
+import { run, sample } from './wasm/bridge';
 import type { Amplitude, CircuitSpec, ComplexMatrix } from './wasm/types';
 import type { Preset } from './model/presets';
 import { GatePalette, type Tool } from './components/GatePalette';
@@ -66,6 +66,8 @@ export default function App() {
   const [redoStack, setRedoStack] = useState<EditorState[]>([]);
   const [probs, setProbs] = useState<number[] | null>(null);
   const [amplitudes, setAmplitudes] = useState<Amplitude[] | null>(null);
+  const [sampled, setSampled] = useState<{ shots: number; counts: number[] } | null>(null);
+  const [shots, setShots] = useState('1000');
   const [error, setError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [language, setLanguage] = useState<Language>(initialLanguage);
@@ -78,6 +80,7 @@ export default function App() {
     setColumns(modelRef.current.columns);
     setProbs(null);
     setAmplitudes(null);
+    setSampled(null);
     bump();
   };
   const mutate = (change: (model: CircuitModel) => boolean | void) => {
@@ -148,6 +151,11 @@ export default function App() {
   };
   const onRun = async () => {
     if (isRunning) return;
+    const shotCount = Number(shots);
+    if (!Number.isInteger(shotCount) || shotCount < 1 || shotCount > 10_000) {
+      setError(text.errors.INVALID_SHOT_COUNT);
+      return;
+    }
     setError(null);
     setIsRunning(true);
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
@@ -159,6 +167,12 @@ export default function App() {
       }
       setAmplitudes(result.amplitudes);
       setProbs(probabilities(result.amplitudes));
+      const sampleResult = sample(modelRef.current.toSpec(), shotCount);
+      if (!sampleResult.ok) {
+        setError(text.errors[sampleResult.error.code]);
+        return;
+      }
+      setSampled(sampleResult);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -201,6 +215,7 @@ export default function App() {
           {error && <div className="error" role="alert" onClick={() => setError(null)}><span>⚠️ {error}</span><span>✕ Dismiss</span></div>}
           <CircuitCanvas messages={text} model={modelRef.current} onDropCell={place} onMoveCell={move} onRemoveGate={(qubit, step) => mutate((model) => model.removeGate(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} isRunning={isRunning} />
           <div className="circuit-actions" role="toolbar" aria-label={text.circuitActions}>
+            <label className="shots-input">{text.shots}<input type="number" min="1" max="10000" step="1" value={shots} onChange={(event) => setShots(event.target.value)} disabled={isRunning} /></label>
             <button className={`run${isRunning ? ' running' : ''}`} type="button" onClick={onRun} disabled={isRunning}>▶ {text.runSimulation}</button>
             <button type="button" onClick={undo} disabled={!undoStack.length}>{text.undo}</button>
             <button type="button" onClick={redo} disabled={!redoStack.length}>{text.redo}</button>
@@ -209,7 +224,7 @@ export default function App() {
             <button type="button" className="clear-circuit" onClick={() => mutate((model) => model.reset())}>{text.clearCircuit}</button>
             <input ref={fileInputRef} type="file" accept="application/json" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) loadFile(file); event.currentTarget.value = ''; }} />
           </div>
-          <ResultsPanel messages={text} probs={probs} amplitudes={amplitudes} numQubits={numQubits} />
+          <ResultsPanel messages={text} probs={probs} amplitudes={amplitudes} sampled={sampled} numQubits={numQubits} />
         </main>
       </div>
       <footer className="footer"><time dateTime={now.toISOString()}>{text.systemTime}: {now.toLocaleTimeString(language === 'it' ? 'it-IT' : 'en-GB')}</time></footer>

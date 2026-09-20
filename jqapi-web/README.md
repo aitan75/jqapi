@@ -27,7 +27,7 @@ the same catalog; raw Java exception messages are never displayed in the UI.
 
 `src/wasm/jqapi.js` is the TeaVM output of the `jqapi-wasm` module (Phase 2b),
 committed here (approach A — no Maven↔npm build wiring). It exposes
-`run(specJson) -> resultJson`. `src/wasm/bridge.ts` is the typed wrapper.
+`run(specJson) -> resultJson` and `sample(specJson, shots) -> resultJson`; sampling returns measured outcome counts for 1–10,000 independent shots. `src/wasm/bridge.ts` is the typed wrapper.
 
 Regenerate it when the bridge or core changes (requires JDK 21 — TeaVM 0.12.0
 does not run under newer JDKs):
@@ -47,7 +47,7 @@ matrix gates. Drag a palette gate onto the grid to place it; dragging a placed
 gate moves every component of that operation together, while dropping it outside
 the grid removes it. Circuits support dynamic wires and columns, undo/redo,
 zoom/pan, JSON/local-storage save-load and shareable URL fragments. Results show
-probabilities, complete complex amplitudes, and magnitude/phase/Bloch details.
+theoretical probabilities, complete complex amplitudes, magnitude/phase/Bloch details, and observed counts with empirical probabilities for the selected number of shots.
 
 `npm run test:e2e` runs the Playwright Bell-circuit smoke test (install Chromium
 once with `npx playwright install chromium`). CI rebuilds the TeaVM asset before

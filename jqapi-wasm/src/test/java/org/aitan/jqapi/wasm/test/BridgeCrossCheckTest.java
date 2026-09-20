@@ -79,6 +79,16 @@ public class BridgeCrossCheckTest {
                 JqapiBridge.run(invalid));
     }
 
+    @Test
+    void sample_returnsOneCountForEveryShotAndRejectsInvalidShotCounts() {
+        String x = "{\"version\":1,\"numQubits\":1,\"levels\":["
+                + "{\"gates\":[{\"kind\":\"X\",\"targets\":[0],\"controls\":[],\"params\":{}}]}]}";
+
+        assertEquals("{\"ok\":true,\"shots\":3,\"counts\":[0,3]}", JqapiBridge.sample(x, 3));
+        assertEquals("{\"ok\":false,\"error\":{\"code\":\"INVALID_SHOT_COUNT\"}}", JqapiBridge.sample(x, 0));
+        assertEquals("{\"ok\":false,\"error\":{\"code\":\"INVALID_SHOT_COUNT\"}}", JqapiBridge.sample(x, JqapiBridge.MAX_SHOTS + 1));
+    }
+
     /** Minimal JSON string literal for embedding a value in the node script. */
     private static String jsonString(String s) {
         return '"' + s.replace("\\", "\\\\").replace("\"", "\\\"") + '"';
