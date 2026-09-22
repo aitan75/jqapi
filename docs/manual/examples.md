@@ -15,6 +15,7 @@ current source.
 5. [Quantum teleportation](#5-quantum-teleportation)
 6. [Deutsch–Jozsa](#6-deutschjozsa)
 7. [Grover search over a classical list](#7-grover-search-over-a-classical-list)
+8. [Quantum Fourier Transform](#8-quantum-fourier-transform)
 
 Common imports for the snippets below:
 
@@ -265,6 +266,33 @@ try {
 ```
 
 *(Adapted from `QuantumAlgorithmTest.testGroverSearchAlgorithm`.)*
+
+---
+
+## 8. Quantum Fourier Transform
+
+`Qft` builds an exact QFT from local Hadamard, controlled-phase, and swap
+gates. `forward(n)` creates a standalone circuit; use `appendForward` or
+`appendInverse` to apply it to part of a larger circuit. Targets are ordered
+most-significant first and may be non-adjacent.
+
+```java
+import org.aitan.jqapi.quantum.Circuit;
+import org.aitan.jqapi.quantum.Qft;
+import org.aitan.jqapi.quantum.simulator.LocalSimulator;
+
+Circuit circuit = new Circuit(4);
+Qft.appendForward(circuit, 3, 1); // q3 is the MSB of this two-qubit QFT
+Qft.appendInverse(circuit, 3, 1); // restores the original sub-register state
+
+LocalSimulator simulator = new LocalSimulator(circuit);
+simulator.execute();
+```
+
+The builder validates each target against the circuit, preserves qubits outside
+the requested sub-register, and obeys the circuit's configured qubit limit.
+The exact transform uses a quadratic number of gates; approximate and
+measurement-based QFT variants are not included.
 
 Internally `search` builds a Grover oracle that marks the matching indexes,
 applies on the order of `pi*sqrt(N)/4` Grover iterations (oracle + diffusion,
