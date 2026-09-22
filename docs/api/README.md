@@ -60,6 +60,7 @@ The core domain model.
 | `QuantumRegister` | The `2^n` amplitude state of `n` qubits; supports full and partial measurement. |
 | `Circuit` | An ordered sequence of `CircuitLevel`s over a fixed number of qubits. |
 | `CircuitLevel` | A single time-step: gates applied in parallel to distinct qubits. |
+| `Qft` | Static builder for exact forward and inverse quantum Fourier transforms. |
 
 ### `org.aitan.jqapi.quantum.gates` — [full reference](gates.md)
 
