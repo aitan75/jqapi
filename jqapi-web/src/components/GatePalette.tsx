@@ -3,6 +3,7 @@ import type { Messages } from '../i18n';
 
 export type Tool =
   | 'H' | 'X' | 'Y' | 'Z' | 'S' | 'T' | 'RX' | 'RY' | 'RZ' | 'PHASE' | 'U3'
+  | 'QFT'
   | 'CNOT-control' | 'CNOT-target' | 'CZ-control' | 'CZ-target' | 'CY-control' | 'CY-target'
   | 'SWAP' | 'CSWAP-control' | 'CSWAP-swap' | 'TOFFOLI-control' | 'TOFFOLI-target'
   | 'MCX-control' | 'MCX-target' | 'MEASUREMENT' | 'RESET' | 'ORACLE' | 'GENERIC' | 'erase';
@@ -13,7 +14,7 @@ const TOOLS: Record<GateGroup, Tool[]> = {
   single: ['H', 'X', 'Y', 'Z', 'S', 'T', 'RX', 'RY', 'RZ', 'PHASE', 'U3', 'MEASUREMENT', 'RESET'],
   two: ['CNOT-control', 'CNOT-target', 'CZ-control', 'CZ-target', 'CY-control', 'CY-target', 'SWAP'],
   three: ['CSWAP-control', 'CSWAP-swap', 'TOFFOLI-control', 'TOFFOLI-target'],
-  multi: ['MCX-control', 'MCX-target'],
+  multi: ['QFT', 'MCX-control', 'MCX-target'],
   other: ['ORACLE', 'GENERIC', 'erase'],
 };
 
@@ -28,14 +29,16 @@ export interface GatePaletteProps {
   phi: number;
   lambda: number;
   matrixText: string;
+  qftWidth: number;
   onChangeTheta: (value: number) => void;
   onChangePhi: (value: number) => void;
   onChangeLambda: (value: number) => void;
   onChangeMatrixText: (value: string) => void;
+  onChangeQftWidth: (value: number) => void;
 }
 
 export function GatePalette(props: GatePaletteProps) {
-  const { tool, messages, onSelect, theta, phi, lambda, matrixText, onChangeTheta, onChangePhi, onChangeLambda, onChangeMatrixText } = props;
+  const { tool, messages, onSelect, theta, phi, lambda, matrixText, qftWidth, onChangeTheta, onChangePhi, onChangeLambda, onChangeMatrixText, onChangeQftWidth } = props;
   const setDrag = (event: DragEvent<HTMLButtonElement>, selected: Tool) => event.dataTransfer.setData('text/plain', selected);
   const number = (label: string, value: number, onChange: (value: number) => void) => <label className="gate-config-field">{label}<input type="number" step="0.05" value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>;
 
@@ -53,6 +56,7 @@ export function GatePalette(props: GatePaletteProps) {
       </div>
     </details>
     {tool && angleTools.includes(tool) && <div className="gate-config">{number('θ', theta, onChangeTheta)}{tool === 'U3' && <>{number('φ', phi, onChangePhi)}{number('λ', lambda, onChangeLambda)}</>}</div>}
+    {tool === 'QFT' && <div className="gate-config">{number(messages.qubits, qftWidth, onChangeQftWidth)}</div>}
     {tool && matrixTools.includes(tool) && <label className="matrix-config">2×2 matrix JSON <textarea value={matrixText} onChange={(event) => onChangeMatrixText(event.target.value)} spellCheck={false} /></label>}
   </div>;
 }

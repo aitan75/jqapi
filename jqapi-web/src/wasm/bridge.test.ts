@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { run, sample } from './bridge';
 import type { CircuitSpec } from './types';
+import { CircuitModel } from '../model/circuit';
 
 function amplitudesOf(spec: CircuitSpec) {
   const result = run(spec);
@@ -128,5 +129,22 @@ describe('wasm bridge', () => {
     ] })[7].re).toBeCloseTo(1, 7);
     expect(amplitudesOf({ version: 1, numQubits: 1, levels: [{ gates: [{ kind: 'GENERIC', targets: [0], controls: [], params: {}, matrix: xMatrix }] }] })[1].re).toBeCloseTo(1, 7);
     expect(amplitudesOf({ version: 1, numQubits: 1, levels: [{ gates: [{ kind: 'MEASUREMENT', targets: [0], controls: [], params: {} }] }] })[0].re).toBeCloseTo(1, 7);
+  });
+
+  it('runs the QFT expansion emitted by the editor', () => {
+    const model = new CircuitModel(2);
+    model.place(1, 0, { kind: 'X' }); // |01>
+    model.insertForwardQft(0, 1, 2);
+
+    const amplitudes = amplitudesOf(model.toSpec());
+    const half = 0.5;
+    expect(amplitudes[0].re).toBeCloseTo(half, 7);
+    expect(amplitudes[0].im).toBeCloseTo(0, 7);
+    expect(amplitudes[1].re).toBeCloseTo(0, 7);
+    expect(amplitudes[1].im).toBeCloseTo(half, 7);
+    expect(amplitudes[2].re).toBeCloseTo(-half, 7);
+    expect(amplitudes[2].im).toBeCloseTo(0, 7);
+    expect(amplitudes[3].re).toBeCloseTo(0, 7);
+    expect(amplitudes[3].im).toBeCloseTo(-half, 7);
   });
 });

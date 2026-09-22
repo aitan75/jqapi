@@ -4,6 +4,7 @@ export const LANGUAGE_STORAGE_KEY = 'jqapi-language';
 export type Language = 'en' | 'it';
 export type GateTool =
   | 'H' | 'X' | 'Y' | 'Z' | 'S' | 'T' | 'RX' | 'RY' | 'RZ' | 'PHASE' | 'U3'
+  | 'QFT'
   | 'CNOT-control' | 'CNOT-target' | 'CZ-control' | 'CZ-target' | 'CY-control' | 'CY-target'
   | 'SWAP' | 'CSWAP-control' | 'CSWAP-swap' | 'TOFFOLI-control' | 'TOFFOLI-target'
   | 'MCX-control' | 'MCX-target' | 'MEASUREMENT' | 'RESET' | 'ORACLE' | 'GENERIC' | 'erase';
@@ -64,7 +65,7 @@ export const messages: Record<Language, Messages> = {
     presets: {
       'bell-phi-plus': { name: 'Bell State |Φ⁺⟩', description: 'Fundamental quantum entanglement using a Hadamard gate and CNOT.' }, 'bell-psi-plus': { name: 'Bell State |Ψ⁺⟩', description: 'Odd-parity Bell state with an initial X gate on q1.' }, 'ghz-state': { name: 'GHZ State |GHZ⟩', description: 'Three-qubit Greenberger-Horne-Zeilinger entanglement.' }, 'superposition-3q': { name: 'Uniform Superposition', description: 'Parallel Hadamard gates create equal probabilities for eight states.' }, 'interference-hzh': { name: 'H-Z-H Interference', description: 'Constructive and destructive interference through a phase gate.' }, 'superdense-coding': { name: 'Superdense Coding', description: 'Transmits two classical bits with an entangled qubit.' }, 'deutsch-algorithm': { name: 'Deutsch Algorithm', description: 'Determines whether a Boolean function is constant or balanced.' },
     },
-    tools: { ...sharedTools, PHASE: 'Phase (θ)', MEASUREMENT: 'Measure', RESET: 'Reset', ORACLE: 'Oracle matrix', GENERIC: 'Generic matrix', 'CNOT-control': 'CNOT control', 'CNOT-target': 'CNOT target', 'CZ-control': 'CZ control', 'CZ-target': 'CZ target', 'CY-control': 'CY control', 'CY-target': 'CY target', 'CSWAP-control': 'CSWAP control', 'CSWAP-swap': 'CSWAP swap', 'TOFFOLI-control': 'Toffoli control', 'TOFFOLI-target': 'Toffoli target', 'MCX-control': 'MC-X control', 'MCX-target': 'MC-X target', erase: 'Erase' },
+    tools: { ...sharedTools, QFT: 'QFT', PHASE: 'Phase (θ)', MEASUREMENT: 'Measure', RESET: 'Reset', ORACLE: 'Oracle matrix', GENERIC: 'Generic matrix', 'CNOT-control': 'CNOT control', 'CNOT-target': 'CNOT target', 'CZ-control': 'CZ control', 'CZ-target': 'CZ target', 'CY-control': 'CY control', 'CY-target': 'CY target', 'CSWAP-control': 'CSWAP control', 'CSWAP-swap': 'CSWAP swap', 'TOFFOLI-control': 'Toffoli control', 'TOFFOLI-target': 'Toffoli target', 'MCX-control': 'MC-X control', 'MCX-target': 'MC-X target', erase: 'Erase' },
   },
   it: {
     language: 'Lingua', languages: { en: 'English', it: 'Italiano' }, appName: 'jqapi studio', logo: 'logo jqapi', appSubtitle: 'Simulatore di circuiti quantistici', wasmEngine: '● Motore WASM', qubitCount: (count) => `${count} qubit`, qubits: 'Qubit:',
@@ -74,7 +75,7 @@ export const messages: Record<Language, Messages> = {
     presets: {
       'bell-phi-plus': { name: 'Stato di Bell |Φ⁺⟩', description: 'Entanglement quantistico fondamentale con Hadamard e CNOT.' }, 'bell-psi-plus': { name: 'Stato di Bell |Ψ⁺⟩', description: 'Stato di Bell a parità dispari con una porta X iniziale su q1.' }, 'ghz-state': { name: 'Stato GHZ |GHZ⟩', description: 'Entanglement Greenberger-Horne-Zeilinger a tre qubit.' }, 'superposition-3q': { name: 'Sovrapposizione uniforme', description: 'Porte Hadamard parallele danno probabilità uguali per otto stati.' }, 'interference-hzh': { name: 'Interferenza H-Z-H', description: 'Interferenza costruttiva e distruttiva attraverso una porta di fase.' }, 'superdense-coding': { name: 'Codifica superdensa', description: 'Trasmette due bit classici con un qubit entangled.' }, 'deutsch-algorithm': { name: 'Algoritmo di Deutsch', description: 'Determina se una funzione booleana è costante o bilanciata.' },
     },
-    tools: { ...sharedTools, PHASE: 'Fase (θ)', MEASUREMENT: 'Misura', RESET: 'Reimposta', ORACLE: 'Matrice oracolo', GENERIC: 'Matrice generica', 'CNOT-control': 'CNOT controllo', 'CNOT-target': 'CNOT bersaglio', 'CZ-control': 'CZ controllo', 'CZ-target': 'CZ bersaglio', 'CY-control': 'CY controllo', 'CY-target': 'CY bersaglio', 'CSWAP-control': 'CSWAP controllo', 'CSWAP-swap': 'CSWAP scambio', 'TOFFOLI-control': 'Toffoli controllo', 'TOFFOLI-target': 'Toffoli bersaglio', 'MCX-control': 'MC-X controllo', 'MCX-target': 'MC-X bersaglio', erase: 'Cancella' },
+    tools: { ...sharedTools, QFT: 'QFT', PHASE: 'Fase (θ)', MEASUREMENT: 'Misura', RESET: 'Reimposta', ORACLE: 'Matrice oracolo', GENERIC: 'Matrice generica', 'CNOT-control': 'CNOT controllo', 'CNOT-target': 'CNOT bersaglio', 'CZ-control': 'CZ controllo', 'CZ-target': 'CZ bersaglio', 'CY-control': 'CY controllo', 'CY-target': 'CY bersaglio', 'CSWAP-control': 'CSWAP controllo', 'CSWAP-swap': 'CSWAP scambio', 'TOFFOLI-control': 'Toffoli controllo', 'TOFFOLI-target': 'Toffoli bersaglio', 'MCX-control': 'MC-X controllo', 'MCX-target': 'MC-X bersaglio', erase: 'Cancella' },
   },
 };
 

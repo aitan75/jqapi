@@ -41,6 +41,8 @@ cp jqapi-wasm/target/js/jqapi.js jqapi-web/src/wasm/jqapi.js
 
 ## Editor features
 
+The multi-qubit palette includes an exact forward QFT macro. Select its contiguous register width, then drop it on that register's most-significant wire. The editor inserts the Hadamard, controlled-phase, and swap decomposition and shifts later gates to preserve circuit order.
+
 The palette supports single-qubit, parametric (`RX`, `RY`, `RZ`, `PHASE`, `U3`),
 controlled, swap, multi-control, measurement/reset, oracle and generic 2×2
 matrix gates. Drag a palette gate onto the grid to place it; dragging a placed
