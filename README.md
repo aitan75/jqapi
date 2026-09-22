@@ -16,7 +16,7 @@ jqapi ships in layers — install only what your use case needs.
 
 | Use case | What you install | Toolchain |
 |----------|------------------|-----------|
-| Embed the quantum simulator in a JVM application | the **library** (`org.aitan:jqapi`) | Java 21+, Maven 3.9+ |
+| Embed the quantum simulator in a JVM application | the **library** (`org.aitan:jqapi`) | Java 25+, Maven 3.9+ |
 | Run or develop the browser **circuit editor** | the **full product** (`jqapi-web`, with the WASM engine already bundled) | Node.js 20.19+ (or 22+), npm |
 | Rebuild the WASM engine after changing the core | the **engine build** (`jqapi-wasm`) | JDK **21** (exactly), Node.js |
 
@@ -72,12 +72,12 @@ for `|00⟩` and `|11⟩`.
 ### 3. Rebuilding the WASM engine (only if you change the core)
 
 `jqapi-web` runs on the TeaVM output of the `jqapi-wasm` module. Regenerate it only
-when you modify `jqapi-core` or the bridge. **TeaVM 0.12 must run under JDK 21** —
-newer JDKs (22/25) are not supported — even though the core targets Java 21:
+when you modify `jqapi-core` or the bridge. **TeaVM 0.15 must run under JDK 25** —
+newer JDKs (21/22) are not supported — even though the core targets Java 25:
 
 ```bash
 mvn -DskipTests install                              # install the current core into ~/.m2
-JAVA_HOME=<path-to-jdk-21> mvn -f jqapi-wasm/pom.xml -B clean package
+JAVA_HOME=<path-to-jdk-25> mvn -f jqapi-wasm/pom.xml -B clean package
 cp jqapi-wasm/target/js/jqapi.js jqapi-web/src/wasm/jqapi.js
 ```
 
@@ -85,7 +85,7 @@ cp jqapi-wasm/target/js/jqapi.js jqapi-web/src/wasm/jqapi.js
 
 ## Requirements
 
-- Java 21+
+- Java 25+
 - Maven 3.9+
 
 ## Build

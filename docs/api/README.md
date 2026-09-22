@@ -5,8 +5,8 @@ library for building and simulating quantum-computing circuits with a local
 state-vector simulator.
 
 - **Package root:** `org.aitan.jqapi`
-- **Requirements:** Java 21+, Maven 3.9+
-- **Runtime dependencies:** none (Java 21 standard library only)
+- **Requirements:** Java 25+, Maven 3.9+
+- **Runtime dependencies:** none (Java 25 standard library only)
 
 If you are new to the library, start with the [User Manual](../manual/README.md);
 this reference documents the public API surface class by class.

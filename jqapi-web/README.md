@@ -29,12 +29,12 @@ the same catalog; raw Java exception messages are never displayed in the UI.
 committed here (approach A — no Maven↔npm build wiring). It exposes
 `run(specJson) -> resultJson` and `sample(specJson, shots) -> resultJson`; sampling returns measured outcome counts for 1–10,000 independent shots. `src/wasm/bridge.ts` is the typed wrapper.
 
-Regenerate it when the bridge or core changes (requires JDK 21 — TeaVM 0.12.0
-does not run under newer JDKs):
+Regenerate it when the bridge or core changes (requires JDK 25 — TeaVM 0.15
+runs under JDK 25 only):
 
 ```bash
 # from the repository root
-JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home \
+JAVA_HOME=/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home \
   mvn -f jqapi-wasm/pom.xml -B clean package
 cp jqapi-wasm/target/js/jqapi.js jqapi-web/src/wasm/jqapi.js
 ```
