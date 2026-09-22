@@ -16,7 +16,7 @@ runnable examples taken from the library's own test suite.
 3. [Installation & build](#installation--build)
 4. [Your first program: a quantum coin flip](#your-first-program-a-quantum-coin-flip)
 5. [Core concepts](concepts.md) — qubits, gates, circuits, levels, registers, the simulator, measurement
-6. [Worked examples](examples.md) — Bell state, two-coin flip, quantum teleportation, Deutsch–Jozsa, Grover search
+6. [Worked examples](examples.md) — Bell state, two-coin flip, quantum teleportation, Deutsch–Jozsa, Grover search, QFT
 7. [Reference](#reference)
 
 For the class-by-class API, see the [API Reference](../api/README.md).
@@ -105,6 +105,12 @@ npm run dev       # http://localhost:5173
 See the [Installation section of the top-level README](../../README.md#installation)
 for all three layers (library, full product, and rebuilding the WASM engine under
 JDK 21).
+
+The Studio's **Multi-qubit** gate palette includes a forward QFT macro. Set its
+contiguous register width and place it on the register's most-significant wire;
+the editor expands it into the exact gate sequence. See the
+[QFT worked example](examples.md#8-quantum-fourier-transform) for the matching
+Java API.
 
 ---
 

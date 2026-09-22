@@ -207,6 +207,7 @@ export function CircuitCanvas({
         cell.kind === 'CY' ||
         cell.kind === 'TOFFOLI' ||
         cell.kind === 'MULTI_CONTROLLED' ||
+        cell.kind === 'CONTROLLED_PHASE' ||
         (cell.kind === 'CSWAP' && cell.role === 'control')
       ) {
         if (cell.role === 'control') {
@@ -250,7 +251,7 @@ export function CircuitCanvas({
                 <Line points={[x, y - 10, x, y + 10]} stroke="#a855f7" strokeWidth={2} />
               </Group>,
             );
-          } else if (cell.kind === 'CZ') {
+          } else if (cell.kind === 'CZ' || cell.kind === 'CONTROLLED_PHASE') {
             nodes.push(
               <Group key={`tgt_cz_${q}-${s}`} onClick={() => gateClick(q, s)} onTap={() => gateClick(q, s)} onDblClick={() => gateDoubleClick(q, s)} onDblTap={() => gateDoubleClick(q, s)} draggable onDragStart={gateDragStart} onDragEnd={(event) => gateDragEnd(q, s, event)}>
                 <Rect
@@ -270,7 +271,7 @@ export function CircuitCanvas({
                   y={y - 7}
                   width={GATE_SIZE}
                   align="center"
-                  text="Z"
+                  text={cell.kind === 'CONTROLLED_PHASE' ? 'P' : 'Z'}
                   fontSize={14}
                   fontFamily="Outfit, sans-serif"
                   fontStyle="bold"
@@ -335,6 +336,7 @@ export function CircuitCanvas({
           c.kind === 'CY' ||
           c.kind === 'TOFFOLI' ||
           c.kind === 'MULTI_CONTROLLED' ||
+          c.kind === 'CONTROLLED_PHASE' ||
           c.kind === 'CSWAP'
         ) {
           multiQubits.push(q);

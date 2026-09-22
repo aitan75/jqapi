@@ -35,6 +35,7 @@ function placementFor(tool: Tool, theta: number, phi: number, lambda: number, ma
   if (tool === 'RX' || tool === 'RY' || tool === 'RZ' || tool === 'PHASE') return { kind: tool, theta };
   if (tool === 'U3') return { kind: 'U3', theta, phi, lambda };
   if (tool === 'ORACLE' || tool === 'GENERIC') return { kind: tool, matrix: parseMatrix(matrixText) };
+  if (tool === 'QFT') throw new Error('QFT is inserted as a circuit macro.');
   return { kind: tool };
 }
 
@@ -57,6 +58,7 @@ export default function App() {
   const [theta, setTheta] = useState(Math.PI / 2);
   const [phi, setPhi] = useState(0);
   const [lambda, setLambda] = useState(0);
+  const [qftWidth, setQftWidth] = useState(2);
   const [matrixText, setMatrixText] = useState(DEFAULT_MATRIX);
   const [version, setVersion] = useState(0);
   const [numQubits, setNumQubits] = useState(2);
@@ -113,6 +115,10 @@ export default function App() {
   const place = (qubit: number, step: number, selected = tool) => {
     if (!selected) return;
     try {
+      if (selected === 'QFT') {
+        mutate((model) => model.insertForwardQft(qubit, step, qftWidth));
+        return;
+      }
       const placement = placementFor(selected, theta, phi, lambda, matrixText);
       mutate((model) => placement ? model.place(qubit, step, placement) : model.removeGate(qubit, step));
     } catch (cause) {
@@ -204,7 +210,7 @@ export default function App() {
       <div className="editor-layout">
         <aside className="sidebar">
           <div className="circuit-settings"><QubitSelector messages={text} value={numQubits} onChange={(value) => mutate((model) => model.setNumQubits(value))} /><div className="editor-actions"><button type="button" onClick={() => mutate((model) => model.setColumns(model.columns - 1))} disabled={columns <= 1}>− step</button><span>{columns} steps</span><button type="button" onClick={() => mutate((model) => model.setColumns(model.columns + 1))}>+ step</button></div></div>
-          <GatePalette messages={text} tool={tool} onSelect={setTool} theta={theta} phi={phi} lambda={lambda} matrixText={matrixText} onChangeTheta={setTheta} onChangePhi={setPhi} onChangeLambda={setLambda} onChangeMatrixText={setMatrixText} />
+          <GatePalette messages={text} tool={tool} onSelect={setTool} theta={theta} phi={phi} lambda={lambda} matrixText={matrixText} qftWidth={qftWidth} onChangeTheta={setTheta} onChangePhi={setPhi} onChangeLambda={setLambda} onChangeMatrixText={setMatrixText} onChangeQftWidth={(value) => setQftWidth(Math.max(1, Math.trunc(value) || 1))} />
           <PresetSelector messages={text} onSelectPreset={onSelectPreset} />
         </aside>
         <main className="workspace">

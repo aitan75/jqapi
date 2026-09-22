@@ -96,7 +96,7 @@ quantum algorithms.
 | Method | Signature | Description |
 |--------|-----------|-------------|
 | `randomBit` | `static int randomBit()` | Produces a uniformly random bit (0 or 1) via a Hadamard coin flip. |
-| `search` | `static <T> T search(List<T> list, Function<T,Boolean> predicate)` | Grover search: returns the first list element matching `predicate`. Throws `JQApiException`. |
+| `search` | `static <T> T search(List<T> list, Function<T,Boolean> predicate)` | Grover search: returns an element matching `predicate`. Throws `JQApiException`. |
 
 ```java
 // A single quantum-random bit
@@ -107,8 +107,9 @@ List<Person> people = ...;
 Person match = Algorithm.search(people, p -> p.age() == 45 && p.name().startsWith("P"));
 ```
 
-`search` requires that exactly the matching elements be marked by the oracle it
-builds internally; it throws `JQApiException("No element found ...")` when the
+`search` marks every matching element in the oracle it builds internally and
+chooses the Grover iteration count from the marked-state ratio; it throws
+`JQApiException("No element found ...")` when the
 predicate matches nothing, and
 `JQApiException("Grover search did not converge ...")` if the probabilistic
 result fails classical verification after 10 attempts.

@@ -39,7 +39,7 @@ public class Algorithm {
     }
 
     /**
-     * Runs Grover's search over {@code list}, returning the first element for
+     * Runs Grover's search over {@code list}, returning an element for
      * which {@code function} evaluates to {@code true}, using the supplied
      * configuration to bound the required number of qubits.
      *
@@ -62,12 +62,15 @@ public class Algorithm {
             throw new JQApiLimitException("Search requires " + N_QUBIT + " qubits, exceeds maximum allowed search qubits (" + config.maxSearchQubits() + ")");
         }
         int N = 1 << N_QUBIT;
-        final int iterations = (int) Math.floor(Math.PI * Math.sqrt(N) / 4);
         Circuit circuit = new Circuit(N_QUBIT, config);
         CircuitLevel level1 = new CircuitLevel();
         Integer[] qubitIndexes = IntStream.range(0, N_QUBIT).boxed().toArray(Integer[]::new);
         level1.addGate(new Hadamard(qubitIndexes));
         boolean[] markedIndexes = findMarkedIndexes(N, list, function);
+        int markedCount = (int) IntStream.range(0, N)
+                .filter(index -> markedIndexes[index])
+                .count();
+        final int iterations = optimalGroverIterations(N, markedCount);
         circuit.addLevel(level1);
         //Grover is probabilistic: the amplified solution is measured with high
         //but not unit probability. Verify the measured candidate classically
@@ -107,5 +110,11 @@ public class Algorithm {
         }
         if(!found) throw new JQApiException("No element found in the list of "+size+" elements with applied filter");
         return markedIndexes;
+    }
+
+    private static int optimalGroverIterations(int stateCount, int markedCount) {
+        // Maximize sin²((2r + 1)θ), where sin²(θ) is the marked-state ratio.
+        double theta = Math.asin(Math.sqrt((double) markedCount / stateCount));
+        return Math.max(0, (int) Math.round(Math.PI / (4.0 * theta) - 0.5));
     }
 }

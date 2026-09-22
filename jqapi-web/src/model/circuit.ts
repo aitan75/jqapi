@@ -14,6 +14,13 @@ export const PAULI_X_MATRIX: ComplexMatrix = [
   [{ re: 1, im: 0 }, { re: 0, im: 0 }],
 ];
 
+export function phaseMatrix(theta: number): ComplexMatrix {
+  return [
+    [{ re: 1, im: 0 }, { re: 0, im: 0 }],
+    [{ re: 0, im: 0 }, { re: Math.cos(theta), im: Math.sin(theta) }],
+  ];
+}
+
 export type SingleQubitFixedKind = 'H' | 'X' | 'Y' | 'Z' | 'S' | 'T' | 'MEASUREMENT' | 'RESET';
 export type RotationKind = 'RX' | 'RY' | 'RZ' | 'PHASE';
 export type ControlledKind = 'CNOT' | 'CZ' | 'CY';
@@ -24,6 +31,7 @@ export type Placement =
   | { kind: RotationKind; theta: number }
   | { kind: 'U3'; theta: number; phi: number; lambda: number }
   | { kind: ControlledKind; role: 'control' | 'target' }
+  | { kind: 'CONTROLLED_PHASE'; role: 'control' | 'target'; theta: number }
   | { kind: 'SWAP'; role: 'swap' }
   | { kind: 'CSWAP'; role: 'control' | 'swap' }
   | { kind: 'TOFFOLI'; role: 'control' | 'target' }
@@ -68,6 +76,43 @@ export class CircuitModel {
 
   setColumns(n: number): void {
     this.resize(this.numQubits, n);
+  }
+
+  /**
+   * Inserts the exact forward QFT for a contiguous register beginning at
+   * {@code firstQubit}. The selected qubit is the register's MSB, matching the
+   * core Qft builder and the editor's qubit ordering.
+   */
+  insertForwardQft(firstQubit: number, step: number, qubitCount: number): void {
+    if (!Number.isInteger(firstQubit) || firstQubit < 0 || firstQubit >= this.numQubits) throw new Error('Choose a valid QFT starting qubit.');
+    if (!Number.isInteger(qubitCount) || qubitCount < 1 || firstQubit + qubitCount > this.numQubits) throw new Error('The QFT register must fit on the selected wire and following wires.');
+    if (!Number.isInteger(step) || step < 0 || step > this.columns) throw new Error('Choose a valid QFT insertion step.');
+
+    const levels: { qubit: number; placement: Placement }[][] = [];
+    for (let targetOffset = 0; targetOffset < qubitCount; targetOffset++) {
+      const target = firstQubit + targetOffset;
+      levels.push([{ qubit: target, placement: { kind: 'H' } }]);
+      for (let controlOffset = targetOffset + 1; controlOffset < qubitCount; controlOffset++) {
+        const control = firstQubit + controlOffset;
+        const theta = Math.PI / 2 ** (controlOffset - targetOffset);
+        levels.push([
+          { qubit: control, placement: { kind: 'CONTROLLED_PHASE', role: 'control', theta } },
+          { qubit: target, placement: { kind: 'CONTROLLED_PHASE', role: 'target', theta } },
+        ]);
+      }
+    }
+    if (qubitCount > 1) {
+      const swaps: { qubit: number; placement: Placement }[] = [];
+      for (let low = 0, high = qubitCount - 1; low < high; low++, high--) {
+        swaps.push({ qubit: firstQubit + low, placement: { kind: 'SWAP', role: 'swap' } });
+        swaps.push({ qubit: firstQubit + high, placement: { kind: 'SWAP', role: 'swap' } });
+      }
+      levels.push(swaps);
+    }
+
+    this.cells.forEach((row) => row.splice(step, 0, ...Array<Placement | null>(levels.length).fill(null)));
+    this.columns += levels.length;
+    levels.forEach((level, offset) => level.forEach(({ qubit, placement }) => this.place(qubit, step + offset, placement)));
   }
 
   place(qubit: number, step: number, placement: Placement): void {
@@ -150,7 +195,16 @@ export class CircuitModel {
       this.place(target, step, { kind, role: 'target' });
     };
     if (gate.kind === 'CNOT' || gate.kind === 'CZ' || gate.kind === 'CY') return putControls(gate.kind);
-    if (gate.kind === 'TOFFOLI' || gate.kind === 'MULTI_CONTROLLED') return putControls(gate.kind);
+    if (gate.kind === 'TOFFOLI') return putControls(gate.kind);
+    if (gate.kind === 'MULTI_CONTROLLED') {
+      const theta = controlledPhaseAngle(gate.matrix);
+      if (gate.controls.length === 1 && theta !== null) {
+        this.place(gate.controls[0], step, { kind: 'CONTROLLED_PHASE', role: 'control', theta });
+        this.place(target, step, { kind: 'CONTROLLED_PHASE', role: 'target', theta });
+        return;
+      }
+      return putControls(gate.kind);
+    }
     if (gate.kind === 'SWAP') {
       gate.targets.forEach((q) => this.place(q, step, { kind: 'SWAP', role: 'swap' }));
       return;
@@ -184,6 +238,8 @@ export class CircuitModel {
       const gates: Gate[] = [];
       const controls: Record<string, number[]> = { CNOT: [], CZ: [], CY: [], TOFFOLI: [], MULTI_CONTROLLED: [], CSWAP: [] };
       const targets: Record<string, number[]> = { CNOT: [], CZ: [], CY: [], TOFFOLI: [], MULTI_CONTROLLED: [], CSWAP: [] };
+      const phaseControls: { qubit: number; theta: number }[] = [];
+      const phaseTargets: { qubit: number; theta: number }[] = [];
       const swaps: number[] = [];
 
       for (let q = 0; q < this.numQubits; q++) {
@@ -191,6 +247,8 @@ export class CircuitModel {
         if (!cell) continue;
         if (cell.kind === 'CNOT' || cell.kind === 'CZ' || cell.kind === 'CY' || cell.kind === 'TOFFOLI' || cell.kind === 'MULTI_CONTROLLED') {
           (cell.role === 'control' ? controls[cell.kind] : targets[cell.kind]).push(q);
+        } else if (cell.kind === 'CONTROLLED_PHASE') {
+          (cell.role === 'control' ? phaseControls : phaseTargets).push({ qubit: q, theta: cell.theta });
         } else if (cell.kind === 'CSWAP') {
           (cell.role === 'control' ? controls.CSWAP : targets.CSWAP).push(q);
         } else if (cell.kind === 'SWAP') {
@@ -213,6 +271,7 @@ export class CircuitModel {
       if (controls.CSWAP.length && targets.CSWAP.length >= 2) gates.push({ kind: 'CSWAP', targets: targets.CSWAP.slice(0, 2), controls: [controls.CSWAP[0]], params: {} });
       if (controls.TOFFOLI.length >= 2 && targets.TOFFOLI.length) gates.push({ kind: 'TOFFOLI', targets: [targets.TOFFOLI[0]], controls: controls.TOFFOLI.slice(0, 2), params: {} });
       if (controls.MULTI_CONTROLLED.length && targets.MULTI_CONTROLLED.length) gates.push({ kind: 'MULTI_CONTROLLED', targets: [targets.MULTI_CONTROLLED[0]], controls: controls.MULTI_CONTROLLED, params: {}, matrix: PAULI_X_MATRIX });
+      if (phaseControls.length && phaseTargets.length) gates.push({ kind: 'MULTI_CONTROLLED', targets: [phaseTargets[0].qubit], controls: [phaseControls[0].qubit], params: {}, matrix: phaseMatrix(phaseTargets[0].theta) });
       if (gates.length) levels.push({ gates });
     }
     return { version: CURRENT_VERSION, numQubits: this.numQubits, levels };
@@ -244,6 +303,15 @@ function isComplexMatrix(value: unknown, dimension: number): boolean {
   return value.every((row) => Array.isArray(row)
     && row.length === dimension
     && row.every((cell) => isRecord(cell) && isFiniteNumber(cell.re) && isFiniteNumber(cell.im)));
+}
+
+function controlledPhaseAngle(matrix: ComplexMatrix | undefined): number | null {
+  if (!matrix || !isComplexMatrix(matrix, 2)) return null;
+  const [[topLeft, topRight], [bottomLeft, bottomRight]] = matrix;
+  const close = (value: number, expected: number) => Math.abs(value - expected) < 1e-12;
+  if (!close(topLeft.re, 1) || !close(topLeft.im, 0) || !close(topRight.re, 0) || !close(topRight.im, 0) || !close(bottomLeft.re, 0) || !close(bottomLeft.im, 0)) return null;
+  if (!close(bottomRight.re ** 2 + bottomRight.im ** 2, 1)) return null;
+  return Math.atan2(bottomRight.im, bottomRight.re);
 }
 
 function hasUniqueIndexes(indexes: number[]): boolean {

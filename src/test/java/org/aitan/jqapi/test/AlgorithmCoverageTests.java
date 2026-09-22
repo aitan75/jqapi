@@ -98,7 +98,7 @@ public class AlgorithmCoverageTests {
         }
 
         @Test
-        @DisplayName("search() with negative numbers")
+        @DisplayName("search() with multiple matching negative-number-list values")
         void searchWithNegativeNumbers() throws JQApiException {
             List<Integer> list = Arrays.asList(-10, -5, 0, 5, 10);
             Function<Integer, Boolean> predicate = x -> x > 0;

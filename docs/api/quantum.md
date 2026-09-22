@@ -15,6 +15,7 @@ structure that gates are organized into.
 - [QuantumRegister](#quantumregister)
 - [Circuit](#circuit)
 - [CircuitLevel](#circuitlevel)
+- [Qft](#qft)
 
 > **Conventions.** Qubit `0` is the most significant bit of a state index; a
 > register of `n` qubits holds a `2^n` amplitude vector. See the
@@ -298,3 +299,46 @@ level.addGate(new Hadamard(0));
 level.addGate(new PauliX(1));   // OK: different qubit
 // level.addGate(new PauliZ(0)); // would throw: qubit 0 already used
 ```
+
+---
+
+## `Qft`
+
+Static builder for the exact forward and inverse quantum Fourier transform
+(QFT). It decomposes the transform into local `Hadamard`, controlled-phase,
+and `Swap` gates, so execution remains compatible with jqapi's state-vector
+simulator and does not materialize a full-system Fourier matrix.
+
+The builder uses `O(n^2)` gates for an `n`-qubit transform. It provides exact
+QFT only; approximate and measurement-based QFT variants are not included.
+
+### Static methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `forward(int qubitCount)` | `Circuit` | Creates a new circuit with the forward QFT over all its qubits. |
+| `inverse(int qubitCount)` | `Circuit` | Creates a new circuit with the inverse QFT over all its qubits. |
+| `appendForward(Circuit circuit, int... targets)` | `void` | Appends a forward QFT to the requested sub-register. |
+| `appendInverse(Circuit circuit, int... targets)` | `void` | Appends an inverse QFT to the requested sub-register. |
+
+`targets` are ordered most-significant first, following jqapi's global qubit
+ordering. They may be non-adjacent, but must be distinct, valid indexes in the
+target circuit. Qubits outside the selected sub-register are untouched.
+
+```java
+// Standalone QFT over q0, q1, q2 (q0 is the MSB).
+Circuit qft = Qft.forward(3);
+
+// QFT followed by its inverse over the non-adjacent q3, q1 sub-register.
+Circuit circuit = new Circuit(4);
+Qft.appendForward(circuit, 3, 1);
+Qft.appendInverse(circuit, 3, 1);
+```
+
+### Validation
+
+`forward` and `inverse` create a `Circuit`, so their `qubitCount` is checked by
+the circuit and its `JQAPIConfig` limit. `appendForward` and `appendInverse`
+throw `NullPointerException` for a null circuit or target array, and
+`IllegalArgumentException` when the target list is empty, has duplicate indexes,
+or contains an index outside `[0, circuit.getInputSize())`.

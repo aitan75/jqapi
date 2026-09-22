@@ -281,6 +281,8 @@ import org.aitan.jqapi.quantum.Circuit;
 import org.aitan.jqapi.quantum.Qft;
 import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 
+Circuit allQubits = Qft.forward(3); // forward QFT over q0, q1, q2
+
 Circuit circuit = new Circuit(4);
 Qft.appendForward(circuit, 3, 1); // q3 is the MSB of this two-qubit QFT
 Qft.appendInverse(circuit, 3, 1); // restores the original sub-register state
@@ -294,9 +296,17 @@ the requested sub-register, and obeys the circuit's configured qubit limit.
 The exact transform uses a quadratic number of gates; approximate and
 measurement-based QFT variants are not included.
 
-Internally `search` builds a Grover oracle that marks the matching indexes,
-applies on the order of `pi*sqrt(N)/4` Grover iterations (oracle + diffusion,
-where `N = 2^ceil(log2(list size))`), measures, and verifies the candidate
+### Using QFT in jqapi studio
+
+The browser editor's **Multi-qubit** palette contains a forward **QFT** macro.
+Select the number of contiguous qubits to transform, then drop QFT on the
+register's most-significant wire. The editor inserts the same Hadamard,
+controlled-phase, and swap decomposition, shifting later gates so their order
+is preserved. The resulting circuit can be run, saved, and shared normally.
+
+Internally `search` builds a Grover oracle that marks every matching index,
+selects the iteration count from the ratio of marked states to the padded search
+space (`N = 2^ceil(log2(list size))`), measures, and verifies the candidate
 against the predicate. It throws:
 
 - `JQApiException("No element found ...")` if the predicate matches nothing.

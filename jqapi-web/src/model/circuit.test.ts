@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CircuitModel, isCircuitSpec, MAX_GATES, MAX_LEVELS, MAX_QUBITS, PAULI_X_MATRIX } from './circuit';
+import { CircuitModel, isCircuitSpec, MAX_GATES, MAX_LEVELS, MAX_QUBITS, PAULI_X_MATRIX, phaseMatrix } from './circuit';
 
 describe('CircuitModel.toSpec', () => {
   it('builds the Bell CircuitSpec from a drawn circuit', () => {
@@ -112,6 +112,34 @@ describe('CircuitModel.toSpec', () => {
     source.place(1, 1, { kind: 'CNOT', role: 'target' });
     source.place(1, 2, { kind: 'ORACLE', matrix: PAULI_X_MATRIX });
     expect(CircuitModel.fromSpec(source.toSpec()).toSpec()).toEqual(source.toSpec());
+  });
+
+  it('inserts an exact forward QFT and preserves the following circuit', () => {
+    const m = new CircuitModel(2, 2);
+    m.place(0, 0, { kind: 'X' });
+    m.place(1, 1, { kind: 'Z' });
+
+    m.insertForwardQft(0, 1, 2);
+
+    expect(m.columns).toBe(6);
+    expect(m.toSpec()).toEqual({
+      version: 1,
+      numQubits: 2,
+      levels: [
+        { gates: [{ kind: 'X', targets: [0], controls: [], params: {} }] },
+        { gates: [{ kind: 'H', targets: [0], controls: [], params: {} }] },
+        { gates: [{ kind: 'MULTI_CONTROLLED', targets: [0], controls: [1], params: {}, matrix: phaseMatrix(Math.PI / 2) }] },
+        { gates: [{ kind: 'H', targets: [1], controls: [], params: {} }] },
+        { gates: [{ kind: 'SWAP', targets: [0, 1], controls: [], params: {} }] },
+        { gates: [{ kind: 'Z', targets: [1], controls: [], params: {} }] },
+      ],
+    });
+    expect(CircuitModel.fromSpec(m.toSpec()).cellAt(0, 2)).toEqual({ kind: 'CONTROLLED_PHASE', role: 'target', theta: Math.PI / 2 });
+  });
+
+  it('rejects QFT registers that do not fit below the selected wire', () => {
+    const m = new CircuitModel(2);
+    expect(() => m.insertForwardQft(1, 0, 2)).toThrow('must fit');
   });
 });
 
