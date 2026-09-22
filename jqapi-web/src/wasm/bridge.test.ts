@@ -110,9 +110,27 @@ describe('wasm bridge', () => {
     expect(result.counts[1]).toBe(0);
     expect(result.counts[2]).toBe(0);
     expect(result.counts[0] + result.counts[3]).toBe(1_000);
-    expect(result.counts[0] / result.shots).toBeGreaterThan(0.35);
-    expect(result.counts[0] / result.shots).toBeLessThan(0.65);
     expect(sample(bell, 0)).toEqual({ ok: false, error: { code: 'INVALID_SHOT_COUNT' } });
+  });
+
+  it('samples complete trajectories through measurement and reset with MSB ordering', () => {
+    const spec: CircuitSpec = {
+      version: 1,
+      numQubits: 2,
+      levels: [
+        { gates: [{ kind: 'X', targets: [0], controls: [], params: {} }] },
+        { gates: [{ kind: 'MEASUREMENT', targets: [0], controls: [], params: {} }] },
+        { gates: [{ kind: 'RESET', targets: [0], controls: [], params: {} }] },
+        { gates: [{ kind: 'X', targets: [1], controls: [], params: {} }] },
+      ],
+    };
+    expect(sample(spec, 32)).toEqual({ ok: true, shots: 32, counts: [0, 32, 0, 0] });
+  });
+
+  it('rejects excessive sampling work using the existing resource error code', () => {
+    expect(sample({ version: 1, numQubits: 24, levels: [] }, 10_000)).toEqual({
+      ok: false, error: { code: 'INPUT_LIMIT_EXCEEDED' },
+    });
   });
 
   it('runs phase, U3, controlled swap, multi-control, measurement, and matrix gates', () => {

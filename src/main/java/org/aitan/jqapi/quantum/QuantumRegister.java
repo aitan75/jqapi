@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.DoubleSupplier;
 import org.aitan.jqapi.JQAPIConfig;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.math.Complex;
@@ -35,6 +36,7 @@ public class QuantumRegister {
     private final int size;
     private final Qubit[] input;
     private final JQAPIConfig config;
+    private final DoubleSupplier random;
     private double[] registerState;
 
     /** Creates a register of the given size initialised to |0...0>, using the
@@ -65,12 +67,7 @@ public class QuantumRegister {
      *  @param size number of qubits
      *  @param config the configuration bounding the register size */
     public QuantumRegister(int size, JQAPIConfig config) {
-        validateSize(size, config.maxQubits());
-        this.result = new Qubit[size];
-        this.input = new Qubit[size];
-        this.size = size;
-        this.config = config;
-        this.initializeQuantumRegister();
+        this(size, config, RANDOM::nextDouble);
     }
 
     /** Creates a register from explicit per-qubit initial states, bounded by
@@ -79,6 +76,7 @@ public class QuantumRegister {
      *  @param config the configuration bounding the register size
      *  @param qubits the initial state of each qubit */
     public QuantumRegister(int size, JQAPIConfig config, Qubit[] qubits) {
+        this.random = RANDOM::nextDouble;
         validateSize(size, config.maxQubits());
         this.result = new Qubit[size];
         this.input = new Qubit[size];
@@ -93,6 +91,7 @@ public class QuantumRegister {
      *  @param config the configuration bounding the register size
      *  @param alphas amplitude coefficients of the state vector */
     public QuantumRegister(int size, JQAPIConfig config, double... alphas) {
+        this.random = RANDOM::nextDouble;
         validateSize(size, config.maxQubits());
         this.result = new Qubit[size];
         this.input = new Qubit[size];
@@ -146,6 +145,61 @@ public class QuantumRegister {
     @Deprecated
     public static QuantumRegister forSimulation(int size, JQAPIConfig config, double... alphas) {
         return new QuantumRegister(size, config, alphas);
+    }
+
+    /**
+     * Creates a zero register with an execution-owned random source. The source
+     * must return finite values in [0, 1); seeded sources are for simulation only.
+     * @param size number of qubits
+     * @param config register resource limits
+     * @param random measurement randomness, also used by reset
+     */
+    public QuantumRegister(int size, JQAPIConfig config, DoubleSupplier random) {
+        validateSize(size, config.maxQubits());
+        this.random = Objects.requireNonNull(random, "random");
+        this.result = new Qubit[size];
+        this.input = new Qubit[size];
+        this.size = size;
+        this.config = config;
+        this.initializeQuantumRegister();
+    }
+
+    /**
+     * Creates a register from a copied, normalized complex state vector, in MSB
+     * order, with an execution-owned random source.
+     * @param size number of qubits
+     * @param config register resource limits
+     * @param initialState normalized vector of dimension 2^size
+     * @param random measurement randomness, also used by reset
+     */
+    public QuantumRegister(int size, JQAPIConfig config, ComplexVector initialState, DoubleSupplier random) {
+        validateSize(size, config.maxQubits());
+        Objects.requireNonNull(initialState, "initialState");
+        this.random = Objects.requireNonNull(random, "random");
+        if (initialState.getDimension() != (1 << size)) {
+            throw new IllegalArgumentException("Initial state dimension must equal 2^size");
+        }
+        double norm = 0;
+        for (int i = 0; i < initialState.getDimension(); i++) {
+            Complex amplitude = Objects.requireNonNull(initialState.getEntry(i), "amplitude");
+            norm += amplitude.getReal() * amplitude.getReal() + amplitude.getImaginary() * amplitude.getImaginary();
+        }
+        if (!Double.isFinite(norm) || Math.abs(norm - 1.0) > 1e-9) {
+            throw new IllegalArgumentException("Initial state must be finite and normalized");
+        }
+        this.size = size;
+        this.config = config;
+        this.result = new Qubit[size];
+        this.input = null;
+        this.registerState = toInterleaved(initialState);
+    }
+
+    private double nextRandom() {
+        double value = random.getAsDouble();
+        if (!Double.isFinite(value) || value < 0 || value >= 1) {
+            throw new IllegalArgumentException("Random source must return a finite value in [0, 1)");
+        }
+        return value;
     }
 
     private static void validateSize(int size, int maxQubits) {
@@ -428,8 +482,13 @@ public class QuantumRegister {
         indexes.forEach(this::reset);
     }
 
-    /** @return the input qubits the register was initialised with */
+    /** @return the input qubits the register was initialised with
+     * @throws IllegalStateException when initialized from a full state vector,
+     * which need not have a per-qubit factorization */
     public Qubit[] getInput() {
+        if (input == null) {
+            throw new IllegalStateException("A full initial state vector has no stored per-qubit inputs");
+        }
         return input;
     }
 
@@ -471,7 +530,7 @@ public class QuantumRegister {
     }
 
     private int calculateCollapsedIndex() {
-        double random = RANDOM.nextDouble();
+        double random = nextRandom();
         int lastIndex = this.registerState.length / 2 - 1;
         int j = -1;
         while (random >= 0 && j < lastIndex) {
@@ -484,7 +543,7 @@ public class QuantumRegister {
     }
 
     private int calculateCollapsedIndex(int qubitIndex) {
-        double random = RANDOM.nextDouble();
+        double random = nextRandom();
         double zeroProbability = 0;
         double oneProbability = 0;
 
