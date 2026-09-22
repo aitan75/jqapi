@@ -135,6 +135,8 @@ vector. Supports full and partial measurement.
 | `QuantumRegister(int size, JQAPIConfig config)` | Same as above, bounded by a per-instance `JQAPIConfig`. |
 | `QuantumRegister(int size, JQAPIConfig config, Qubit[] qubits)` | Same as above, bounded by a per-instance `JQAPIConfig`. |
 | `QuantumRegister(int size, JQAPIConfig config, double... alphas)` | Same as above, bounded by a per-instance `JQAPIConfig`. |
+| `QuantumRegister(int size, JQAPIConfig config, DoubleSupplier random)` | Zero state with explicit measurement/reset randomness returning finite values in `[0, 1)`. |
+| `QuantumRegister(int size, JQAPIConfig config, ComplexVector initialState, DoubleSupplier random)` | Copies a finite normalized full state vector of dimension `2^size`, in MSB order; supports entangled inputs. |
 
 Config injection is uniform with [`Circuit`](#circuit): pass a `JQAPIConfig` to
 any constructor to bound the register to a non-default size limit.
@@ -153,7 +155,7 @@ constructors only for manual state setup.
 | `applyPhaseOracle(boolean[])` | `void` | Negates amplitudes at marked basis-state indexes without creating an operator matrix. |
 | `applyGroverDiffusion()` | `void` | Applies Grover's inversion-about-the-mean operator in place. |
 | `setRegisterState(ComplexVector)` | `void` | **Deprecated.** Replaces the amplitude vector. Throws `IllegalArgumentException` on dimension mismatch. |
-| `getInput()` | `Qubit[]` | The per-qubit states the register was initialized with. |
+| `getInput()` | `Qubit[]` | The per-qubit states the register was initialized with. Throws `IllegalStateException` for full-vector initialization, which need not admit a per-qubit factorization. |
 | `getResult()` | `Qubit[]` | The measured qubits; populated by `measure()` / `measureQubitAtIndexes(...)`. |
 | `measure()` | `void` | Collapses the whole register to a basis state per current probabilities. |
 | `measureQubitAtIndexes(List<Integer>)` | `void` | Measures only the listed qubits, renormalizing the residual state. |

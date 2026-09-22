@@ -16,6 +16,7 @@ current source.
 6. [Deutsch–Jozsa](#6-deutschjozsa)
 7. [Grover search over a classical list](#7-grover-search-over-a-classical-list)
 8. [Quantum Fourier Transform](#8-quantum-fourier-transform)
+9. [Reproducible shot sampling](#9-reproducible-shot-sampling)
 
 Common imports for the snippets below:
 
@@ -312,6 +313,44 @@ against the predicate. It throws:
 - `JQApiException("No element found ...")` if the predicate matches nothing.
 - `JQApiException("Grover search did not converge after 10 attempts")` if every
   attempt yields an unlucky measurement.
+
+---
+
+## 9. Reproducible shot sampling
+
+Use the core sampler to collect repeated measurements and reproduce an experiment
+with an explicit seed. Each shot executes the circuit from its initial state,
+including any intermediate measurements or resets.
+
+```java
+import org.aitan.jqapi.JQAPIConfig;
+import org.aitan.jqapi.quantum.simulator.CircuitSampler;
+import org.aitan.jqapi.quantum.simulator.SamplingOptions;
+import org.aitan.jqapi.quantum.simulator.SamplingResult;
+
+Circuit bell = new Circuit(2, JQAPIConfig.sequential(2));
+CircuitLevel h = new CircuitLevel();
+h.addGate(new Hadamard(0));
+CircuitLevel cx = new CircuitLevel();
+cx.addGate(new ControlledNot(0, 1));
+bell.addLevel(h, cx);
+
+SamplingOptions options = new SamplingOptions(4096).withSeed(107L);
+SamplingResult result = CircuitSampler.sample(bell, options);
+int[] counts = result.counts(); // [00, 01, 10, 11]: only 00 and 11 occur
+int[] q0Counts = result.marginal(0).counts(); // [0, 1], total remains 4096
+int[] repeated = CircuitSampler.sample(bell, options).counts(); // same counts
+```
+
+The first requested output qubit is the most significant bit. To sample a subset,
+use `options.withMeasuredQubits(1)`; to choose a different starting state, pass a
+normalized complex state vector as the third argument to `sample`.
+
+Seeds reproduce results within the same library version and runtime/execution
+configuration. JVM/TeaVM stream equality is not guaranteed. Omitting `withSeed`
+uses secure randomness. Neither seeds nor shot counts belong in saved circuit
+specifications. Requests exceeding the shot limit (10,000) or work budget are
+rejected; see [sampling options and limits](../api/simulator.md#circuitsampler).
 
 ---
 

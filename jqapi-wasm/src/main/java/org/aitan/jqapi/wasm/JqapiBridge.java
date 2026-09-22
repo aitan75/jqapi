@@ -5,7 +5,8 @@ import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
-import org.aitan.jqapi.quantum.QubitOne;
+import org.aitan.jqapi.quantum.simulator.CircuitSampler;
+import org.aitan.jqapi.quantum.simulator.SamplingOptions;
 import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 import org.aitan.jqapi.visualization.CircuitSpecs;
 import org.aitan.jqapi.visualization.spec.CircuitSpec;
@@ -28,8 +29,7 @@ import org.teavm.jso.JSExport;
 public final class JqapiBridge {
 
     /** Keep browser sampling bounded: every shot executes a complete simulation. */
-    public static final int MAX_SHOTS = 10_000;
-    private static final QubitOne ONE = new QubitOne();
+    public static final int MAX_SHOTS = SamplingOptions.MAX_SHOTS;
 
     private JqapiBridge() {
     }
@@ -94,19 +94,7 @@ public final class JqapiBridge {
             JQAPIConfig config = JQAPIConfig.sequential(JQAPIConfig.DEFAULT_MAX_QUBITS);
             CircuitSpec spec = CircuitSpecJson.fromJson(specJson, config);
             Circuit circuit = CircuitSpecs.toCircuit(spec, config);
-            int[] counts = new int[1 << spec.numQubits()];
-            for (int shot = 0; shot < shots; shot++) {
-                LocalSimulator sim = new LocalSimulator(circuit);
-                sim.execute();
-                sim.getQuantumRegister().measure();
-                int outcome = 0;
-                for (int qubit = 0; qubit < spec.numQubits(); qubit++) {
-                    if (sim.getQuantumRegister().getResult()[qubit].equals(ONE)) {
-                        outcome |= 1 << (spec.numQubits() - 1 - qubit);
-                    }
-                }
-                counts[outcome]++;
-            }
+            int[] counts = CircuitSampler.sample(circuit, new SamplingOptions(shots)).counts();
             StringBuilder sb = new StringBuilder("{\"ok\":true,\"shots\":").append(shots).append(",\"counts\":[");
             for (int i = 0; i < counts.length; i++) {
                 if (i > 0) {

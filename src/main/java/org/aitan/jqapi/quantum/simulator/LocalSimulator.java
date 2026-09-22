@@ -2,6 +2,7 @@ package org.aitan.jqapi.quantum.simulator;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.DoubleSupplier;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
@@ -29,6 +30,27 @@ public class LocalSimulator implements QuantumSimulator {
 
     private final Circuit circuit;
     private final QuantumRegister quantumRegister;
+
+    /**
+     * Creates a zero-state simulator with execution-owned measurement/reset randomness.
+     * @param circuit circuit to simulate
+     * @param random source returning finite values in [0, 1)
+     */
+    public LocalSimulator(Circuit circuit, DoubleSupplier random) {
+        this.circuit = circuit;
+        this.quantumRegister = new QuantumRegister(circuit.getInputSize(), circuit.getConfig(), random);
+    }
+
+    /**
+     * Creates a simulator from a copied, normalized complex state vector in MSB order.
+     * @param circuit circuit to simulate
+     * @param initialState vector of dimension 2^circuit.getInputSize()
+     * @param random source returning finite values in [0, 1)
+     */
+    public LocalSimulator(Circuit circuit, ComplexVector initialState, DoubleSupplier random) {
+        this.circuit = circuit;
+        this.quantumRegister = new QuantumRegister(circuit.getInputSize(), circuit.getConfig(), initialState, random);
+    }
 
     /** @param circuit the circuit to simulate (register initialised to |0...0>) */
     public LocalSimulator(Circuit circuit) {

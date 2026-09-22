@@ -10,6 +10,7 @@ Runs a [`Circuit`](quantum.md#circuit) and exposes the resulting
 
 - [QuantumSimulator (interface)](#quantumsimulator-interface)
 - [LocalSimulator](#localsimulator)
+- [CircuitSampler](#circuitsampler)
 
 ---
 
@@ -27,6 +28,70 @@ then measure or inspect the register.
 
 ---
 
+## `CircuitSampler`
+
+`CircuitSampler.sample(circuit, options)` returns immutable `SamplingResult`
+counts for final computational-basis measurements. Every shot starts at
+`|0...0>`, executes the entire circuit, including measurement and reset gates,
+then measures the full register. Intermediate measurement records are not the
+output. No final-state reuse optimization is performed.
+
+The overload `sample(circuit, options, initialState)` accepts a finite,
+normalized `ComplexVector` of dimension `2^numQubits`, including entangled and
+complex states. A fresh copy initializes every trajectory; sampling does not
+modify the supplied vector. Do not mutate the circuit or input state during a call.
+
+```java
+SamplingOptions options = new SamplingOptions(4096).withSeed(107L);
+SamplingResult result = CircuitSampler.sample(circuit, options);
+int[] counts = result.counts();
+SamplingResult q0 = result.marginal(0);
+```
+
+Counts are dense arrays whose sum equals `result.shots()`. By default the array
+index is the basis-state integer with qubit 0 as its most significant bit:
+three-qubit `|100>` contributes to `counts[4]`. Use
+`options.withMeasuredQubits(2, 0)` to select output qubits; the first requested
+qubit is the output MSB, so the same `|100>` contributes to `counts[1]`.
+`result.measuredQubits()` records this order. `result.marginal(2, 0)` aggregates
+existing counts by physical qubit index without further simulation or randomness.
+It can only select qubits present in the result. Arrays returned by results are
+defensive copies. Index lists must be nonempty, distinct and in range.
+
+`SamplingOptions` is immutable. Its default source is a fresh `SecureRandom`
+per call. `withSeed(long)` creates a fresh `java.util.Random` per call, used for
+all mid-circuit measurements, resets and final readouts across that call's
+sequential shots. With equal inputs, seed, library version and runtime/execution
+configuration, repeated calls reproduce counts; unrelated simulations do not
+advance their stream. Cross-JVM/TeaVM identical streams and equality between
+different execution configurations are not promised. Seeded randomness is for
+simulation reproducibility, not cryptographic use.
+
+For controlled experiments, `withRandomSource(Supplier<DoubleSupplier>)`
+injects a factory invoked once per call. It must supply a fresh, exclusively
+owned source returning finite values in `[0, 1)`. Returning a shared source
+breaks isolation and reproducibility; invalid random values are rejected.
+Existing simulator/register constructors retain their secure default source.
+`LocalSimulator(circuit, random)` and
+`LocalSimulator(circuit, initialState, random)` expose the same injection for
+individual trajectories.
+
+Shots must be in `[1, 10000]`. The circuit's `JQAPIConfig.maxQubits` remains in
+force. Sampling also checks a work budget before allocating counts or registers:
+`shots * 2^numQubits * (1 + sum of gate index counts)`, including identity gates.
+The default is `SamplingOptions.DEFAULT_MAX_WORK` (1,000,000,000); use
+`withMaxWork(long)` for an explicit positive limit. This bounds trajectory volume,
+not exact arithmetic operations or elapsed time; gate arity affects actual cost.
+Memory still grows exponentially. Invalid options/state/indexes throw
+`IllegalArgumentException`; an exceeded budget throws `JQApiLimitException`.
+
+Shots, seeds and budgets are execution options and are never stored in
+`CircuitSpec`. The browser bridge delegates to this sampler while retaining
+`sample(specJson, shots)`, its counts JSON shape and stable error codes;
+exceeded sampling budgets use `INPUT_LIMIT_EXCEEDED`.
+
+---
+
 ## `LocalSimulator`
 
 `implements QuantumSimulator`
@@ -40,6 +105,8 @@ Local **state-vector** simulator. During execution, it delegates the gate applic
 | `LocalSimulator(Circuit circuit)` | Register initialized to `\|0...0>`. |
 | `LocalSimulator(Circuit circuit, Qubit... qubits)` | Register initialized from explicit per-qubit states. |
 | `LocalSimulator(Circuit circuit, double... alphas)` | Register initialized from `\|0>`-amplitude coefficients (each becomes a `QubitSuperposition`). |
+| `LocalSimulator(Circuit circuit, DoubleSupplier random)` | Zero state with explicit measurement/reset randomness. |
+| `LocalSimulator(Circuit circuit, ComplexVector initialState, DoubleSupplier random)` | Copies a finite normalized complex state vector in MSB order, with explicit randomness. |
 
 - **Throws** `IllegalArgumentException` (both the `Qubit...` and `double...`
   overloads) if the number of supplied inputs differs from

@@ -89,6 +89,14 @@ public class BridgeCrossCheckTest {
         assertEquals("{\"ok\":false,\"error\":{\"code\":\"INVALID_SHOT_COUNT\"}}", JqapiBridge.sample(x, JqapiBridge.MAX_SHOTS + 1));
     }
 
+    @Test
+    void sample_preservesInvalidSpecAndResourceLimitCodes() {
+        assertEquals("{\"ok\":false,\"error\":{\"code\":\"INVALID_CIRCUIT_SPEC\"}}",
+                JqapiBridge.sample("{}", 1));
+        assertEquals("{\"ok\":false,\"error\":{\"code\":\"INPUT_LIMIT_EXCEEDED\"}}",
+                JqapiBridge.sample("{\"version\":1,\"numQubits\":24,\"levels\":[]}", 10_000));
+    }
+
     /** Minimal JSON string literal for embedding a value in the node script. */
     private static String jsonString(String s) {
         return '"' + s.replace("\\", "\\\\").replace("\"", "\\\"") + '"';
