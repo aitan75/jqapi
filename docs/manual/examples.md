@@ -304,9 +304,9 @@ register's most-significant wire. The editor inserts the same Hadamard,
 controlled-phase, and swap decomposition, shifting later gates so their order
 is preserved. The resulting circuit can be run, saved, and shared normally.
 
-Internally `search` builds a Grover oracle that marks the matching indexes,
-applies on the order of `pi*sqrt(N)/4` Grover iterations (oracle + diffusion,
-where `N = 2^ceil(log2(list size))`), measures, and verifies the candidate
+Internally `search` builds a Grover oracle that marks every matching index,
+selects the iteration count from the ratio of marked states to the padded search
+space (`N = 2^ceil(log2(list size))`), measures, and verifies the candidate
 against the predicate. It throws:
 
 - `JQApiException("No element found ...")` if the predicate matches nothing.
