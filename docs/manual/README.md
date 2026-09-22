@@ -47,10 +47,10 @@ The library also ships a few ready-made algorithms in the
 
 ## Requirements
 
-- **Java 21+**
+- **Java 25+**
 - **Maven 3.9+**
 
-jqapi has no third-party runtime dependencies — it relies only on the Java 21
+jqapi has no third-party runtime dependencies — it relies only on the Java 25
 standard library. (JUnit is used for tests only.)
 
 ---
@@ -104,7 +104,7 @@ npm run dev       # http://localhost:5173
 
 See the [Installation section of the top-level README](../../README.md#installation)
 for all three layers (library, full product, and rebuilding the WASM engine under
-JDK 21).
+JDK 25).
 
 The Studio's **Multi-qubit** gate palette includes a forward QFT macro. Set its
 contiguous register width and place it on the register's most-significant wire;
