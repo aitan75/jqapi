@@ -1,6 +1,9 @@
 package org.aitan.jqapi.test;
 
 import java.util.Arrays;
+import java.util.List;
+import org.aitan.jqapi.JQAPIConfig;
+import org.aitan.jqapi.utils.Constants;
 import org.aitan.jqapi.quantum.CircuitLevel;
 import org.aitan.jqapi.quantum.Circuit;
 import org.aitan.jqapi.quantum.QuantumRegister;
@@ -28,6 +31,23 @@ import static org.junit.jupiter.api.Assertions.*;
 public class QuantumMeasurementTest {
 
     private static final double EPS = 1e-9;
+
+    @Test
+    void zeroRandomDrawNeverSelectsImpossiblePartialMeasurementBranch() {
+        QuantumRegister register = new QuantumRegister(2, JQAPIConfig.sequential(2), () -> 0.0);
+        register.applyOperator(Constants.PAULI_X_MATRIX, List.of(0));
+        register.measureQubitAtIndexes(List.of(0));
+        assertEquals(new QubitOne(), register.getResult()[0]);
+        assertEquals(Complex.ONE, register.getRegisterState().getEntry(2));
+    }
+
+    @Test
+    void resetWithZeroRandomDrawResetsExcitedQubit() {
+        QuantumRegister register = new QuantumRegister(2, JQAPIConfig.sequential(2), () -> 0.0);
+        register.applyOperator(Constants.PAULI_X_MATRIX, List.of(0));
+        register.reset(0);
+        assertEquals(Complex.ONE, register.getRegisterState().getEntry(0));
+    }
 
     /**
      * State sqrt(0.8)|00> + sqrt(0.2)|11>. After measuring qubit 0 the register

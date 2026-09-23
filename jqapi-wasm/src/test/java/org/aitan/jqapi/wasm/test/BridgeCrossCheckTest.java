@@ -9,14 +9,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.aitan.jqapi.wasm.JqapiBridge;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Cross-checks the TeaVM-compiled JavaScript bridge against the JVM: the same
  * Bell spec must yield the same state-vector amplitudes whether run through
  * {@link JqapiBridge#run(String)} on the JVM or through the compiled JS in
- * Node. Skipped (not failed) when Node or the JS artifact is unavailable, so
+ * Node. Skipped (not failed) when Node is unavailable, so
  * the build stays runnable without a JS toolchain.
  *
  * @author Gaetano Ferrara
@@ -42,32 +45,46 @@ public class BridgeCrossCheckTest {
 
     @Test
     void compiledJs_matchesJvm_forBellCircuit() throws IOException, InterruptedException {
-        Path js = Path.of("target", "js", "jqapi.js").toAbsolutePath();
-        assumeTrue(Files.isRegularFile(js), "TeaVM JS artifact missing (build under JDK 21 first)");
-
         String jvm = JqapiBridge.run(BELL);
-
-        String script = "const j=require(" + jsonString(js.toString()) + ");"
-                + "process.stdout.write(j.run(" + jsonString(BELL) + "));";
-        String node;
-        Process p;
-        try {
-            p = new ProcessBuilder("node", "-e", script).redirectErrorStream(true).start();
-        } catch (IOException e) {
-            assumeTrue(false, "node not available: " + e.getMessage());
-            return;
-        }
-        node = new String(p.getInputStream().readAllBytes());
-        int exit = p.waitFor();
-        assertEquals(0, exit, "node exited non-zero: " + node);
-
+        String node = runCompiledJs(BELL);
         List<double[]> jvmAmps = parseAmplitudes(jvm);
         List<double[]> jsAmps = parseAmplitudes(node);
+        assertEquals(4, jvmAmps.size(), "Bell circuit must return four amplitudes");
         assertEquals(jvmAmps.size(), jsAmps.size(), "amplitude count mismatch; node output: " + node);
         for (int i = 0; i < jvmAmps.size(); i++) {
             assertEquals(jvmAmps.get(i)[0], jsAmps.get(i)[0], 1e-9, "re[" + i + "]");
             assertEquals(jvmAmps.get(i)[1], jsAmps.get(i)[1], 1e-9, "im[" + i + "]");
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"+1", "01", "1.", ".1", "1e+"})
+    void compiledJs_rejectsMalformedNumbersLikeJvm(String number) throws IOException, InterruptedException {
+        String spec = BELL.replace("\"version\":1", "\"version\":" + number);
+        String expected = "{\"ok\":false,\"error\":{\"code\":\"INVALID_CIRCUIT_SPEC\"}}";
+        assertEquals(expected, JqapiBridge.run(spec));
+        assertEquals(expected, runCompiledJs(spec));
+    }
+
+    private static String runCompiledJs(String spec) throws IOException, InterruptedException {
+        Path js = Path.of("target", "js", "jqapi.js").toAbsolutePath();
+        assertTrue(Files.isRegularFile(js), "TeaVM JS artifact missing (build under JDK 25 first)");
+
+        String script = "import * as j from " + jsonString(js.toUri().toString()) + ";"
+                + "process.stdout.write(j.run(" + jsonString(spec) + "));";
+        String node;
+        Process p;
+        try {
+            p = new ProcessBuilder("node", "--input-type=module", "-e", script).redirectErrorStream(true).start();
+        } catch (IOException e) {
+            assumeTrue(false, "node not available: " + e.getMessage());
+            return "";
+        }
+        node = new String(p.getInputStream().readAllBytes());
+        int exit = p.waitFor();
+        assertEquals(0, exit, "node exited non-zero: " + node);
+
+        return node;
     }
 
     @Test

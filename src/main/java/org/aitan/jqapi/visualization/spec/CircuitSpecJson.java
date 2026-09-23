@@ -42,6 +42,7 @@ public final class CircuitSpecJson {
      * @param spec the spec to serialize
      * @return its JSON representation
      * @throws IllegalArgumentException if any number is non-finite (NaN/Infinity)
+     *         or a parameter key contains an unpaired surrogate
      */
     public static String toJson(CircuitSpec spec) {
         StringBuilder sb = new StringBuilder();
@@ -100,14 +101,50 @@ public final class CircuitSpecJson {
     private static void writeParams(StringBuilder sb, Map<String, Double> params) {
         sb.append('{');
         boolean first = true;
-        for (Map.Entry<String, Double> e : new TreeMap<>(params).entrySet()) {
+        // Empty and single-parameter gates are already ordered.
+        Map<String, Double> ordered = params.size() < 2 ? params : new TreeMap<>(params);
+        for (Map.Entry<String, Double> e : ordered.entrySet()) {
             if (!first) {
                 sb.append(',');
             }
             first = false;
-            sb.append('"').append(e.getKey()).append("\":").append(num(e.getValue()));
+            writeString(sb, e.getKey());
+            sb.append(':').append(num(e.getValue()));
         }
         sb.append('}');
+    }
+
+    private static void writeString(StringBuilder sb, String value) {
+        sb.append('"');
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '"' -> sb.append("\\\"");
+                case '\\' -> sb.append("\\\\");
+                case '\b' -> sb.append("\\b");
+                case '\f' -> sb.append("\\f");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c < 0x20) {
+                        sb.append("\\u00");
+                        sb.append("0123456789abcdef".charAt(c >> 4));
+                        sb.append("0123456789abcdef".charAt(c & 0xf));
+                    } else if (Character.isHighSurrogate(c)) {
+                        if (i + 1 >= value.length() || !Character.isLowSurrogate(value.charAt(i + 1))) {
+                            throw new IllegalArgumentException("lone high surrogate cannot be serialized");
+                        }
+                        sb.append(c).append(value.charAt(++i));
+                    } else if (Character.isLowSurrogate(c)) {
+                        throw new IllegalArgumentException("lone low surrogate cannot be serialized");
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        sb.append('"');
     }
 
     private static void writeMatrix(StringBuilder sb, List<List<ComplexCell>> m) {
@@ -439,6 +476,8 @@ public final class CircuitSpecJson {
                         case 'u' -> appendUnicodeEscape(sb);
                         default -> throw err("invalid escape '\\" + e + "'");
                     }
+                } else if (c < 0x20) {
+                    throw err("unescaped control character");
                 } else if (Character.isHighSurrogate(c)) {
                     //A raw high surrogate must be followed by a raw low surrogate;
                     //an unpaired one is not a valid Unicode scalar value (RFC 8259 8.2).
@@ -517,16 +556,41 @@ public final class CircuitSpecJson {
 
         private Double parseNumber() {
             int start = pos;
-            while (pos < s.length() && "+-0123456789.eE".indexOf(s.charAt(pos)) >= 0) {
-                pos++;
+            consume('-');
+            if (!consume('0')) {
+                requireDigits();
             }
-            if (pos == start) {
-                throw err("invalid value");
+            if (consume('.')) {
+                requireDigits();
+            }
+            if (consume('e') || consume('E')) {
+                if (!consume('+')) {
+                    consume('-');
+                }
+                requireDigits();
             }
             try {
                 return Double.parseDouble(s.substring(start, pos));
             } catch (NumberFormatException nfe) {
                 throw err("invalid number");
+            }
+        }
+
+        private boolean consume(char c) {
+            if (pos < s.length() && s.charAt(pos) == c) {
+                pos++;
+                return true;
+            }
+            return false;
+        }
+
+        private void requireDigits() {
+            int start = pos;
+            while (pos < s.length() && s.charAt(pos) >= '0' && s.charAt(pos) <= '9') {
+                pos++;
+            }
+            if (pos == start) {
+                throw err("expected digit");
             }
         }
 
@@ -551,7 +615,7 @@ public final class CircuitSpecJson {
         }
 
         private void skipWs() {
-            while (pos < s.length() && Character.isWhitespace(s.charAt(pos))) {
+            while (pos < s.length() && " \t\r\n".indexOf(s.charAt(pos)) >= 0) {
                 pos++;
             }
         }

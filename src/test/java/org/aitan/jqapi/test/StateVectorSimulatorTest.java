@@ -1,6 +1,7 @@
 package org.aitan.jqapi.test;
 
 import java.util.stream.IntStream;
+import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
 import org.aitan.jqapi.quantum.CircuitLevel;
 import org.aitan.jqapi.quantum.QuantumRegister;
@@ -107,12 +108,13 @@ public class StateVectorSimulatorTest {
         simulator.execute();
         QuantumRegister qreg = simulator.getQuantumRegister();
 
-        int dimension = qreg.getRegisterState().getDimension();
+        ComplexVector state = qreg.getRegisterState();
+        int dimension = state.getDimension();
         double invSqrt2 = 1 / Math.sqrt(2);
-        assertEquals(invSqrt2, qreg.getRegisterState().getEntry(0).abs(), EPS);
-        assertEquals(invSqrt2, qreg.getRegisterState().getEntry(dimension - 1).abs(), EPS);
+        assertEquals(invSqrt2, state.getEntry(0).abs(), EPS);
+        assertEquals(invSqrt2, state.getEntry(dimension - 1).abs(), EPS);
         for (int i = 1; i < dimension - 1; i++) {
-            assertEquals(0.0, qreg.getRegisterState().getEntry(i).abs(), EPS);
+            assertEquals(0.0, state.getEntry(i).abs(), EPS);
         }
 
         qreg.measure();
@@ -143,17 +145,19 @@ public class StateVectorSimulatorTest {
 
         double expected = 1 / Math.pow(2, N / 2.0);
         double norm = 0;
-        for (int i = 0; i < qreg.getRegisterState().getDimension(); i++) {
-            assertEquals(expected, qreg.getRegisterState().getEntry(i).abs(), EPS);
-            norm += Math.pow(qreg.getRegisterState().getEntry(i).abs(), 2);
+        ComplexVector state = qreg.getRegisterState();
+        for (int i = 0; i < state.getDimension(); i++) {
+            assertEquals(expected, state.getEntry(i).abs(), EPS);
+            norm += Math.pow(state.getEntry(i).abs(), 2);
         }
         assertEquals(1.0, norm, 1e-6);
     }
 
     private void assertBasisState(QuantumRegister qreg, int expectedIndex) {
-        for (int i = 0; i < qreg.getRegisterState().getDimension(); i++) {
+        ComplexVector state = qreg.getRegisterState();
+        for (int i = 0; i < state.getDimension(); i++) {
             double expected = i == expectedIndex ? 1.0 : 0.0;
-            assertEquals(expected, qreg.getRegisterState().getEntry(i).abs(), EPS,
+            assertEquals(expected, state.getEntry(i).abs(), EPS,
                     "unexpected amplitude at basis state " + i);
         }
     }
