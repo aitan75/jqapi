@@ -11,8 +11,64 @@ import org.aitan.jqapi.visualization.spec.GateSpec;
 import org.aitan.jqapi.visualization.spec.LevelSpec;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class CircuitSpecJsonTest {
+    @Test
+    void roundTrip_escapesParameterKeys() {
+        String key = "quote\" slash\\ controls\b\f\n\r\t" + (char) 0 + (char) 31 + " 😀";
+        CircuitSpec spec = CircuitSpec.of(1, List.of(new LevelSpec(List.of(
+                new GateSpec(GateKind.H, List.of(0), List.of(), Map.of(key, 1.0), null)))));
+        String json = CircuitSpecJson.toJson(spec);
+        assertTrue(json.contains("quote\\\" slash\\\\ controls\\b\\f\\n\\r\\t\\u0000\\u001f 😀"));
+        assertEquals(spec, CircuitSpecJson.fromJson(json));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0xD800, 0xDC00})
+    void toJson_unpairedSurrogateKey_rejected(int codeUnit) {
+        CircuitSpec spec = CircuitSpec.of(1, List.of(new LevelSpec(List.of(
+                new GateSpec(GateKind.H, List.of(0), List.of(),
+                        Map.of("a" + (char) codeUnit + "b", 1.0), null)))));
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.toJson(spec));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"+1", "01", "-01", ".1", "1.", "1.e2", "1e", "1e+", "--1", "0x1p0"})
+    void fromJson_invalidNumberGrammar_rejected(String number) {
+        String json = specWithParamKey("\"theta\"").replace(":1.0", ":" + number);
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson(json));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "-0", "1.25", "-0.25", "1e2", "1E+2", "1e-2"})
+    void fromJson_validNumberGrammar_accepted(String number) {
+        String json = specWithParamKey("\"theta\"").replace(":1.0", ":" + number);
+        double actual = CircuitSpecJson.fromJson(json).levels().getFirst().gates().getFirst().params().get("theta");
+        assertEquals(Double.parseDouble(number), actual);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 9, 10, 13, 31})
+    void fromJson_unescapedControlCharacter_rejected(int codeUnit) {
+        String json = specWithParamKey("\"a" + (char) codeUnit + "b\"");
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson(json));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"\u000b", "\u2003"})
+    void fromJson_nonJsonWhitespace_rejected(String whitespace) {
+        assertThrows(IllegalArgumentException.class, () -> CircuitSpecJson.fromJson(
+                whitespace + "{\"version\":1,\"numQubits\":1,\"levels\":[]}"));
+    }
+
+    @Test
+    void fromJson_allJsonWhitespace_accepted() {
+        assertEquals(CircuitSpec.of(1, List.of()), CircuitSpecJson.fromJson(
+                " \t\r\n{\"version\":1,\"numQubits\":1,\"levels\":[]} \t\r\n"));
+    }
+
 
     private static GateSpec cnot(int control, int target) {
         return new GateSpec(GateKind.CNOT, List.of(target), List.of(control), Map.of(), null);

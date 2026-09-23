@@ -30,7 +30,6 @@ import org.aitan.jqapi.visualization.spec.LevelSpec;
  */
 public final class AsciiCircuitRenderer {
 
-    private final boolean asciiOnly;
     private final char wire;
     private final char vert;
     private final char cross;
@@ -47,7 +46,6 @@ public final class AsciiCircuitRenderer {
      * @param asciiOnly if {@code true}, use the pure-ASCII glyph fallback
      */
     public AsciiCircuitRenderer(boolean asciiOnly) {
-        this.asciiOnly = asciiOnly;
         this.wire = asciiOnly ? '-' : '─';
         this.vert = asciiOnly ? '|' : '│';
         this.cross = asciiOnly ? '+' : '┼';
@@ -117,14 +115,17 @@ public final class AsciiCircuitRenderer {
                     int start = cellStart[l] + (cellW[l] - s.length()) / 2;
                     putString(grid[2 * q], start, s);
                 }
-                int lo = Arrays.stream(w).min().orElse(0);
-                int hi = Arrays.stream(w).max().orElse(0);
+                int lo = n;
+                int hi = -1;
+                for (int q : w) {
+                    lo = Math.min(lo, q);
+                    hi = Math.max(hi, q);
+                }
                 for (int i = lo; i < hi; i++) {
                     grid[2 * i + 1][center] = vert; // gap between wire i and i+1
                 }
                 for (int q = lo + 1; q < hi; q++) {
-                    final int wire = q;
-                    if (Arrays.stream(w).noneMatch(x -> x == wire)) {
+                    if (!g.controls().contains(q) && !g.targets().contains(q)) {
                         grid[2 * q][center] = cross; // wire passing under the connector
                     }
                 }
@@ -133,7 +134,12 @@ public final class AsciiCircuitRenderer {
 
         StringBuilder out = new StringBuilder();
         for (int r = 0; r < rows; r++) {
-            out.append(rtrim(new String(grid[r])));
+            char[] row = grid[r];
+            int end = row.length;
+            while (end > 0 && row[end - 1] == ' ') {
+                end--;
+            }
+            out.append(row, 0, end);
             if (r < rows - 1) {
                 out.append('\n');
             }
@@ -202,11 +208,4 @@ public final class AsciiCircuitRenderer {
         }
     }
 
-    private static String rtrim(String s) {
-        int end = s.length();
-        while (end > 0 && s.charAt(end - 1) == ' ') {
-            end--;
-        }
-        return s.substring(0, end);
-    }
 }

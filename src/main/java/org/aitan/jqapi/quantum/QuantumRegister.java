@@ -276,12 +276,33 @@ public class QuantumRegister {
      * @param operator the 2^k x 2^k matrix operator to apply
      * @param targetQubits the list of target qubits
      * @param parallel whether to spread the independent amplitude groups across cores
+     * @throws JQApiLimitException if a target index is outside the register
+     * @throws IllegalArgumentException if targets repeat, exceed the register size,
+     *         or the matrix is not square with dimension 2^k
      */
     public void applyOperator(ComplexMatrix operator, List<Integer> targetQubits, boolean parallel) {
+        Objects.requireNonNull(operator, "operator");
+        Objects.requireNonNull(targetQubits, "targetQubits");
         int k = targetQubits.size();
+        if (k > size) {
+            throw new IllegalArgumentException("Gate has more targets than register qubits");
+        }
+        int targetMask = 0;
+        for (Integer target : targetQubits) {
+            Objects.requireNonNull(target, "target qubit");
+            if (target < 0 || target >= size) {
+                throw new JQApiLimitException("Target qubit index out of range [0," + size + "): " + target);
+            }
+            int bit = 1 << (size - 1 - target);
+            if ((targetMask & bit) != 0) {
+                throw new IllegalArgumentException("Duplicate target qubit: " + target);
+            }
+            targetMask |= bit;
+        }
         int localDimension = 1 << k;
-        if (operator.getRowDimension() != localDimension) {
+        if (operator.getRowDimension() != localDimension || operator.getColumnDimension() != localDimension) {
             throw new IllegalArgumentException("Gate matrix of dimension " + operator.getRowDimension()
+                    + "x" + operator.getColumnDimension()
                     + " cannot be applied to " + k + " qubit(s)");
         }
         int dimension = this.registerState.length / 2;
@@ -299,7 +320,6 @@ public class QuantumRegister {
             }
             offsets[t] = offset;
         }
-        int targetMask = offsets[localDimension - 1];
 
         //Flatten the operator once per call: the zero-check happens on the boxed
         //entry (same check as before the migration); the per-amplitude loops
@@ -545,7 +565,6 @@ public class QuantumRegister {
     private int calculateCollapsedIndex(int qubitIndex) {
         double random = nextRandom();
         double zeroProbability = 0;
-        double oneProbability = 0;
 
         int dimension = this.registerState.length / 2;
         int shift = size - 1 - qubitIndex; // qubit 0 is the most significant bit
@@ -555,9 +574,8 @@ public class QuantumRegister {
             double im = this.registerState[2 * i + 1];
             double probability = re * re + im * im;
             zeroProbability += bitAtIndex == 0 ? probability : 0;
-            oneProbability += bitAtIndex == 1 ? probability : 0;
         }
-        return zeroProbability >= random ? 0 : 1;
+        return random < zeroProbability ? 0 : 1;
     }
 
     private void updateRegisterStateAfterQubitCollapsed(int qubitPos, int collapsedValue) {
