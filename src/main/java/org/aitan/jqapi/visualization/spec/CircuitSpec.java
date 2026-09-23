@@ -1,6 +1,8 @@
 package org.aitan.jqapi.visualization.spec;
 
 import java.util.List;
+import org.aitan.jqapi.quantum.classical.ClassicalRecord;
+import org.aitan.jqapi.quantum.classical.Condition;
 
 /**
  * The canonical, serializable representation of a quantum circuit for the
@@ -15,11 +17,19 @@ import java.util.List;
  *
  * @author Gaetano Ferrara
  */
-public record CircuitSpec(int version, int numQubits, List<LevelSpec> levels) {
+public record CircuitSpec(int version, int numQubits, List<LevelSpec> levels,
+                            List<ClassicalRecord> measurementRecords,
+                            List<Condition> conditions) {
 
     /** Defensively copies the levels into an immutable list. */
     public CircuitSpec {
         levels = List.copyOf(levels);
+        measurementRecords = measurementRecords == null ? List.of() : List.copyOf(measurementRecords);
+        conditions = conditions == null ? List.of() : List.copyOf(conditions);
+    }
+
+    public CircuitSpec(int version, int numQubits, List<LevelSpec> levels) {
+        this(version, numQubits, levels, List.of(), List.of());
     }
 
     /** Current on-disk/format version. */
@@ -37,5 +47,11 @@ public record CircuitSpec(int version, int numQubits, List<LevelSpec> levels) {
     public static CircuitSpec migrateV1(CircuitSpec v1) {
         if (v1.version() != VERSION_1) throw new IllegalArgumentException("Expected v1 spec");
         return new CircuitSpec(CURRENT_VERSION, v1.numQubits(), v1.levels());
+    }
+
+    public static CircuitSpec of(int numQubits, List<LevelSpec> levels,
+                                 List<ClassicalRecord> measurementRecords,
+                                 List<Condition> conditions) {
+        return new CircuitSpec(CURRENT_VERSION, numQubits, levels, measurementRecords, conditions);
     }
 }

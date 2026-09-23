@@ -57,6 +57,13 @@ public final class CircuitSpecJson {
             writeLevel(sb, levels.get(i));
         }
         sb.append("]}");
+        if (!spec.measurementRecords().isEmpty()) {
+            sb.append(",\"measurementRecords\":[]"); // placeholder per formato futuro
+        }
+        if (!spec.conditions().isEmpty()) {
+            sb.append(",\"conditions\":[]"); // placeholder per formato futuro
+        }
+        sb.append('}');
         return sb.toString();
     }
 
@@ -228,7 +235,7 @@ public final class CircuitSpecJson {
             }
             levels.add(new LevelSpec(gates));
         }
-        return new CircuitSpec(version, numQubits, levels);
+        return new CircuitSpec(version, numQubits, levels, null, null);
     }
 
     private static GateSpec mapGate(Object go, int numQubits) {
