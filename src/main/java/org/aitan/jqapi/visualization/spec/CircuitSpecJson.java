@@ -58,7 +58,7 @@ public final class CircuitSpecJson {
             }
             writeLevel(sb, levels.get(i));
         }
-        sb.append("]}");
+        sb.append("]");
         writeRecords(sb, spec.measurementRecords());
         writeConditions(sb, spec.conditions());
         sb.append('}');
