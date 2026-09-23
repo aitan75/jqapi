@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import org.aitan.jqapi.quantum.classical.ClassicalRecord;
+import org.aitan.jqapi.quantum.classical.Condition;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -57,12 +59,8 @@ public final class CircuitSpecJson {
             writeLevel(sb, levels.get(i));
         }
         sb.append("]}");
-        if (!spec.measurementRecords().isEmpty()) {
-            sb.append(",\"measurementRecords\":[]"); // placeholder per formato futuro
-        }
-        if (!spec.conditions().isEmpty()) {
-            sb.append(",\"conditions\":[]"); // placeholder per formato futuro
-        }
+        writeRecords(sb, spec.measurementRecords());
+        writeConditions(sb, spec.conditions());
         sb.append('}');
         return sb.toString();
     }
@@ -235,7 +233,9 @@ public final class CircuitSpecJson {
             }
             levels.add(new LevelSpec(gates));
         }
-        return new CircuitSpec(version, numQubits, levels, null, null);
+        List<ClassicalRecord> measurementRecords = mapRecords(root.get("measurementRecords"));
+        List<Condition> conditions = mapConditions(root.get("conditions"));
+        return new CircuitSpec(version, numQubits, levels, measurementRecords, conditions);
     }
 
     private static GateSpec mapGate(Object go, int numQubits) {
@@ -650,6 +650,52 @@ public final class CircuitSpecJson {
         private IllegalArgumentException err(String msg) {
             return new IllegalArgumentException("Invalid CircuitSpec JSON at position " + pos + ": " + msg);
         }
+    }
+
+    private static void writeRecords(StringBuilder sb, List<ClassicalRecord> records) {
+        if (records == null || records.isEmpty()) return;
+        sb.append(",\"measurementRecords\":[");
+        for (int i = 0; i < records.size(); i++) {
+            if (i > 0) sb.append(',');
+            sb.append("{\"bit\":").append(records.get(i).bit()).append('}');
+        }
+        sb.append(']');
+    }
+
+    private static void writeConditions(StringBuilder sb, List<Condition> conditions) {
+        if (conditions == null || conditions.isEmpty()) return;
+        sb.append(",\"conditions\":[");
+        for (int i = 0; i < conditions.size(); i++) {
+            if (i > 0) sb.append(',');
+            sb.append("{\"record\":{\"bit\":").append(conditions.get(i).record().bit())
+              .append("},\"expected\":").append(conditions.get(i).expected()).append('}');
+        }
+        sb.append(']');
+    }
+
+    private static List<ClassicalRecord> mapRecords(Object o) {
+        if (o == null) return List.of();
+        List<Object> arr = asArray(o, "measurementRecords");
+        List<ClassicalRecord> out = new ArrayList<>(arr.size());
+        for (Object item : arr) {
+            Map<String, Object> m = asObject(item, "measurementRecord");
+            out.add(new ClassicalRecord(asInt(m.get("bit"), "bit")));
+        }
+        return out;
+    }
+
+    private static List<Condition> mapConditions(Object o) {
+        if (o == null) return List.of();
+        List<Object> arr = asArray(o, "conditions");
+        List<Condition> out = new ArrayList<>(arr.size());
+        for (Object item : arr) {
+            Map<String, Object> m = asObject(item, "condition");
+            Map<String, Object> recMap = asObject(m.get("record"), "record");
+            int bit = asInt(recMap.get("bit"), "record.bit");
+            int expected = asInt(m.get("expected"), "expected");
+            out.add(new Condition(new ClassicalRecord(bit), expected));
+        }
+        return out;
     }
 
     private static String num(double d) {
