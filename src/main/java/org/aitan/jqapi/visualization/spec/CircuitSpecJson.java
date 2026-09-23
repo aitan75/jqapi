@@ -211,6 +211,9 @@ public final class CircuitSpecJson {
     private static CircuitSpec mapCircuit(Object tree, int maxQubits) {
         Map<String, Object> root = asObject(tree, "root");
         int version = asInt(root.get("version"), "version");
+        if (version != 1 && version != 2) {
+            throw new IllegalArgumentException("Unsupported spec version: " + version + ". Only 1 and 2 are supported.");
+        }
         int numQubits = asInt(root.get("numQubits"), "numQubits");
         if (numQubits <= 0 || numQubits > maxQubits) {
             throw new JQApiLimitException("numQubits out of range (1.." + maxQubits + "): " + numQubits);
@@ -679,7 +682,11 @@ public final class CircuitSpecJson {
         List<ClassicalRecord> out = new ArrayList<>(arr.size());
         for (Object item : arr) {
             Map<String, Object> m = asObject(item, "measurementRecord");
-            out.add(new ClassicalRecord(asInt(m.get("bit"), "bit")));
+            int bit = asInt(m.get("bit"), "bit");
+            if (bit != 0 && bit != 1) {
+                throw new IllegalArgumentException("Measurement bit must be 0 or 1, got: " + bit);
+            }
+            out.add(new ClassicalRecord(bit));
         }
         return out;
     }
@@ -693,6 +700,12 @@ public final class CircuitSpecJson {
             Map<String, Object> recMap = asObject(m.get("record"), "record");
             int bit = asInt(recMap.get("bit"), "record.bit");
             int expected = asInt(m.get("expected"), "expected");
+            if (bit != 0 && bit != 1) {
+                throw new IllegalArgumentException("Condition record bit must be 0 or 1, got: " + bit);
+            }
+            if (expected != 0 && expected != 1) {
+                throw new IllegalArgumentException("Condition expected value must be 0 or 1, got: " + expected);
+            }
             out.add(new Condition(new ClassicalRecord(bit), expected));
         }
         return out;

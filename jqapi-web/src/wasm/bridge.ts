@@ -7,7 +7,7 @@ const SUPPORTED_SPEC_VERSION = 2;
 
 export function run(spec: CircuitSpec): RunResult {
   if (spec.version !== 1 && spec.version !== SUPPORTED_SPEC_VERSION) {
-    return { ok: false, error: { code: 'UNSUPPORTED_SPEC_VERSION', detail: `version=${spec.version}` } };
+    return { ok: false, error: { code: 'UNSUPPORTED_SPEC_VERSION' } };
   }
   try {
     return JSON.parse(wasmRun(JSON.stringify(spec))) as RunResult;
@@ -19,7 +19,7 @@ export function run(spec: CircuitSpec): RunResult {
 /** Samples a circuit independently, up to the WASM engine's 10,000-shot limit. */
 export function sample(spec: CircuitSpec, shots: number): SampleResult {
   if (spec.version !== 1 && spec.version !== SUPPORTED_SPEC_VERSION) {
-    return { ok: false, error: { code: 'UNSUPPORTED_SPEC_VERSION', detail: `version=${spec.version}` } };
+    return { ok: false, error: { code: 'UNSUPPORTED_SPEC_VERSION' } };
   }
   if (!Number.isInteger(shots) || shots < 1 || shots > 10_000) {
     return { ok: false, error: { code: 'INVALID_SHOT_COUNT' } };

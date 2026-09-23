@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.aitan.jqapi.quantum.classical.ClassicalRecord;
+import org.aitan.jqapi.quantum.classical.Condition;
 import org.aitan.jqapi.JQAPIConfig;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.quantum.gates.*;
@@ -20,6 +22,8 @@ public class Circuit {
     private final List<CircuitLevel> levels;
     private final JQAPIConfig config;
     private int inputSize;
+    private List<ClassicalRecord> measurementRecords = new ArrayList<>();
+    private List<Condition> conditions = new ArrayList<>();
 
     /** Creates a circuit using the default configuration.
      *  @param inputSize number of qubits the circuit operates on */
@@ -36,6 +40,11 @@ public class Circuit {
         this.inputSize = inputSize;
         this.levels = new ArrayList<>();
     }
+
+    public List<ClassicalRecord> getMeasurementRecords() { return measurementRecords; }
+    public List<Condition> getConditions() { return conditions; }
+    public void setMeasurementRecords(List<ClassicalRecord> records) { this.measurementRecords = new ArrayList<>(records); }
+    public void setConditions(List<Condition> conditions) { this.conditions = new ArrayList<>(conditions); }
 
     /** @return the number of qubits the circuit operates on */
     public int getInputSize() {

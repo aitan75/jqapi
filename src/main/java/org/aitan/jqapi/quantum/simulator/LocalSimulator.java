@@ -114,10 +114,17 @@ public class LocalSimulator implements QuantumSimulator {
 
     public List<ClassicalRecord> extractClassicalRecords() {
         Qubit[] result = quantumRegister.getResult();
-        List<ClassicalRecord> records = new ArrayList<>(result.length);
+        List<ClassicalRecord> records = new ArrayList<>();
+        if (result == null || result.length == 0) {
+            return records;
+        }
         for (int i = 0; i < result.length; i++) {
-            int bit = (result[i] instanceof org.aitan.jqapi.quantum.QubitZero) ? 0 : 1;
-            records.add(new ClassicalRecord(bit));
+            if (result[i] == null) {
+                records.add(new ClassicalRecord(0)); // uninitialized / unmeasured
+            } else {
+                int bit = (result[i] instanceof org.aitan.jqapi.quantum.QubitZero) ? 0 : 1;
+                records.add(new ClassicalRecord(bit));
+            }
         }
         return records;
     }

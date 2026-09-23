@@ -28,7 +28,7 @@ export interface Amplitude {
   im: number;
 }
 
-export type EngineErrorCode = 'INPUT_LIMIT_EXCEEDED' | 'INVALID_CIRCUIT_SPEC' | 'INVALID_SHOT_COUNT' | 'SIMULATION_FAILED';
+export type EngineErrorCode = 'INPUT_LIMIT_EXCEEDED' | 'INVALID_CIRCUIT_SPEC' | 'INVALID_SHOT_COUNT' | 'SIMULATION_FAILED' | 'UNSUPPORTED_SPEC_VERSION';
 
 export interface RunSuccess {
   ok: true;

@@ -74,6 +74,8 @@ public final class CircuitSpecs {
      */
     public static Circuit toCircuit(CircuitSpec spec, JQAPIConfig config) {
         Circuit circuit = new Circuit(spec.numQubits(), config);
+        circuit.setMeasurementRecords(spec.measurementRecords());
+        circuit.setConditions(spec.conditions());
         for (LevelSpec levelSpec : spec.levels()) {
             CircuitLevel level = new CircuitLevel();
             for (GateSpec gateSpec : levelSpec.gates()) {
@@ -206,7 +208,8 @@ public final class CircuitSpecs {
             }
             levels.add(new LevelSpec(gates));
         }
-        return CircuitSpec.of(circuit.getInputSize(), levels);
+        return CircuitSpec.of(circuit.getInputSize(), levels,
+                circuit.getMeasurementRecords(), circuit.getConditions());
     }
 
     private static GateSpec toGateSpec(GateKind kind, Gate gate) {

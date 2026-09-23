@@ -66,7 +66,7 @@ public class CircuitSpecJsonTest {
     @Test
     void fromJson_allJsonWhitespace_accepted() {
         assertEquals(CircuitSpec.of(1, List.of()), CircuitSpecJson.fromJson(
-                " \t\r\n{\"version\":1,\"numQubits\":1,\"levels\":[]} \t\r\n"));
+                " \t\r\n{\"version\":2,\"numQubits\":1,\"levels\":[]} \t\r\n"));
     }
 
 
@@ -80,7 +80,7 @@ public class CircuitSpecJsonTest {
                 new LevelSpec(List.of(GateSpec.of(GateKind.H, 0))),
                 new LevelSpec(List.of(cnot(0, 1)))));
         assertEquals(
-                "{\"version\":1,\"numQubits\":2,\"levels\":["
+                "{\"version\":2,\"numQubits\":2,\"levels\":["
                 + "{\"gates\":[{\"kind\":\"H\",\"targets\":[0],\"controls\":[],\"params\":{}}]},"
                 + "{\"gates\":[{\"kind\":\"CNOT\",\"targets\":[1],\"controls\":[0],\"params\":{}}]}"
                 + "]}",
@@ -94,7 +94,7 @@ public class CircuitSpecJsonTest {
                         Map.of("theta", 1.5, "phi", 0.5, "lambda", 0.25), null)))));
         // keys emitted alphabetically: lambda, phi, theta
         assertEquals(
-                "{\"version\":1,\"numQubits\":1,\"levels\":["
+                "{\"version\":2,\"numQubits\":1,\"levels\":["
                 + "{\"gates\":[{\"kind\":\"U3\",\"targets\":[0],\"controls\":[],"
                 + "\"params\":{\"lambda\":0.25,\"phi\":0.5,\"theta\":1.5}}]}"
                 + "]}",
@@ -109,7 +109,7 @@ public class CircuitSpecJsonTest {
         CircuitSpec spec = CircuitSpec.of(1, List.of(new LevelSpec(List.of(
                 new GateSpec(GateKind.GENERIC, List.of(0), List.of(), Map.of(), m)))));
         assertEquals(
-                "{\"version\":1,\"numQubits\":1,\"levels\":["
+                "{\"version\":2,\"numQubits\":1,\"levels\":["
                 + "{\"gates\":[{\"kind\":\"GENERIC\",\"targets\":[0],\"controls\":[],\"params\":{},"
                 + "\"matrix\":[[{\"re\":0.0,\"im\":0.0},{\"re\":1.0,\"im\":0.0}],"
                 + "[{\"re\":1.0,\"im\":0.0},{\"re\":0.0,\"im\":0.0}]]}]}"
