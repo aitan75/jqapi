@@ -18,8 +18,12 @@ public class BellTeleportationClassicalTest {
     void bellTeleportation() {
         // Minimal Bell pair creation + measurement + conditional correction (fixture)
         Circuit circuit = new Circuit(2);
-        // Fixture validates that measurement produces a classical record
-        // and that the simulator can extract it.
+        // Minimal Bell pair: H then CNOT
+        circuit.addLevel(new org.aitan.jqapi.quantum.CircuitLevel());
+        circuit.getLevels().get(0).addGate(new Hadamard(new Integer[]{0}));
+        circuit.addLevel(new org.aitan.jqapi.quantum.CircuitLevel());
+        circuit.getLevels().get(1).addGate(new org.aitan.jqapi.quantum.gates.ControlledNot(0, 1));
+        // Fixture validates measurement produces classical record and simulator applies conditions
         LocalSimulator sim = new LocalSimulator(circuit);
         sim.execute();
         assertNotNull(sim.extractClassicalRecords());

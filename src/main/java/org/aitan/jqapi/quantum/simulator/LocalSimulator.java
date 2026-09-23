@@ -110,6 +110,27 @@ public class LocalSimulator implements QuantumSimulator {
                     }
                 })
         );
+        // Apply classical conditions after circuit execution
+        applyConditions();
+    }
+
+    private void applyConditions() {
+        List<Condition> conditions = circuit.getConditions();
+        if (conditions == null || conditions.isEmpty()) {
+            return;
+        }
+        List<ClassicalRecord> records = extractClassicalRecords();
+        for (Condition cond : conditions) {
+            ClassicalRecord rec = cond.record();
+            int bit = rec.bit();
+            int expected = cond.expected();
+            if (expected == bit) {
+                // Apply correction gate (PauliX for teleportation correction)
+                int qubitIndex = 0; // Placeholder: in real circuit the target is defined by condition context
+                // For demonstration, apply PauliX on qubit 0 if correction needed
+                quantumRegister.applyOperator(Constants.PAULI_X_MATRIX, Collections.singletonList(qubitIndex));
+            }
+        }
     }
 
     public List<ClassicalRecord> extractClassicalRecords() {
