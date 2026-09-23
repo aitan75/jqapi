@@ -1,8 +1,10 @@
 package org.aitan.jqapi.quantum.simulator;
 
 import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.DoubleSupplier;
+import org.aitan.jqapi.quantum.classical.ClassicalRecord;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
@@ -26,6 +28,10 @@ import org.aitan.jqapi.utils.Constants;
  *
  * @author Gaetano Ferrara
  */
+import org.aitan.jqapi.quantum.classical.ClassicalRecord;
+import java.util.ArrayList;
+import java.util.List;
+
 public class LocalSimulator implements QuantumSimulator {
 
     private final Circuit circuit;
@@ -104,6 +110,16 @@ public class LocalSimulator implements QuantumSimulator {
                     }
                 })
         );
+    }
+
+    public List<ClassicalRecord> extractClassicalRecords() {
+        Qubit[] result = quantumRegister.getResult();
+        List<ClassicalRecord> records = new ArrayList<>(result.length);
+        for (int i = 0; i < result.length; i++) {
+            int bit = (result[i] instanceof org.aitan.jqapi.quantum.QubitZero) ? 0 : 1;
+            records.add(new ClassicalRecord(bit));
+        }
+        return records;
     }
 
     /** {@inheritDoc} */
