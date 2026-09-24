@@ -1,6 +1,38 @@
 # Java Quantum API [![Build](https://github.com/aitan75/jqapi/actions/workflows/build.yml/badge.svg)](https://github.com/aitan75/jqapi/actions/workflows/build.yml) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=aitan75_jqapi&metric=coverage)](https://sonarcloud.io/summary/new_code?id=aitan75_jqapi)
 
-_**jqapi**_ is a Java Api library to test quantum computing concepts. At the moment you can simulate your quantum circuit with a local simulator.
+_**jqapi**_ is a pure-Java quantum computing toolkit: a state-vector simulator
+library for the JVM, the same engine compiled to JavaScript for the browser, and
+**jqapi studio**, a visual circuit editor that runs entirely client-side.
+
+<p align="center"><img src="docs/assets/studio-ghz.png" alt="jqapi studio running a 3-qubit GHZ circuit: the gate grid with H and two CNOTs, the shot counter and Run button, and the full 8-state vector with 50 percent probability on 000 and 111." width="640"></p>
+
+**Bell state in 20 seconds:** drag `H` onto qubit 0, add a `CNOT` from qubit 0
+to qubit 1, set 1000 shots and run. The WASM engine shows the exact 50/50
+probabilities for `|00⟩` and `|11⟩` next to the counts observed over 1000 shots.
+
+![Animated walkthrough of jqapi studio: it places H on qubit 0 and a CNOT from qubit 0 to qubit 1, sets 1000 shots, runs the circuit, and shows 50 percent probability for 00 and 11 alongside observed counts of about 500 each.](docs/assets/visual-editor-bell-demo.gif)
+
+## What's inside
+
+| | |
+|---|---|
+| **Simulator library** (`org.aitan:jqapi`) | State-vector simulation up to 24 qubits by default (30 max), no runtime dependencies. Gates on arbitrary non-adjacent qubits, parametric rotations, multi-controlled gates, mid-circuit measurement, reset and classically conditioned gates. |
+| **jqapi studio** ([`jqapi-web/`](jqapi-web/)) | Drag-and-drop circuit editor with the full gate palette, algorithm presets, a QFT macro, undo/redo, JSON save/load and shareable URLs. Shows amplitudes, probabilities, Bloch details and repeated-shot counts. English and Italian. No backend. |
+| **OpenQASM 2** | Import and export `.qasm` circuits, including measurement, reset and `if` conditions — [guide](docs/manual/openqasm.md). |
+| **Sampling** | `CircuitSampler` runs many shots with an optional seed, so counts are reproducible. |
+| **Algorithms** | Bell/GHZ states, teleportation, Deutsch-Jozsa, Grover search, QFT / inverse QFT in the library; the studio adds presets such as superdense coding. |
+| **CircuitSpec** | A lossless, versioned JSON format for circuits, shared by the library, the WASM bridge and the studio. |
+| **ASCII renderer** | Deterministic text diagrams for terminals, tests and bug reports. |
+
+### Quick start
+
+```bash
+# try the studio in your browser (Node 20.19+)
+cd jqapi-web && npm ci --ignore-scripts && npm run dev   # http://localhost:5173
+
+# or install the library into ~/.m2 (Java 25+, Maven 3.9+)
+mvn -DskipTests install
+```
 
 ## Documentation
 
@@ -57,18 +89,9 @@ npm run dev       # dev server at http://localhost:5173
 npm run build     # production bundle in jqapi-web/dist/ (static files)
 ```
 
-The editor supports `H`, `X`, `Z`, and `CNOT` on 1–8 qubits, with results shown as
-outcome probabilities. The full gate set is shipped with the library — see
-[Supported gates](#supported-gates) below.
-
-### Bell-state editor demo
-
-The 20-second walkthrough creates a Bell state: on two qubits, drag `H` to
-qubit 0 in the first column, add the `CNOT` control and target in the next
-column, then run the circuit. The local WASM simulator shows equal probability
-for `|00⟩` and `|11⟩`.
-
-![Animated walkthrough of the visual editor: it adds H to qubit 0, connects a CNOT to qubit 1, runs the circuit, and shows 50 percent probability for the 00 and 11 outcomes.](docs/assets/visual-editor-bell-demo.gif)
+The studio works on 1–8 qubits and exposes the library's full gate set (see
+[Supported gates](#supported-gates)), grouped by arity, plus algorithm presets.
+See the [`jqapi-web` README](jqapi-web/README.md) for the complete feature list.
 
 ### 3. Rebuilding the WASM engine (only if you change the core)
 
@@ -104,32 +127,26 @@ The build produces `target/jqapi-1.1.1.jar`.
 - `target/site/jacoco/index.html` — human-readable line/branch coverage report
 - `target/site/jacoco/jacoco.xml` — machine-readable report, ingested by SonarCloud
 
-CI runs `mvn -B verify` before the SonarCloud scan (`.github/workflows/build.yml`), so every build on `main` and every pull request updates the coverage badge above and the [SonarCloud dashboard](https://sonarcloud.io/summary/new_code?id=aitan75_jqapi). There is currently no enforced coverage threshold — coverage is tracked and visible, not gating.
+CI runs `mvn -B verify` before the SonarCloud scan (`.github/workflows/build.yml`), so every build on `main` and every pull request updates the coverage badge above and the [SonarCloud dashboard](https://sonarcloud.io/summary/new_code?id=aitan75_jqapi). The build fails if instruction, branch or line coverage drops below 80%.
 
 ## Getting Started
 
+Build a Bell state and sample it 1,000 times with a fixed seed:
+
 ```java
-        final int COUNT = 10000;
-        Circuit circuit = new Circuit(1);
-        CircuitLevel level = new CircuitLevel();
-        level.addGate(new Hadamard(0));
-        circuit.addLevel(level);
-        int cntZero = 0;
-        int cntOne = 0;
-        Qubit qubitZero=new QubitZero();
-        for (int j = 0; j < COUNT; j++) {
-            QuantumSimulator simulator = new LocalSimulator(circuit);
-            simulator.execute();
-            QuantumRegister qreg = simulator.getQuantumRegister();
-            qreg.measure();
-            if (qreg.getResult()[0].equals(qubitZero)) {
-                cntZero++;
-            } else {
-                cntOne++;
-            }
-        }
-        System.out.println("Executed " + COUNT + " times hadamard gate on single qubit: " + cntZero + " of them were 0 and " + cntOne + " were 1.");
+Circuit circuit = new Circuit(2);
+CircuitLevel level1 = new CircuitLevel();
+CircuitLevel level2 = new CircuitLevel();
+level1.addGate(new Hadamard(0));
+level2.addGate(new ControlledNot(0, 1));
+circuit.addLevel(level1, level2);
+
+SamplingResult result = CircuitSampler.sample(circuit, new SamplingOptions(1000).withSeed(42L));
+System.out.println(Arrays.toString(result.counts())); // [465, 0, 0, 535] — only |00⟩ and |11⟩
 ```
+
+The [user manual](docs/manual/README.md) walks through single runs with
+`LocalSimulator`, measurement, and the [worked examples](docs/manual/examples.md).
 
 ## Simulator notes
 
@@ -176,7 +193,7 @@ for terminals without Unicode.
 Under the hood the renderer works on `CircuitSpec`, a lossless, serializable
 description of a circuit. `CircuitSpecs.toCircuit(spec)` builds a runnable
 `Circuit` from a spec and `CircuitSpecs.toSpec(circuit)` reflects one back — the
-foundation for the upcoming save/load and graphical editor. See the
+same format the studio saves, loads and shares. See the
 [visualization reference](docs/api/visualization.md) for details.
 
 ## Size limits
@@ -215,8 +232,9 @@ Measurement, Reset.
 
 ## Supported algorithms & examples
 
-Bell state, quantum teleportation, Deutsch-Jozsa, Grover search, function
-search, random bit generation. See the tests under
+Bell state, GHZ state, quantum teleportation, Deutsch-Jozsa,
+Grover search, function search, quantum Fourier transform and its inverse
+(`Qft`), random bit generation. See the tests under
 `src/test/java/org/aitan/jqapi/test/` for runnable examples.
 
 ## Contributing
