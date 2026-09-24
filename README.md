@@ -28,7 +28,7 @@ your local repository first:
 ```bash
 git clone https://github.com/aitan75/jqapi.git
 cd jqapi
-mvn -DskipTests install     # installs org.aitan:jqapi:1.1.0 into ~/.m2
+mvn -DskipTests install     # installs org.aitan:jqapi:1.1.1 into ~/.m2
 ```
 
 Then depend on it from your project:
@@ -37,7 +37,7 @@ Then depend on it from your project:
 <dependency>
     <groupId>org.aitan</groupId>
     <artifactId>jqapi</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 ```
 
@@ -94,7 +94,7 @@ cp jqapi-wasm/target/js/jqapi.js jqapi-web/src/wasm/jqapi.js
 mvn clean package
 ```
 
-The build produces `target/jqapi-1.1.0.jar`.
+The build produces `target/jqapi-1.1.1.jar`.
 
 ## Test coverage
 
