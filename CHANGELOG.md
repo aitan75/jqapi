@@ -5,8 +5,22 @@ the published release notes and source archives.
 
 ## Unreleased
 
+## 1.1.1 - 2026-09-24
+
+### Added
+
+- Quantum Fourier transform and inverse-QFT circuit builders, with a QFT macro
+  in the web editor.
+- Reproducible core circuit sampling and repeated-shot simulation in Studio.
+- Classical measurement records and conditional circuit execution, including
+  CircuitSpec v2 serialization and TeaVM bridge support.
+- Broader numerical and cross-runtime checks, with JaCoCo coverage gates in CI.
+
 ### Fixed
 
+- Grover iteration selection for searches with multiple matching states.
+- React compatibility warnings and validation of shot-count input in Studio.
+- Simulation boundary validation and CodeQL workflow version consistency.
 - `CircuitSpecJson.fromJson` rejects lone UTF-16 surrogate escapes (and raw lone
   surrogates), so string escape sequences decode to valid Unicode scalar values
   per RFC 8259 §8.2. It also rejects duplicate target/control indexes and caps
@@ -19,6 +33,10 @@ the published release notes and source archives.
 
 ### Changed
 
+- The core and TeaVM bridge now require Java 25; the bridge uses TeaVM 0.15.
+- Updated locked frontend dependencies, including React 19.3, Vite 8.3,
+  and oxlint 1.85; TypeScript 6.0 and Vitest 4.1 remain in use.
+- Reduced allocations in circuit rendering and CircuitSpec JSON serialization.
 - Documented the unavoidable inline-style requirement of the editor's CSP
   (`style-src 'unsafe-inline'`) and the retained shared `SecureRandom` for
   measurement, backed by a concurrency benchmark.
