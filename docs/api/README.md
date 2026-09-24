@@ -147,3 +147,9 @@ dependency):
   `getDimension`, `getData`, and the tensor/Kronecker operations.
 
 See [math.md](math.md) for details.
+
+## Classical measurement and execution
+
+See [Classical execution and CircuitSpec v2](classical-design.md) for addressed
+measurement storage, guarded gate placements, independent-shot records, and
+format/capability handling.

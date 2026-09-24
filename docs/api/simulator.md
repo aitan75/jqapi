@@ -221,3 +221,35 @@ QuantumRegister reg = new QuantumRegister(20, cfg); // gates run on `pool`
   forces the sequential (`false`) or parallel (`true`) path regardless of the config.
 - Only the work **inside** a single gate is parallelized; gate and level ordering in
   `LocalSimulator.execute` remains sequential.
+
+
+## Classical execution
+
+`new Circuit(numQubits, numClassicalBits[, config])` allocates classical addresses;
+`LocalSimulator` owns their values, initially zero. `Measurement.into(qubit, bit)`
+writes one outcome, and `new ConditionalGate(gate, new Condition(bit, expected))`
+guards the specified unitary gate. `expected` must be 0 or 1. The condition is
+read when the gate executes, before subsequent levels. Quantum `Reset` does not
+clear classical records. Same-level read/write dependencies and duplicate writes
+are rejected; writes in later levels replace earlier values.
+
+`extractClassicalRecords()` returns an immutable snapshot in classical-address
+order. With no classical register it returns an empty list; it never infers bits
+from unmeasured quantum state. Reusing a simulator continues its state, while a
+new simulator or sampling shot starts with new zero-valued classical bits.
+
+```java
+SamplingOptions options = new SamplingOptions(1024)
+        .withSeed(110).withClassicalBits(1, 0);
+SamplingResult result = CircuitSampler.sample(circuit, options);
+int[] classicalCounts = result.classicalCounts();
+int[] selectedAddresses = result.classicalBits(); // [1, 0], first address is MSB
+```
+
+`counts()` remains the final quantum histogram. Classical counts describe the
+last stored values, including outcomes before quantum reset. Result arrays are
+copied defensively. The register size is bounded by `config.maxQubits()` and
+sampling histogram allocation is checked against `maxWork` before allocation.
+
+See the [v2 contract and migration](classical-design.md) for JSON and capability
+handling, and the [manual example](../manual/examples.md#10-classical-feed-forward).

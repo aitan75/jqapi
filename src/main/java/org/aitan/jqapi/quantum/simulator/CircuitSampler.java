@@ -18,7 +18,7 @@ public final class CircuitSampler {
      * Starts every shot at |0...0>. Do not mutate the circuit during sampling.
      * @param circuit circuit to execute
      * @param options shots, output indexes, random source and work limit
-     * @return final basis counts (not intermediate measurement records)
+     * @return final basis counts and optionally selected classical outcomes
      */
     public static SamplingResult sample(Circuit circuit, SamplingOptions options) {
         return execute(circuit, options, null);
@@ -40,7 +40,9 @@ public final class CircuitSampler {
     private static SamplingResult execute(Circuit circuit, SamplingOptions options, ComplexVector initialState) {
         Objects.requireNonNull(circuit, "circuit");
         Objects.requireNonNull(options, "options");
+        circuit.validateClassicalOperations();
         int size = circuit.getInputSize();
+        int[] classicalIndexes = options.classicalIndexesFor(circuit.getNumClassicalBits());
         int[] indexes = options.indexesFor(size);
         long work = (long) options.shots() * (1L << size);
         long passes = 1;
@@ -53,13 +55,22 @@ public final class CircuitSampler {
             throw new JQApiLimitException("Sampling exceeds the amplitude-visit work budget");
         }
         DoubleSupplier random = options.newRandom();
+        long histogramCells = (1L << indexes.length) + (classicalIndexes.length == 0 ? 0 : 1L << classicalIndexes.length);
+        if (histogramCells > options.maxWork()) throw new JQApiLimitException("Sampling histogram budget exceeded");
         int[] counts = new int[1 << indexes.length];
+        int[] classicalCounts = classicalIndexes.length == 0 ? new int[0] : new int[1 << classicalIndexes.length];
         QubitOne one = new QubitOne();
         for (int shot = 0; shot < options.shots(); shot++) {
             LocalSimulator simulator = initialState == null
                     ? new LocalSimulator(circuit, random)
                     : new LocalSimulator(circuit, initialState, random);
             simulator.execute();
+            if (classicalIndexes.length != 0) {
+                var records = simulator.extractClassicalRecords();
+                int classicalOutcome = 0;
+                for (int bit : classicalIndexes) classicalOutcome = (classicalOutcome << 1) | records.get(bit).bit();
+                classicalCounts[classicalOutcome]++;
+            }
             simulator.getQuantumRegister().measure();
             Qubit[] measured = simulator.getQuantumRegister().getResult();
             int outcome = 0;
@@ -68,6 +79,6 @@ public final class CircuitSampler {
             }
             counts[outcome]++;
         }
-        return new SamplingResult(options.shots(), indexes, counts);
+        return new SamplingResult(options.shots(), indexes, counts, classicalIndexes, classicalCounts);
     }
 }

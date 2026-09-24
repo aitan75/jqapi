@@ -10,6 +10,8 @@ import org.aitan.jqapi.quantum.Circuit;
 import org.aitan.jqapi.quantum.CircuitLevel;
 import org.aitan.jqapi.utils.Constants;
 import org.aitan.jqapi.visualization.spec.GateKind;
+import org.aitan.jqapi.quantum.gates.ConditionalGate;
+import org.aitan.jqapi.quantum.gates.Identity;
 import org.aitan.jqapi.quantum.gates.ControlledNot;
 import org.aitan.jqapi.quantum.gates.ControlledSwap;
 import org.aitan.jqapi.quantum.gates.ControlledY;
@@ -73,7 +75,7 @@ public final class CircuitSpecs {
      * @return the equivalent circuit
      */
     public static Circuit toCircuit(CircuitSpec spec, JQAPIConfig config) {
-        Circuit circuit = new Circuit(spec.numQubits(), config);
+        Circuit circuit = new Circuit(spec.numQubits(), spec.numClassicalBits(), config);
         for (LevelSpec levelSpec : spec.levels()) {
             CircuitLevel level = new CircuitLevel();
             for (GateSpec gateSpec : levelSpec.gates()) {
@@ -90,15 +92,15 @@ public final class CircuitSpecs {
     private static Gate build(GateSpec g) {
         List<Integer> t = g.targets();
         List<Integer> c = g.controls();
-        return switch (g.kind()) {
-            case IDENTITY -> null; // auto-padded by Circuit.addLevel
+        Gate gate = switch (g.kind()) {
+            case IDENTITY -> g.condition() == null ? null : new Identity(arr(t)); // auto-padded by Circuit.addLevel
             case H -> new Hadamard(arr(t));
             case X -> new PauliX(arr(t));
             case Y -> new PauliY(arr(t));
             case Z -> new PauliZ(arr(t));
             case S -> new PauliS(arr(t));
             case T -> new PauliT(arr(t));
-            case MEASUREMENT -> new Measurement(arr(t));
+            case MEASUREMENT -> g.classicalTarget() == null ? new Measurement(arr(t)) : Measurement.into(t.getFirst(), g.classicalTarget());
             case RESET -> new Reset(arr(t));
             case RX -> new Rx(param(g, "theta"), arr(t));
             case RY -> new Ry(param(g, "theta"), arr(t));
@@ -115,6 +117,7 @@ public final class CircuitSpecs {
             case ORACLE -> new Oracle(matrixOf(g), arr(t));
             case GENERIC -> new GenericGate(matrixOf(g), t.size(), arr(t));
         };
+        return g.condition() == null ? gate : new ConditionalGate(gate, g.condition());
     }
 
     private static double param(GateSpec g, String name) {
@@ -199,20 +202,25 @@ public final class CircuitSpecs {
             List<GateSpec> gates = new ArrayList<>();
             for (Gate gate : level.getGates()) {
                 GateKind kind = KIND_BY_TYPE.getOrDefault(gate.getType(), GateKind.GENERIC);
-                if (kind == GateKind.IDENTITY) {
+                if (kind == GateKind.IDENTITY && !(gate instanceof ConditionalGate)) {
                     continue; // idle wires need not be listed
                 }
-                gates.add(toGateSpec(kind, gate));
+                Gate underlying = gate instanceof ConditionalGate conditional ? conditional.gate() : gate;
+                GateSpec placement = toGateSpec(kind, underlying);
+                gates.add(placement.withClassical(
+                        underlying instanceof Measurement measurement ? measurement.classicalTarget() : null,
+                        gate instanceof ConditionalGate conditional ? conditional.condition() : null));
             }
             levels.add(new LevelSpec(gates));
         }
-        return CircuitSpec.of(circuit.getInputSize(), levels);
+        return CircuitSpec.of(circuit.getInputSize(), levels,
+                circuit.getNumClassicalBits());
     }
 
     private static GateSpec toGateSpec(GateKind kind, Gate gate) {
         List<Integer> idx = gate.getIndexes();
         return switch (kind) {
-            case H, X, Y, Z, S, T, MEASUREMENT, RESET, SWAP ->
+            case IDENTITY, H, X, Y, Z, S, T, MEASUREMENT, RESET, SWAP ->
                 new GateSpec(kind, List.copyOf(idx), List.of(), Map.of(), null);
             case CNOT, CZ, CY ->
                 new GateSpec(kind, List.of(idx.get(1)), List.of(idx.get(0)), Map.of(), null);

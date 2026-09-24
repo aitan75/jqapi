@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CircuitModel, isCircuitSpec, MAX_GATES, MAX_LEVELS, MAX_QUBITS, PAULI_X_MATRIX, phaseMatrix } from './circuit';
+import { CircuitModel, isCircuitSpec, isUnsupportedCircuitSpec, MAX_GATES, MAX_LEVELS, MAX_QUBITS, PAULI_X_MATRIX, phaseMatrix } from './circuit';
 
 describe('CircuitModel.toSpec', () => {
   it('builds the Bell CircuitSpec from a drawn circuit', () => {
@@ -214,5 +214,26 @@ describe('isCircuitSpec', () => {
     const gate = { kind: 'H', targets: [0], controls: [], params: {} };
     expect(isCircuitSpec({ ...valid, levels: [{ gates: Array.from({ length: MAX_GATES + 1 }, () => gate) }] })).toBe(false);
     expect(isCircuitSpec({ ...valid, levels: Array.from({ length: MAX_LEVELS + 1 }, () => ({ gates: [] })) })).toBe(false);
+  });
+});
+
+
+describe('classical capability rejection', () => {
+  it('refuses classical imports instead of discarding metadata on save', () => {
+    const plain = new CircuitModel(2).toSpec();
+    for (const spec of [
+      { ...plain, version: 2 },
+      { ...plain, numClassicalBits: 1 },
+      { ...plain, measurementRecords: [] },
+      { ...plain, conditions: [] },
+      { ...plain, levels: [{ gates: [{ kind: 'X', targets: [0], controls: [], params: {}, condition: { bitIndex: 0, expected: 1 as const } }] }] },
+      { ...plain, levels: [{ gates: [{ kind: 'MEASUREMENT', targets: [0], controls: [], params: {}, classicalTarget: 0 }] }] },
+    ]) {
+      expect(isUnsupportedCircuitSpec(spec)).toBe(true);
+      expect(isCircuitSpec(spec)).toBe(false);
+      expect(() => CircuitModel.fromSpec(spec)).toThrow(/does not support/);
+    }
+    expect(isUnsupportedCircuitSpec(null)).toBe(false);
+    expect(isCircuitSpec(plain)).toBe(true);
   });
 });

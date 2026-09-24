@@ -284,3 +284,14 @@ level.addGate(new Reset(0, 1)); // reset qubits 0 and 1 to |0> mid-circuit
 The matrices backing the built-in gates are defined as public constants in
 `org.aitan.jqapi.utils.Constants` (e.g. `HADAMARD_MATRIX`, `PAULI_X_MATRIX`,
 `CONTROLLED_NOT_MATRIX`, `TOFFOLI_MATRIX`).
+
+
+## Stored measurement and classical guards
+
+`Measurement.into(qubit, classicalBit)` stores a single measurement outcome.
+`new ConditionalGate(unitaryGate, new Condition(classicalBit, expected))` applies
+that placement only if its addressed bit equals `expected` (0 or 1). The condition
+and classical destination are immutable. A guard cannot wrap measurement, reset,
+or another guard. Register bounds and same-level dependencies are validated by
+`Circuit` and rechecked before simulation. See the
+[classical contract](classical-design.md) and [example](../manual/examples.md#10-classical-feed-forward).

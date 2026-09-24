@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import org.aitan.jqapi.quantum.classical.Condition;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -56,7 +57,9 @@ public final class CircuitSpecJson {
             }
             writeLevel(sb, levels.get(i));
         }
-        sb.append("]}");
+        sb.append("]");
+        if (spec.version() == 2 && spec.numClassicalBits() != 0) sb.append(",\"numClassicalBits\":").append(spec.numClassicalBits());
+        sb.append('}');
         return sb.toString();
     }
 
@@ -83,6 +86,11 @@ public final class CircuitSpecJson {
         if (g.matrix() != null) {
             sb.append(",\"matrix\":");
             writeMatrix(sb, g.matrix());
+        }
+        if (g.classicalTarget() != null) sb.append(",\"classicalTarget\":").append(g.classicalTarget().intValue());
+        if (g.condition() != null) {
+            sb.append(",\"condition\":{\"bitIndex\":").append(g.condition().bitIndex())
+              .append(",\"expected\":").append(g.condition().expected()).append('}');
         }
         sb.append('}');
     }
@@ -206,6 +214,15 @@ public final class CircuitSpecJson {
     private static CircuitSpec mapCircuit(Object tree, int maxQubits) {
         Map<String, Object> root = asObject(tree, "root");
         int version = asInt(root.get("version"), "version");
+        if (version != 1 && version != 2) {
+            throw new org.aitan.jqapi.exceptions.UnsupportedSpecVersionException(version);
+        }
+        if (root.containsKey("measurementRecords") || root.containsKey("conditions")) {
+            throw new IllegalArgumentException("Unsupported prototype classical metadata; use v2 gate placements");
+        }
+        int classicalBits = root.containsKey("numClassicalBits") ? asInt(root.get("numClassicalBits"), "numClassicalBits") : 0;
+        if (version == 1 && root.containsKey("numClassicalBits")) throw new IllegalArgumentException("Classical fields require v2");
+        if (classicalBits < 0 || classicalBits > maxQubits) throw new JQApiLimitException("Classical register exceeds configured budget");
         int numQubits = asInt(root.get("numQubits"), "numQubits");
         if (numQubits <= 0 || numQubits > maxQubits) {
             throw new JQApiLimitException("numQubits out of range (1.." + maxQubits + "): " + numQubits);
@@ -224,14 +241,14 @@ public final class CircuitSpecJson {
                 if (++gateCount > MAX_GATES) {
                     throw new JQApiLimitException("too many gates (max " + MAX_GATES + ")");
                 }
-                gates.add(mapGate(go, numQubits));
+                gates.add(mapGate(go, numQubits, version));
             }
             levels.add(new LevelSpec(gates));
         }
-        return new CircuitSpec(version, numQubits, levels);
+        return new CircuitSpec(version, numQubits, levels, classicalBits);
     }
 
-    private static GateSpec mapGate(Object go, int numQubits) {
+    private static GateSpec mapGate(Object go, int numQubits, int version) {
         Map<String, Object> gm = asObject(go, "gate");
         GateKind kind;
         try {
@@ -248,7 +265,16 @@ public final class CircuitSpecJson {
         }
         Map<String, Double> params = mapParams(gm.get("params"));
         List<List<ComplexCell>> matrix = mapMatrix(gm.get("matrix"), targets.size());
-        return new GateSpec(kind, targets, controls, params, matrix);
+        if (version == 1 && (gm.containsKey("classicalTarget") || gm.containsKey("condition"))) {
+            throw new IllegalArgumentException("Classical gate fields require v2");
+        }
+        Integer destination = gm.containsKey("classicalTarget") ? asInt(gm.get("classicalTarget"), "classicalTarget") : null;
+        Condition condition = null;
+        if (gm.containsKey("condition")) {
+            Map<String, Object> predicate = asObject(gm.get("condition"), "condition");
+            condition = new Condition(asInt(predicate.get("bitIndex"), "bitIndex"), asInt(predicate.get("expected"), "expected"));
+        }
+        return new GateSpec(kind, targets, controls, params, matrix, destination, condition);
     }
 
     private static List<Integer> mapIndexes(Object o, int numQubits, String field) {

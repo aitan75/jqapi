@@ -166,3 +166,47 @@ describe('wasm bridge', () => {
     expect(amplitudes[3].im).toBeCloseTo(-half, 7);
   });
 });
+
+
+describe('classical v2 execution', () => {
+  const spec: CircuitSpec = {
+    version: 2, numQubits: 2, numClassicalBits: 1,
+    levels: [
+      { gates: [{ kind: 'X', targets: [0], controls: [], params: {} }] },
+      { gates: [{ kind: 'MEASUREMENT', targets: [0], controls: [], params: {}, classicalTarget: 0 }] },
+      { gates: [{ kind: 'RESET', targets: [0], controls: [], params: {} }] },
+      { gates: [{ kind: 'X', targets: [1], controls: [], params: {}, condition: { bitIndex: 0, expected: 1 } }] },
+    ],
+  };
+
+  it('uses stored measurement after reset and applies X on its actual target', () => {
+    expect(run(spec)).toEqual({ ok: true, amplitudes: [
+      { re: 0, im: 0 }, { re: 1, im: 0 }, { re: 0, im: 0 }, { re: 0, im: 0 },
+    ], classicalRecords: [1] });
+    expect(sample(spec, 8)).toEqual({ ok: true, shots: 8, counts: [0, 8, 0, 0], classicalCounts: [0, 8] });
+  });
+
+  it('skips a false predicate and evaluates zero-valued outcomes', () => {
+    const zero = { ...spec, levels: spec.levels.slice(1) };
+    expect(amplitudesOf(zero)[0].re).toBeCloseTo(1);
+    const expectedZero = structuredClone(zero);
+    expectedZero.levels[2].gates[0].condition!.expected = 0;
+    expect(amplitudesOf(expectedZero)[1].re).toBeCloseTo(1);
+  });
+
+  it('applies conditional Z before a later Hadamard', () => {
+    const z: CircuitSpec = { version: 2, numQubits: 1, numClassicalBits: 1, levels: [
+      { gates: [{ kind: 'H', targets: [0], controls: [], params: {} }] },
+      { gates: [{ kind: 'Z', targets: [0], controls: [], params: {}, condition: { bitIndex: 0, expected: 0 } }] },
+      { gates: [{ kind: 'H', targets: [0], controls: [], params: {} }] },
+    ] };
+    expect(amplitudesOf(z)[1].re).toBeCloseTo(1);
+  });
+
+  it('rejects unsupported versions, legacy classical fields, and invalid references', () => {
+    expect(run({ ...spec, version: 99 })).toEqual({ ok: false, error: { code: 'UNSUPPORTED_SPEC_VERSION' } });
+    expect(sample({ ...spec, version: 99 }, 1)).toEqual({ ok: false, error: { code: 'UNSUPPORTED_SPEC_VERSION' } });
+    expect(run({ ...spec, version: 1 })).toEqual({ ok: false, error: { code: 'INVALID_CIRCUIT_SPEC' } });
+    expect(run({ ...spec, numClassicalBits: 0 })).toEqual({ ok: false, error: { code: 'INVALID_CIRCUIT_SPEC' } });
+  });
+});

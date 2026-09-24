@@ -28,14 +28,34 @@ public record GateSpec(
         List<Integer> targets,
         List<Integer> controls,
         Map<String, Double> params,
-        List<List<ComplexCell>> matrix) {
+        List<List<ComplexCell>> matrix,
+        Integer classicalTarget,
+        org.aitan.jqapi.quantum.classical.Condition condition) {
 
     /** Defensively copies every component into an immutable form. */
     public GateSpec {
+        java.util.Objects.requireNonNull(kind, "kind");
+        if (classicalTarget != null && (classicalTarget < 0 || classicalTarget >= 30
+                || kind != GateKind.MEASUREMENT || targets.size() != 1 || !controls.isEmpty())) {
+            throw new IllegalArgumentException("Classical destination requires a single-qubit measurement and index in [0, 30)");
+        }
+        if (condition != null && (kind == GateKind.MEASUREMENT || kind == GateKind.RESET)) {
+            throw new IllegalArgumentException("Conditions require a unitary gate");
+        }
         targets = List.copyOf(targets);
         controls = List.copyOf(controls);
         params = Map.copyOf(params);
         matrix = matrix == null ? null : matrix.stream().map(List::copyOf).toList();
+    }
+
+    public GateSpec(GateKind kind, List<Integer> targets, List<Integer> controls,
+                    Map<String, Double> params, List<List<ComplexCell>> matrix) {
+        this(kind, targets, controls, params, matrix, null, null);
+    }
+
+    /** Returns this placement with classical execution metadata. */
+    public GateSpec withClassical(Integer destination, org.aitan.jqapi.quantum.classical.Condition predicate) {
+        return new GateSpec(kind, targets, controls, params, matrix, destination, predicate);
     }
 
     /** Convenience for the common uncontrolled, non-parametric single-family gate. */

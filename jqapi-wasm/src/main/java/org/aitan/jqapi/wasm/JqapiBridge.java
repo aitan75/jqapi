@@ -2,6 +2,7 @@ package org.aitan.jqapi.wasm;
 
 import org.aitan.jqapi.JQAPIConfig;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
+import org.aitan.jqapi.exceptions.UnsupportedSpecVersionException;
 import org.aitan.jqapi.math.Complex;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
@@ -42,7 +43,8 @@ public final class JqapiBridge {
     /**
      * Parses and validates a circuit spec, runs it on the local state-vector
      * simulator, and returns either the resulting amplitudes or a stable error
-     * code for the browser to localize.
+     * code for the browser to localize. Classical circuits also return
+     * {@code classicalRecords} in address order.
      *
      * @param specJson the circuit as {@code CircuitSpec} JSON
      * @return {@code {"ok":true,"amplitudes":[{"re":…,"im":…}, …]}} or
@@ -66,7 +68,19 @@ public final class JqapiBridge {
                 sb.append("{\"re\":").append(c.getReal())
                         .append(",\"im\":").append(c.getImaginary()).append('}');
             }
-            return sb.append("]}").toString();
+            sb.append(']');
+            if (circuit.getNumClassicalBits() > 0) {
+                sb.append(",\"classicalRecords\":[");
+                var records = sim.extractClassicalRecords();
+                for (int i = 0; i < records.size(); i++) {
+                    if (i > 0) sb.append(',');
+                    sb.append(records.get(i).bit());
+                }
+                sb.append(']');
+            }
+            return sb.append('}').toString();
+        } catch (UnsupportedSpecVersionException e) {
+            return error("UNSUPPORTED_SPEC_VERSION");
         } catch (JQApiLimitException e) {
             return error("INPUT_LIMIT_EXCEEDED");
         } catch (IllegalArgumentException e) {
@@ -79,7 +93,8 @@ public final class JqapiBridge {
     /**
      * Runs independently initialized simulations and returns a full
      * computational-basis histogram. The circuit JSON stays unchanged because
-     * the number of shots is an execution option.
+     * the number of shots is an execution option. Classical circuits also return
+     * {@code classicalCounts} over all declared classical bits, c0 as MSB.
      *
      * @param specJson the circuit as {@code CircuitSpec} JSON
      * @param shots number of independent measurements, from 1 to {@value MAX_SHOTS}
@@ -94,7 +109,14 @@ public final class JqapiBridge {
             JQAPIConfig config = JQAPIConfig.sequential(JQAPIConfig.DEFAULT_MAX_QUBITS);
             CircuitSpec spec = CircuitSpecJson.fromJson(specJson, config);
             Circuit circuit = CircuitSpecs.toCircuit(spec, config);
-            int[] counts = CircuitSampler.sample(circuit, new SamplingOptions(shots)).counts();
+            SamplingOptions options = new SamplingOptions(shots);
+            if (circuit.getNumClassicalBits() > 0) {
+                int[] bits = new int[circuit.getNumClassicalBits()];
+                for (int i = 0; i < bits.length; i++) bits[i] = i;
+                options = options.withClassicalBits(bits);
+            }
+            var result = CircuitSampler.sample(circuit, options);
+            int[] counts = result.counts();
             StringBuilder sb = new StringBuilder("{\"ok\":true,\"shots\":").append(shots).append(",\"counts\":[");
             for (int i = 0; i < counts.length; i++) {
                 if (i > 0) {
@@ -102,7 +124,19 @@ public final class JqapiBridge {
                 }
                 sb.append(counts[i]);
             }
-            return sb.append("]}").toString();
+            sb.append(']');
+            if (circuit.getNumClassicalBits() > 0) {
+                sb.append(",\"classicalCounts\":[");
+                int[] classicalCounts = result.classicalCounts();
+                for (int i = 0; i < classicalCounts.length; i++) {
+                    if (i > 0) sb.append(',');
+                    sb.append(classicalCounts[i]);
+                }
+                sb.append(']');
+            }
+            return sb.append('}').toString();
+        } catch (UnsupportedSpecVersionException e) {
+            return error("UNSUPPORTED_SPEC_VERSION");
         } catch (JQApiLimitException e) {
             return error("INPUT_LIMIT_EXCEEDED");
         } catch (IllegalArgumentException e) {

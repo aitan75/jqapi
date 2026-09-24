@@ -124,3 +124,22 @@ System.out.println(new AsciiCircuitRenderer().draw(bell));
 //           │
 // q1: ──────⊕─
 ```
+
+
+## CircuitSpec v2 classical operations
+
+The full circuit constructor is `(version, numQubits, levels, numClassicalBits)`;
+the original three-argument constructor remains available with zero classical
+bits. `GateSpec` adds optional `classicalTarget` and `condition` fields; the old
+five-argument constructor creates a quantum-only placement. Conditions contain
+`bitIndex` and `expected`, not a captured outcome. Classical placement metadata
+survives JSON and Circuit conversions, including guards on identity gates.
+
+v1 is still readable with its original semantics. `CircuitSpec.migrateV1` produces
+an equivalent v2 spec. Unknown versions, v1 with classical fields, and the unfinished
+prototype's top-level `measurementRecords`/`conditions` are rejected. The ASCII
+renderer rejects classical circuits rather than drawing an unconditional circuit.
+The existing best-effort mapping of parametric gates back to matrices is unchanged.
+
+See [Classical execution and CircuitSpec v2](classical-design.md) for the complete
+schema, ordering rules, resource bounds, and capability policy.
