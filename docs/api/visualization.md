@@ -6,7 +6,7 @@ bidirectional mapper to/from the runtime [`Circuit`](quantum.md#circuit)
 (`AsciiCircuitRenderer`). Entirely in `jqapi-core`, no runtime dependency.
 
 - [Back to API index](README.md)
-- Related: [Quantum core](quantum.md) · [Gates](gates.md) · [Simulator](simulator.md)
+- Related: [Quantum core](quantum.md) · [Gates](gates.md) · [Simulator](simulator.md) · [OpenQASM 2](openqasm.md)
 
 ## Contents
 

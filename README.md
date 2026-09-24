@@ -6,6 +6,7 @@ _**jqapi**_ is a Java Api library to test quantum computing concepts. At the mom
 
 - **User Manual** — start here: [overview & first program](docs/manual/README.md), [core concepts](docs/manual/concepts.md), [worked examples](docs/manual/examples.md)
 - **API Reference** — [index](docs/api/README.md): [quantum](docs/api/quantum.md), [gates](docs/api/gates.md), [simulator](docs/api/simulator.md), [math](docs/api/math.md), [visualization](docs/api/visualization.md)
+- **OpenQASM 2** — [import/export guide](docs/manual/openqasm.md), [supported subset and limits](docs/api/openqasm.md). Includes measurement, reset, and one-bit classical conditions.
 - **Wiki** — [project wiki](https://github.com/aitan75/jqapi/wiki) for a guided overview, architecture notes, CI/quality explainer, and FAQ
 
 ***

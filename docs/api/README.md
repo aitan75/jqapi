@@ -41,6 +41,7 @@ signatures below:
 | Simulator | `org.aitan.jqapi.quantum.simulator` | [simulator.md](simulator.md) |
 | Linear algebra | `org.aitan.jqapi.math` | [math.md](math.md) |
 | Visualization (spec + ASCII renderer) | `org.aitan.jqapi.visualization` | [visualization.md](visualization.md) |
+| OpenQASM 2 import/export | `org.aitan.jqapi.visualization.openqasm` | [openqasm.md](openqasm.md) |
 | Algorithms & utilities | `org.aitan.jqapi`, `org.aitan.jqapi.utils`, `org.aitan.jqapi.exceptions` | (below) |
 
 ---
