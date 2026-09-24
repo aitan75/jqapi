@@ -18,7 +18,7 @@ jqapi ships in layers — install only what your use case needs.
 |----------|------------------|-----------|
 | Embed the quantum simulator in a JVM application | the **library** (`org.aitan:jqapi`) | Java 25+, Maven 3.9+ |
 | Run or develop the browser **circuit editor** | the **full product** (`jqapi-web`, with the WASM engine already bundled) | Node.js 20.19+ (or 22+), npm |
-| Rebuild the WASM engine after changing the core | the **engine build** (`jqapi-wasm`) | JDK **21** (exactly), Node.js |
+| Rebuild the WASM engine after changing the core | the **engine build** (`jqapi-wasm`) | JDK **25** (exactly), Node.js |
 
 ### 1. The library only (JVM projects)
 
@@ -72,8 +72,8 @@ for `|00⟩` and `|11⟩`.
 ### 3. Rebuilding the WASM engine (only if you change the core)
 
 `jqapi-web` runs on the TeaVM output of the `jqapi-wasm` module. Regenerate it only
-when you modify `jqapi-core` or the bridge. **TeaVM 0.15 must run under JDK 25** —
-newer JDKs (21/22) are not supported — even though the core targets Java 25:
+when you modify `jqapi-core` or the bridge. **TeaVM 0.15 requires JDK 25 exactly** for the engine build.
+JDK 21 and 22 are not supported:
 
 ```bash
 mvn -DskipTests install                              # install the current core into ~/.m2
