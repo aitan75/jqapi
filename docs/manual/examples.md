@@ -17,6 +17,7 @@ current source.
 7. [Grover search over a classical list](#7-grover-search-over-a-classical-list)
 8. [Quantum Fourier Transform](#8-quantum-fourier-transform)
 9. [Reproducible shot sampling](#9-reproducible-shot-sampling)
+10. [Classical feed-forward](#10-classical-feed-forward)
 
 Common imports for the snippets below:
 
@@ -356,3 +357,46 @@ rejected; see [sampling options and limits](../api/simulator.md#circuitsampler).
 
 For the exact class and method signatures used above, consult the
 [API Reference](../api/README.md).
+
+
+## 10. Classical feed-forward
+
+Store a measurement separately from the quantum state, reset the measured qubit,
+and use the retained bit to correct a different qubit:
+
+```java
+import org.aitan.jqapi.quantum.classical.Condition;
+import org.aitan.jqapi.quantum.simulator.CircuitSampler;
+import org.aitan.jqapi.quantum.simulator.SamplingOptions;
+
+Circuit circuit = new Circuit(2, 1); // two qubits, one classical bit
+Gate[] operations = {
+    new Hadamard(0),
+    Measurement.into(0, 0),
+    new Reset(0),
+    new ConditionalGate(new PauliX(1), new Condition(0, 1))
+};
+for (Gate gate : operations) {
+    CircuitLevel level = new CircuitLevel();
+    level.addGate(gate);
+    circuit.addLevel(level);
+}
+LocalSimulator simulator = new LocalSimulator(circuit);
+simulator.execute();
+int outcome = simulator.extractClassicalRecords().get(0).bit();
+// q0 is zero; q1 equals outcome. Quantum reset has preserved the classical bit.
+var sampled = CircuitSampler.sample(circuit,
+        new SamplingOptions(1024).withSeed(110).withClassicalBits(0));
+System.out.println(java.util.Arrays.toString(sampled.classicalCounts()));
+```
+
+For teleportation, use three qubits and two classical bits. After Bell preparation
+and Alice's CNOT/Hadamard, store measurements of q0 and q1 in c0 and c1. Apply
+`ConditionalGate(new PauliX(2), new Condition(1, 1))`, followed by
+`ConditionalGate(new PauliZ(2), new Condition(0, 1))`. The test
+`BellTeleportationClassicalTest` checks all four measurement branches on basis,
+superposition, and complex input states against the transferred amplitudes.
+
+Circuits with classical operations use CircuitSpec v2. Java and the TeaVM bridge
+execute them; the current grid editor and ASCII renderer reject them explicitly.
+See [the format and execution contract](../api/classical-design.md).

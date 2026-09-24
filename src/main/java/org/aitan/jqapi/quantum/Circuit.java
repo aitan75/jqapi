@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.aitan.jqapi.quantum.classical.ClassicalRecord;
-import org.aitan.jqapi.quantum.classical.Condition;
 import org.aitan.jqapi.JQAPIConfig;
 import org.aitan.jqapi.exceptions.JQApiLimitException;
 import org.aitan.jqapi.quantum.gates.*;
@@ -22,8 +20,7 @@ public class Circuit {
     private final List<CircuitLevel> levels;
     private final JQAPIConfig config;
     private int inputSize;
-    private List<ClassicalRecord> measurementRecords = new ArrayList<>();
-    private List<Condition> conditions = new ArrayList<>();
+    private final int numClassicalBits;
 
     /** Creates a circuit using the default configuration.
      *  @param inputSize number of qubits the circuit operates on */
@@ -35,16 +32,57 @@ public class Circuit {
      *  @param inputSize number of qubits the circuit operates on
      *  @param config the configuration bounding the circuit size */
     public Circuit(int inputSize, JQAPIConfig config) {
-        this.config = config;
+        this(inputSize, 0, config);
+    }
+
+    /** Creates a circuit with a zero-initialized classical register. */
+    public Circuit(int inputSize, int numClassicalBits) {
+        this(inputSize, numClassicalBits, JQAPIConfig.getDefault());
+    }
+
+    public Circuit(int inputSize, int numClassicalBits, JQAPIConfig config) {
+        this.config = java.util.Objects.requireNonNull(config, "config");
+        if (numClassicalBits < 0 || numClassicalBits > config.maxQubits()) {
+            throw new JQApiLimitException("Classical register exceeds configured qubit budget");
+        }
+        this.numClassicalBits = numClassicalBits;
         this.validateInputSize(inputSize);
         this.inputSize = inputSize;
         this.levels = new ArrayList<>();
     }
 
-    public List<ClassicalRecord> getMeasurementRecords() { return measurementRecords; }
-    public List<Condition> getConditions() { return conditions; }
-    public void setMeasurementRecords(List<ClassicalRecord> records) { this.measurementRecords = new ArrayList<>(records); }
-    public void setConditions(List<Condition> conditions) { this.conditions = new ArrayList<>(conditions); }
+    public int getNumClassicalBits() { return numClassicalBits; }
+
+    /** Checks classical references and same-level dependencies, including after mutable edits. */
+    public void validateClassicalOperations() {
+        for (CircuitLevel level : levels) validateClassicalLevel(level);
+    }
+
+    private void validateClassicalLevel(CircuitLevel level) {
+        boolean[] writes = new boolean[numClassicalBits];
+        boolean[] reads = new boolean[numClassicalBits];
+        for (Gate gate : level.getGates()) {
+            if (gate instanceof Measurement measurement && measurement.classicalTarget() != null) {
+                int bit = measurement.classicalTarget();
+                validateClassicalIndex(bit);
+                if (measurement.getIndexes().size() != 1) throw new IllegalArgumentException("Stored measurement needs one qubit");
+                if (writes[bit]) throw new IllegalArgumentException("Repeated classical write within one level");
+                writes[bit] = true;
+            }
+            if (gate instanceof ConditionalGate conditional) {
+                int bit = conditional.condition().bitIndex();
+                validateClassicalIndex(bit);
+                reads[bit] = true;
+            }
+        }
+        for (int bit = 0; bit < numClassicalBits; bit++) {
+            if (reads[bit] && writes[bit]) throw new IllegalArgumentException("Same-level classical read/write dependency");
+        }
+    }
+
+    private void validateClassicalIndex(int bit) {
+        if (bit < 0 || bit >= numClassicalBits) throw new IllegalArgumentException("Classical bit is outside register");
+    }
 
     /** @return the number of qubits the circuit operates on */
     public int getInputSize() {
@@ -86,6 +124,7 @@ public class Circuit {
     }
 
     private CircuitLevel initializeLevels(CircuitLevel level) {
+        validateClassicalLevel(level);
 
         boolean errorGate = level.getGates().stream().anyMatch(g -> g.getIndexes().size() > inputSize || !g.getIndexes().stream().allMatch(index -> index >= 0 && index < inputSize));
         if (errorGate) {

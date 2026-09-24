@@ -71,7 +71,7 @@ public class BridgeCrossCheckTest {
         assertTrue(Files.isRegularFile(js), "TeaVM JS artifact missing (build under JDK 25 first)");
 
         String script = "import * as j from " + jsonString(js.toUri().toString()) + ";"
-                + "process.stdout.write(j.run(" + jsonString(spec) + "));";
+                + "process.stdout.write(j.run(" + jsonString(spec.replace("\n", " ").replace("\r", " ")) + "));";
         String node;
         Process p;
         try {
@@ -112,6 +112,25 @@ public class BridgeCrossCheckTest {
                 JqapiBridge.sample("{}", 1));
         assertEquals("{\"ok\":false,\"error\":{\"code\":\"INPUT_LIMIT_EXCEEDED\"}}",
                 JqapiBridge.sample("{\"version\":1,\"numQubits\":24,\"levels\":[]}", 10_000));
+    }
+
+    @Test
+    void classicalCorrectionsAndRecordsMatchCompiledBackend() throws IOException, InterruptedException {
+        String spec = """
+            {"version":2,"numQubits":2,"numClassicalBits":1,"levels":[
+              {"gates":[{"kind":"X","targets":[0],"controls":[]}]},
+              {"gates":[{"kind":"MEASUREMENT","targets":[0],"controls":[],"classicalTarget":0}]},
+              {"gates":[{"kind":"RESET","targets":[0],"controls":[]}]},
+              {"gates":[{"kind":"X","targets":[1],"controls":[],"condition":{"bitIndex":0,"expected":1}}]}
+            ]}
+            """;
+        String expected = "{\"ok\":true,\"amplitudes\":[{\"re\":0.0,\"im\":0.0},{\"re\":1.0,\"im\":0.0},{\"re\":0.0,\"im\":0.0},{\"re\":0.0,\"im\":0.0}],\"classicalRecords\":[1]}";
+        assertEquals(expected, JqapiBridge.run(spec));
+        assertEquals(expected, runCompiledJs(spec));
+        assertEquals("{\"ok\":true,\"shots\":4,\"counts\":[0,4,0,0],\"classicalCounts\":[0,4]}", JqapiBridge.sample(spec, 4));
+        String unknown = spec.replace("\"version\":2", "\"version\":99");
+        assertEquals("{\"ok\":false,\"error\":{\"code\":\"UNSUPPORTED_SPEC_VERSION\"}}", runCompiledJs(unknown));
+        assertEquals(JqapiBridge.run(unknown), JqapiBridge.sample(unknown, 1));
     }
 
     /** Minimal JSON string literal for embedding a value in the node script. */

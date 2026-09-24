@@ -61,6 +61,9 @@ public final class AsciiCircuitRenderer {
 
     /** @return the ASCII drawing of {@code spec} */
     public String draw(CircuitSpec spec) {
+        if (spec.numClassicalBits() != 0) {
+            throw new IllegalArgumentException("ASCII renderer does not support classical circuits");
+        }
         int n = spec.numQubits();
         List<LevelSpec> levels = spec.levels();
 

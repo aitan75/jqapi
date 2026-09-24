@@ -181,6 +181,7 @@ export class CircuitModel {
 
   /** Rebuilds the editable subset of CircuitSpec used by this editor. */
   static fromSpec(spec: CircuitSpec): CircuitModel {
+    if (isUnsupportedCircuitSpec(spec)) throw new Error('The editor does not support this circuit format or classical operations.');
     if (!isCircuitSpec(spec)) throw new Error('Invalid CircuitSpec');
     const model = new CircuitModel(spec.numQubits, Math.max(DEFAULT_COLUMNS, spec.levels.length));
     spec.levels.forEach((level, step) => level.gates.forEach((gate) => model.placeGate(step, gate)));
@@ -357,8 +358,18 @@ function isGate(value: unknown, numQubits: number): boolean {
  * limits, so a malformed payload is rejected before it can build a
  * `CircuitModel` or reach the WASM bridge as a trusted spec.
  */
-export function isCircuitSpec(value: unknown): value is CircuitSpec {
+/** Capability check before loading; unsupported metadata must never be discarded. */
+export function isUnsupportedCircuitSpec(value: unknown): boolean {
   if (!isRecord(value)) return false;
+  if (typeof value.version === 'number' && value.version !== CURRENT_VERSION) return true;
+  if ('numClassicalBits' in value || 'measurementRecords' in value || 'conditions' in value) return true;
+  return Array.isArray(value.levels) && value.levels.some((level) =>
+    isRecord(level) && Array.isArray(level.gates) && level.gates.some((gate) =>
+      isRecord(gate) && ('condition' in gate || 'classicalTarget' in gate)));
+}
+
+export function isCircuitSpec(value: unknown): value is CircuitSpec {
+  if (!isRecord(value) || isUnsupportedCircuitSpec(value)) return false;
   const { version, numQubits, levels } = value;
   if (version !== CURRENT_VERSION || !Number.isInteger(numQubits)) return false;
   const qubits = numQubits as number;

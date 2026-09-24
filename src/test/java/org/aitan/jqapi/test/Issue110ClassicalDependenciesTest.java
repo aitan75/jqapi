@@ -1,37 +1,68 @@
 package org.aitan.jqapi.test;
 
-import org.aitan.jqapi.quantum.classical.ClassicalRecord;
-import org.aitan.jqapi.quantum.classical.Condition;
-import org.aitan.jqapi.quantum.classical.ConditionPredicate;
-import org.junit.jupiter.api.DisplayName;
+import java.util.List;
+import org.aitan.jqapi.JQAPIConfig;
+import org.aitan.jqapi.math.Complex;
+import org.aitan.jqapi.math.ComplexVector;
+import org.aitan.jqapi.quantum.*;
+import org.aitan.jqapi.quantum.classical.*;
+import org.aitan.jqapi.quantum.gates.*;
+import org.aitan.jqapi.quantum.simulator.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.aitan.jqapi.test.ClassicalTestSupport.*;
 
-/** #110 criterion 2: repeated writes, uninitialized bits, reset, invalid refs, same-level deps. */
-public class Issue110ClassicalDependenciesTest {
-
+class Issue110ClassicalDependenciesTest {
     @Test
-    @DisplayName("Repeated writes preserve last value; uninitialized bit defaults to 0")
-    void repeatedWritesAndUninitialized() {
-        ClassicalRecord bit = new ClassicalRecord(0); // uninitialized/default
-        assertEquals(0, bit.bit());
-        ClassicalRecord updated = new ClassicalRecord(1);
-        assertEquals(1, updated.bit());
+    void unwrittenBitsAreZeroAndLaterWritesReplaceEarlierValues() {
+        Circuit c = circuit(2, 2, new ConditionalGate(new PauliX(1), new Condition(1, 0)),
+                new PauliX(0), Measurement.into(0, 0), new PauliX(0), Measurement.into(0, 0));
+        LocalSimulator sim = new LocalSimulator(c);
+        sim.execute();
+        assertEquals(List.of(new ClassicalRecord(0), new ClassicalRecord(0)), sim.extractClassicalRecords());
+        assertEquals(1, sim.getQuantumRegister().getRegisterState().getEntry(1).abs(), 1e-12);
+        assertEquals(List.of(), new LocalSimulator(new Circuit(1)).extractClassicalRecords());
     }
 
     @Test
-    @DisplayName("Reset creates a new ClassicalRecord at 0")
-    void resetSemantics() {
-        assertEquals(0, new ClassicalRecord(0).bit());
+    void quantumResetAndFinalReadoutPreserveStoredOutcomeAndSnapshots() {
+        Circuit c = circuit(1, 1, new PauliX(0), Measurement.into(0, 0), new Reset(0));
+        LocalSimulator sim = new LocalSimulator(c);
+        sim.execute();
+        var records = sim.extractClassicalRecords();
+        sim.getQuantumRegister().measure();
+        assertEquals(1, records.getFirst().bit());
+        assertEquals(records, sim.extractClassicalRecords());
+        assertEquals(1, sim.getQuantumRegister().getRegisterState().getEntry(0).abs(), 1e-12);
+        assertThrows(UnsupportedOperationException.class, () -> records.clear());
+        assertEquals(0, new LocalSimulator(c).extractClassicalRecords().getFirst().bit());
     }
 
     @Test
-    @DisplayName("Condition with same-level dependency does not change without explicit write")
-    void invalidReferenceRejected() {
-        ClassicalRecord bit = new ClassicalRecord(0);
-        ConditionPredicate pred = new ConditionPredicate(bit, 0);
-        assertTrue(pred.matches());
-        // Same-level dependency: bit remains unchanged (no mutation allowed)
-        assertTrue(new ConditionPredicate(bit, 0).matches());
+    void sameLevelReadWriteAndRepeatedWritesAreRejectedInEitherOrder() {
+        for (boolean reversed : new boolean[]{false, true}) {
+            Gate write = Measurement.into(0, 0);
+            Gate read = new ConditionalGate(new PauliX(1), new Condition(0, 1));
+            assertThrows(IllegalArgumentException.class, () -> append(circuit(2, 1), reversed ? read : write, reversed ? write : read));
+        }
+        assertThrows(IllegalArgumentException.class, () -> append(circuit(2, 1), Measurement.into(0, 0), Measurement.into(1, 0)));
+        Circuit independent = circuit(2, 1);
+        append(independent, new ConditionalGate(new PauliX(0), new Condition(0, 0)), new ConditionalGate(new PauliX(1), new Condition(0, 0)));
+        LocalSimulator sim = new LocalSimulator(independent); sim.execute();
+        assertEquals(1, sim.getQuantumRegister().getRegisterState().getEntry(3).abs(), 1e-12);
+    }
+
+    @Test
+    void invalidReferencesAndBudgetAreRejectedEvenAfterMutableEdits() {
+        assertThrows(IllegalArgumentException.class, () -> circuit(1, 0, Measurement.into(0, 0)));
+        assertThrows(IllegalArgumentException.class, () -> circuit(1, 1, new ConditionalGate(new PauliX(0), new Condition(1, 0))));
+        assertThrows(IllegalArgumentException.class, () -> Measurement.into(0, -1));
+        assertThrows(IllegalArgumentException.class, () -> Measurement.into(30, 0));
+        assertThrows(RuntimeException.class, () -> new Circuit(1, 3, JQAPIConfig.sequential(2)));
+        Circuit c = circuit(2, 1, Measurement.into(0, 0));
+        LocalSimulator sim = new LocalSimulator(c);
+        c.getLevels().getFirst().getGates().clear();
+        c.getLevels().getFirst().getGates().add(new ConditionalGate(new PauliX(0), new Condition(1, 0)));
+        assertThrows(IllegalArgumentException.class, sim::execute);
     }
 }

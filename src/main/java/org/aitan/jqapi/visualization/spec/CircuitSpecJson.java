@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import org.aitan.jqapi.quantum.classical.ClassicalRecord;
 import org.aitan.jqapi.quantum.classical.Condition;
 import java.util.Map;
 import java.util.Set;
@@ -59,8 +58,7 @@ public final class CircuitSpecJson {
             writeLevel(sb, levels.get(i));
         }
         sb.append("]");
-        writeRecords(sb, spec.measurementRecords());
-        writeConditions(sb, spec.conditions());
+        if (spec.version() == 2 && spec.numClassicalBits() != 0) sb.append(",\"numClassicalBits\":").append(spec.numClassicalBits());
         sb.append('}');
         return sb.toString();
     }
@@ -88,6 +86,11 @@ public final class CircuitSpecJson {
         if (g.matrix() != null) {
             sb.append(",\"matrix\":");
             writeMatrix(sb, g.matrix());
+        }
+        if (g.classicalTarget() != null) sb.append(",\"classicalTarget\":").append(g.classicalTarget().intValue());
+        if (g.condition() != null) {
+            sb.append(",\"condition\":{\"bitIndex\":").append(g.condition().bitIndex())
+              .append(",\"expected\":").append(g.condition().expected()).append('}');
         }
         sb.append('}');
     }
@@ -212,8 +215,14 @@ public final class CircuitSpecJson {
         Map<String, Object> root = asObject(tree, "root");
         int version = asInt(root.get("version"), "version");
         if (version != 1 && version != 2) {
-            throw new IllegalArgumentException("Unsupported spec version: " + version + ". Only 1 and 2 are supported.");
+            throw new org.aitan.jqapi.exceptions.UnsupportedSpecVersionException(version);
         }
+        if (root.containsKey("measurementRecords") || root.containsKey("conditions")) {
+            throw new IllegalArgumentException("Unsupported prototype classical metadata; use v2 gate placements");
+        }
+        int classicalBits = root.containsKey("numClassicalBits") ? asInt(root.get("numClassicalBits"), "numClassicalBits") : 0;
+        if (version == 1 && root.containsKey("numClassicalBits")) throw new IllegalArgumentException("Classical fields require v2");
+        if (classicalBits < 0 || classicalBits > maxQubits) throw new JQApiLimitException("Classical register exceeds configured budget");
         int numQubits = asInt(root.get("numQubits"), "numQubits");
         if (numQubits <= 0 || numQubits > maxQubits) {
             throw new JQApiLimitException("numQubits out of range (1.." + maxQubits + "): " + numQubits);
@@ -232,16 +241,14 @@ public final class CircuitSpecJson {
                 if (++gateCount > MAX_GATES) {
                     throw new JQApiLimitException("too many gates (max " + MAX_GATES + ")");
                 }
-                gates.add(mapGate(go, numQubits));
+                gates.add(mapGate(go, numQubits, version));
             }
             levels.add(new LevelSpec(gates));
         }
-        List<ClassicalRecord> measurementRecords = mapRecords(root.get("measurementRecords"));
-        List<Condition> conditions = mapConditions(root.get("conditions"));
-        return new CircuitSpec(version, numQubits, levels, measurementRecords, conditions);
+        return new CircuitSpec(version, numQubits, levels, classicalBits);
     }
 
-    private static GateSpec mapGate(Object go, int numQubits) {
+    private static GateSpec mapGate(Object go, int numQubits, int version) {
         Map<String, Object> gm = asObject(go, "gate");
         GateKind kind;
         try {
@@ -258,7 +265,16 @@ public final class CircuitSpecJson {
         }
         Map<String, Double> params = mapParams(gm.get("params"));
         List<List<ComplexCell>> matrix = mapMatrix(gm.get("matrix"), targets.size());
-        return new GateSpec(kind, targets, controls, params, matrix);
+        if (version == 1 && (gm.containsKey("classicalTarget") || gm.containsKey("condition"))) {
+            throw new IllegalArgumentException("Classical gate fields require v2");
+        }
+        Integer destination = gm.containsKey("classicalTarget") ? asInt(gm.get("classicalTarget"), "classicalTarget") : null;
+        Condition condition = null;
+        if (gm.containsKey("condition")) {
+            Map<String, Object> predicate = asObject(gm.get("condition"), "condition");
+            condition = new Condition(asInt(predicate.get("bitIndex"), "bitIndex"), asInt(predicate.get("expected"), "expected"));
+        }
+        return new GateSpec(kind, targets, controls, params, matrix, destination, condition);
     }
 
     private static List<Integer> mapIndexes(Object o, int numQubits, String field) {
@@ -653,62 +669,6 @@ public final class CircuitSpecJson {
         private IllegalArgumentException err(String msg) {
             return new IllegalArgumentException("Invalid CircuitSpec JSON at position " + pos + ": " + msg);
         }
-    }
-
-    private static void writeRecords(StringBuilder sb, List<ClassicalRecord> records) {
-        if (records == null || records.isEmpty()) return;
-        sb.append(",\"measurementRecords\":[");
-        for (int i = 0; i < records.size(); i++) {
-            if (i > 0) sb.append(',');
-            sb.append("{\"bit\":").append(records.get(i).bit()).append('}');
-        }
-        sb.append(']');
-    }
-
-    private static void writeConditions(StringBuilder sb, List<Condition> conditions) {
-        if (conditions == null || conditions.isEmpty()) return;
-        sb.append(",\"conditions\":[");
-        for (int i = 0; i < conditions.size(); i++) {
-            if (i > 0) sb.append(',');
-            sb.append("{\"record\":{\"bit\":").append(conditions.get(i).record().bit())
-              .append("},\"expected\":").append(conditions.get(i).expected()).append('}');
-        }
-        sb.append(']');
-    }
-
-    private static List<ClassicalRecord> mapRecords(Object o) {
-        if (o == null) return List.of();
-        List<Object> arr = asArray(o, "measurementRecords");
-        List<ClassicalRecord> out = new ArrayList<>(arr.size());
-        for (Object item : arr) {
-            Map<String, Object> m = asObject(item, "measurementRecord");
-            int bit = asInt(m.get("bit"), "bit");
-            if (bit != 0 && bit != 1) {
-                throw new IllegalArgumentException("Measurement bit must be 0 or 1, got: " + bit);
-            }
-            out.add(new ClassicalRecord(bit));
-        }
-        return out;
-    }
-
-    private static List<Condition> mapConditions(Object o) {
-        if (o == null) return List.of();
-        List<Object> arr = asArray(o, "conditions");
-        List<Condition> out = new ArrayList<>(arr.size());
-        for (Object item : arr) {
-            Map<String, Object> m = asObject(item, "condition");
-            Map<String, Object> recMap = asObject(m.get("record"), "record");
-            int bit = asInt(recMap.get("bit"), "record.bit");
-            int expected = asInt(m.get("expected"), "expected");
-            if (bit != 0 && bit != 1) {
-                throw new IllegalArgumentException("Condition record bit must be 0 or 1, got: " + bit);
-            }
-            if (expected != 0 && expected != 1) {
-                throw new IllegalArgumentException("Condition expected value must be 0 or 1, got: " + expected);
-            }
-            out.add(new Condition(new ClassicalRecord(bit), expected));
-        }
-        return out;
     }
 
     private static String num(double d) {

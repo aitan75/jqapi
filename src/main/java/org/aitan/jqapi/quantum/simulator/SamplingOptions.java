@@ -18,15 +18,16 @@ public final class SamplingOptions {
 
     private final int shots;
     private final int[] measuredQubits;
+    private final int[] classicalBits;
     private final long maxWork;
     private final Supplier<DoubleSupplier> randomFactory;
 
     /** @param shots number of shots, from 1 to {@value MAX_SHOTS} */
     public SamplingOptions(int shots) {
-        this(shots, null, DEFAULT_MAX_WORK, () -> new SecureRandom()::nextDouble);
+        this(shots, null, new int[0], DEFAULT_MAX_WORK, () -> new SecureRandom()::nextDouble);
     }
 
-    private SamplingOptions(int shots, int[] measuredQubits, long maxWork,
+    private SamplingOptions(int shots, int[] measuredQubits, int[] classicalBits, long maxWork,
                             Supplier<DoubleSupplier> randomFactory) {
         if (shots < 1 || shots > MAX_SHOTS) {
             throw new IllegalArgumentException("Shots must be in [1, " + MAX_SHOTS + "]");
@@ -35,6 +36,7 @@ public final class SamplingOptions {
             throw new IllegalArgumentException("Sampling work budget must be positive");
         }
         this.shots = shots;
+        this.classicalBits = classicalBits.clone();
         this.measuredQubits = measuredQubits == null ? null : measuredQubits.clone();
         this.maxWork = maxWork;
         this.randomFactory = Objects.requireNonNull(randomFactory, "randomFactory");
@@ -49,7 +51,19 @@ public final class SamplingOptions {
     public SamplingOptions withMeasuredQubits(int... indexes) {
         Objects.requireNonNull(indexes, "indexes");
         validateIndexes(indexes, 30);
-        return new SamplingOptions(shots, indexes, maxWork, randomFactory);
+        return new SamplingOptions(shots, indexes, classicalBits, maxWork, randomFactory);
+    }
+
+    /** Selects classical outcomes to aggregate separately; the first selected bit is MSB. */
+    public SamplingOptions withClassicalBits(int... indexes) {
+        Objects.requireNonNull(indexes, "indexes");
+        validateIndexes(indexes, 30);
+        return new SamplingOptions(shots, measuredQubits, indexes, maxWork, randomFactory);
+    }
+
+    int[] classicalIndexesFor(int size) {
+        if (classicalBits.length != 0) validateIndexes(classicalBits, size);
+        return classicalBits.clone();
     }
 
     /** @param seed simulation seed (not cryptographic)
@@ -64,7 +78,7 @@ public final class SamplingOptions {
      * @return new options
      */
     public SamplingOptions withRandomSource(Supplier<DoubleSupplier> factory) {
-        return new SamplingOptions(shots, measuredQubits, maxWork, factory);
+        return new SamplingOptions(shots, measuredQubits, classicalBits, maxWork, factory);
     }
 
     /**
@@ -75,7 +89,7 @@ public final class SamplingOptions {
      * @return new options
      */
     public SamplingOptions withMaxWork(long budget) {
-        return new SamplingOptions(shots, measuredQubits, budget, randomFactory);
+        return new SamplingOptions(shots, measuredQubits, classicalBits, budget, randomFactory);
     }
 
     /** @return requested shot count */

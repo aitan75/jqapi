@@ -136,3 +136,17 @@ test('starts with closed menus and no selected gate', async ({ page }) => {
   await page.getByText('Gates', { exact: true }).click();
   await expect(page.locator('.gate-btn.selected')).toHaveCount(0);
 });
+
+test('rejects classical file and shared-link imports without dropping their metadata', async ({ page }) => {
+  const spec = {
+    version: 2, numQubits: 2, numClassicalBits: 1,
+    levels: [{ gates: [{ kind: 'X', targets: [1], controls: [], params: {}, condition: { bitIndex: 0, expected: 1 } }] }],
+  };
+  const json = JSON.stringify(spec);
+  await page.goto('/');
+  await page.locator('input[type="file"]').setInputFiles({ name: 'classical.json', mimeType: 'application/json', buffer: Buffer.from(json) });
+  await expect(page.getByText('This editor cannot load this circuit format or its classical operations.')).toBeVisible();
+  await page.goto('/#circuit=' + encodeURIComponent(Buffer.from(json).toString('base64')));
+  await page.reload();
+  await expect(page.getByText('This editor cannot load this circuit format or its classical operations.')).toBeVisible();
+});

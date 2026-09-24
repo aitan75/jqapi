@@ -5,11 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.DoubleSupplier;
 import org.aitan.jqapi.quantum.classical.ClassicalRecord;
-import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
 import org.aitan.jqapi.quantum.QuantumRegister;
 import org.aitan.jqapi.quantum.Qubit;
+import org.aitan.jqapi.quantum.QubitOne;
+import org.aitan.jqapi.quantum.gates.ConditionalGate;
+import org.aitan.jqapi.quantum.gates.Measurement;
 import org.aitan.jqapi.utils.Constants;
 
 /**
@@ -28,13 +30,11 @@ import org.aitan.jqapi.utils.Constants;
  *
  * @author Gaetano Ferrara
  */
-import org.aitan.jqapi.quantum.classical.ClassicalRecord;
-import java.util.ArrayList;
-import java.util.List;
 
 public class LocalSimulator implements QuantumSimulator {
 
     private final Circuit circuit;
+    private final int[] classicalBits;
     private final QuantumRegister quantumRegister;
 
     /**
@@ -43,7 +43,9 @@ public class LocalSimulator implements QuantumSimulator {
      * @param random source returning finite values in [0, 1)
      */
     public LocalSimulator(Circuit circuit, DoubleSupplier random) {
+        circuit.validateClassicalOperations();
         this.circuit = circuit;
+        this.classicalBits = new int[circuit.getNumClassicalBits()];
         this.quantumRegister = new QuantumRegister(circuit.getInputSize(), circuit.getConfig(), random);
     }
 
@@ -54,13 +56,17 @@ public class LocalSimulator implements QuantumSimulator {
      * @param random source returning finite values in [0, 1)
      */
     public LocalSimulator(Circuit circuit, ComplexVector initialState, DoubleSupplier random) {
+        circuit.validateClassicalOperations();
         this.circuit = circuit;
+        this.classicalBits = new int[circuit.getNumClassicalBits()];
         this.quantumRegister = new QuantumRegister(circuit.getInputSize(), circuit.getConfig(), initialState, random);
     }
 
     /** @param circuit the circuit to simulate (register initialised to |0...0>) */
     public LocalSimulator(Circuit circuit) {
+        circuit.validateClassicalOperations();
         this.circuit = circuit;
+        this.classicalBits = new int[circuit.getNumClassicalBits()];
         this.quantumRegister = new QuantumRegister(circuit.getInputSize(), circuit.getConfig());
     }
 
@@ -71,7 +77,9 @@ public class LocalSimulator implements QuantumSimulator {
         if (circuit.getInputSize() != qubits.length) {
             throw new IllegalArgumentException("Number of input qubits are different from circuit size");
         }
+        circuit.validateClassicalOperations();
         this.circuit = circuit;
+        this.classicalBits = new int[circuit.getNumClassicalBits()];
         this.quantumRegister = new QuantumRegister(circuit.getInputSize(), circuit.getConfig(), qubits);
     }
 
@@ -82,17 +90,25 @@ public class LocalSimulator implements QuantumSimulator {
         if (circuit.getInputSize() != alphas.length) {
             throw new IllegalArgumentException("Number of input qubits are different from circuit size");
         }
+        circuit.validateClassicalOperations();
         this.circuit = circuit;
+        this.classicalBits = new int[circuit.getNumClassicalBits()];
         this.quantumRegister = new QuantumRegister(circuit.getInputSize(), circuit.getConfig(), alphas);
     }
 
     /** {@inheritDoc} */
     @Override
     public void execute() {
+        circuit.validateClassicalOperations();
         circuit.getLevels().forEach(level ->
                 level.getGates().forEach(gate -> {
+                    if (gate instanceof ConditionalGate conditional
+                            && classicalBits[conditional.condition().bitIndex()] != conditional.condition().expected()) return;
                     if (gate.getType().equals(Constants.MEASUREMENT)) {
                         quantumRegister.measureQubitAtIndexes(gate.getIndexes());
+                    if (gate instanceof Measurement measurement && measurement.classicalTarget() != null) {
+                        classicalBits[measurement.classicalTarget()] = quantumRegister.getResult()[gate.getIndexes().getFirst()] instanceof QubitOne ? 1 : 0;
+                    }
                         return; //the measurement gate matrix is the identity: nothing else to apply
                     }
                     if (gate.getType().equals(Constants.RESET)) {
@@ -110,44 +126,13 @@ public class LocalSimulator implements QuantumSimulator {
                     }
                 })
         );
-        // Apply classical conditions after circuit execution
-        applyConditions();
     }
 
-    private void applyConditions() {
-        List<Condition> conditions = circuit.getConditions();
-        if (conditions == null || conditions.isEmpty()) {
-            return;
-        }
-        List<ClassicalRecord> records = extractClassicalRecords();
-        for (Condition cond : conditions) {
-            ClassicalRecord rec = cond.record();
-            int bit = rec.bit();
-            int expected = cond.expected();
-            if (expected == bit) {
-                // Apply correction gate (PauliX for teleportation correction)
-                int qubitIndex = 0; // Placeholder: in real circuit the target is defined by condition context
-                // For demonstration, apply PauliX on qubit 0 if correction needed
-                quantumRegister.applyOperator(Constants.PAULI_X_MATRIX, Collections.singletonList(qubitIndex));
-            }
-        }
-    }
-
+    /** Immutable snapshot of execution-owned classical bits, in address order. */
     public List<ClassicalRecord> extractClassicalRecords() {
-        Qubit[] result = quantumRegister.getResult();
-        List<ClassicalRecord> records = new ArrayList<>();
-        if (result == null || result.length == 0) {
-            return records;
-        }
-        for (int i = 0; i < result.length; i++) {
-            if (result[i] == null) {
-                records.add(new ClassicalRecord(0)); // uninitialized / unmeasured
-            } else {
-                int bit = (result[i] instanceof org.aitan.jqapi.quantum.QubitZero) ? 0 : 1;
-                records.add(new ClassicalRecord(bit));
-            }
-        }
-        return records;
+        List<ClassicalRecord> records = new ArrayList<>(classicalBits.length);
+        for (int bit : classicalBits) records.add(new ClassicalRecord(bit));
+        return List.copyOf(records);
     }
 
     /** {@inheritDoc} */

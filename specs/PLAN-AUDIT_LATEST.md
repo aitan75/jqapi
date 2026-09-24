@@ -1,25 +1,19 @@
-# Plan Audit — #110
-**Verdict:** READY (con gap documentati chiusi nel design)
+# Issue #110 implementation plan
 
-## Principi
-- Vertical slices: ✅ (measure/store/conditional + fixture standalone)
-- Scope: ✅ in_scope (measure→store→conditional, CircuitSpec v1/v2); out_of_scope (loop, computazione classica generale)
-- Success criteria: ✅ da issue #110 acceptance criteria
-- HARD GATE: design `CircuitSpec` version/migration prima di tdd
+The original scaffold did not implement classical execution. The completed work
+uses the [v2 design](../docs/api/classical-design.md), written before replacing that
+scaffold, and the following sequence:
 
-## Pre-flight
-| Command | Value |
-| Test | `mvn -B verify` |
-| Build | `mvn clean package` |
-| Lint | `mvn -B verify` / `npm run lint` |
-| Typecheck | `mvn compile` / `npm run typecheck` |
-| CI | GitHub Actions |
-| Mode | team |
-| Lang | Java 25 + TypeScript / React |
+1. Define classical register addresses, measurement destinations, gate predicates,
+   ordering, validation, and version/migration semantics.
+2. Connect them to simulator execution and independent-shot sampling.
+3. Replace placeholder tests with analytic conditional, teleportation, syndrome,
+   round-trip, rejection, and shot-isolation checks.
+4. Rebuild the TeaVM bridge under JDK 25 and coordinate editor capability handling.
+5. Run core, bridge, web, and browser verification; document the public API.
 
-## Gap chiusi
-- Scope e out_of_scope definiti (issue #110)
-- Design interface `CircuitSpec` con version/migration richiesto come HARD GATE
+The implementation excludes loops and general classical computation. Grid editing
+and ASCII display of classical wires remain unsupported and reject such circuits.
 
-## Prossimo passo
-`design-interface` per `CircuitSpec` v2, classi classiche (Record, Condition), poi `develop-tdd`.
+See [the verification report](verifications/AUDIT-110.md) for executed commands,
+results, coverage of each acceptance criterion, and compatibility boundaries.

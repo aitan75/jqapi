@@ -1,14 +1,9 @@
 package org.aitan.jqapi.quantum.classical;
 
-public class Condition {
-    private final ClassicalRecord record;
-    private final int expected;
-    public Condition(ClassicalRecord record, int expected) {
-        if (expected != 0 && expected != 1) {
-            throw new IllegalArgumentException("Condition expected value must be 0 or 1, got: " + expected);
-        }
-        this.record = record; this.expected = expected;
+/** Equality predicate on an addressed classical bit, evaluated when its gate executes. */
+public record Condition(int bitIndex, int expected) {
+    public Condition {
+        if (bitIndex < 0 || bitIndex >= 30) throw new IllegalArgumentException("Classical bit index must be in [0, 30)");
+        if (expected != 0 && expected != 1) throw new IllegalArgumentException("Expected bit must be 0 or 1");
     }
-    public ClassicalRecord record() { return record; }
-    public int expected() { return expected; }
 }
