@@ -10,10 +10,12 @@ CLAUDE.md
 GEMINI.md
 COPILOT.md
 .agents/
+.claude/
 .codex/
 .aider*
 .cursor/
 .cursorrules
+.pi/
 
 # Local review artifacts
 review_report.md

@@ -1,0 +1,2 @@
+qiskit==2.5.2
+cirq-core==1.7.0
