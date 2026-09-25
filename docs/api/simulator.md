@@ -11,6 +11,8 @@ Runs a [`Circuit`](quantum.md#circuit) and exposes the resulting
 - [QuantumSimulator (interface)](#quantumsimulator-interface)
 - [LocalSimulator](#localsimulator)
 - [CircuitSampler](#circuitsampler)
+- [ExpectationSampler](#expectationsampler)
+- [Browser bridge expectation exports](#browser-bridge-expectation-exports)
 
 ---
 
@@ -89,6 +91,85 @@ Shots, seeds and budgets are execution options and are never stored in
 `CircuitSpec`. The browser bridge delegates to this sampler while retaining
 `sample(specJson, shots)`, its counts JSON shape and stable error codes;
 exceeded sampling budgets use `INPUT_LIMIT_EXCEEDED`.
+
+---
+
+## `ExpectationSampler`
+
+`ExpectationSampler.estimate(circuit, observable, options[, initialState])`
+estimates `⟨H⟩` for a [`PauliSum`](observables.md#paulisum) from shots, as on
+hardware. It returns an immutable `SampledExpectation(value, standardError,
+totalShots, terms)` with one `TermEstimate(coeff, pauli, shots, mean, variance)`
+per term, in observable order.
+
+For every non-identity term the sampler runs `options.shots()` complete shots
+of the circuit followed by a rotation into the term's eigenbasis — X: `Hadamard`;
+Y: `Phase(−π/2)` (S†) then `Hadamard`; Z: none — and measures only the qubits the
+term acts on. A shot's eigenvalue is `(−1)^parity` of those bits. Identity terms
+are added exactly and use 0 shots. Mid-circuit measurement and reset are
+supported; the circuit must act on `observable.numQubits()` qubits.
+
+**Estimator.** With `N` shots per term, `n₊`/`n₋` eigenvalue counts:
+
+- `mean mₖ = (n₊ − n₋) / N` (unbiased for `⟨Pₖ⟩`)
+- `variance Var(mₖ) = (1 − mₖ²) / (N − 1)`, so `N ≥ 2` is required
+- `value = Σ cₖ mₖ`, `standardError = sqrt(Σ cₖ² Var(mₖ))`, terms treated as
+  independent (combined with `Math.hypot`, so large finite coefficients do not
+  overflow early)
+
+Shots are allocated **uniformly**: each non-identity term gets `options.shots()`
+(2 to 10,000); `totalShots` is their sum. Measured-qubit and classical-bit
+selections in `options` are ignored.
+
+**Randomness.** The options' random factory is called **once** per estimate and
+its stream is shared, in order, by all terms: equal seeds reproduce the whole
+estimate, and two identical terms do not replay the same stream. The seed rules
+of [`CircuitSampler`](#circuitsampler) apply.
+
+**Limits.** The work budget `options.maxWork()` bounds the **sum** over all
+terms (`shots · 2^n · passes` with the basis-change gates included) and is
+checked before any shot runs. An `initialState` is validated even when only
+identity terms are present. A value or standard error outside the `double`
+range throws `JQApiLimitException`.
+
+```java
+SampledExpectation e = ExpectationSampler.estimate(ansatz, h,
+        new SamplingOptions(10_000).withSeed(32));
+double estimate = e.value();         // ≈ Expectation.of(psi, h)
+double uncertainty = e.standardError();
+int shotsForTerm0 = e.terms().get(0).shots();
+```
+
+---
+
+## Browser bridge expectation exports
+
+`jqapi-wasm`'s `JqapiBridge` exposes both estimators to JavaScript with the same
+JSON-in/JSON-out contract as `run`/`sample`. The circuit is `CircuitSpec` JSON,
+the observable is [`PauliSumJson`](observables.md#paulisumjson), and the bridge
+uses `JQAPIConfig.sequential(24)`.
+
+| Export | Success |
+|--------|---------|
+| `expectation(specJson, observableJson)` | `{"ok":true,"value":…,"terms":[{"coeff","pauli","value"}]}` |
+| `sampleExpectation(specJson, observableJson, shots)` | `{"ok":true,"value":…,"standardError":…,"totalShots":…,"terms":[{"coeff","pauli","shots","mean","variance"}]}` |
+
+`expectation` evaluates the final state exactly and rejects circuits containing
+measurement, reset or classical conditions, which have no single final state;
+`sampleExpectation` accepts them. The exact budget is checked before the state
+is allocated. Failures are `{"ok":false,"error":{"code":…}}` with:
+
+| Code | Meaning |
+|------|---------|
+| `INVALID_SHOT_COUNT` | `shots` outside `[2, 10000]`, checked before parsing. |
+| `INVALID_CIRCUIT_SPEC` / `UNSUPPORTED_SPEC_VERSION` | As for `run`. |
+| `INVALID_OBSERVABLE` | Malformed observable, or its `numQubits` differs from the circuit. |
+| `NON_UNITARY_CIRCUIT` | `expectation` on a circuit with measurement, reset or conditions. |
+| `INPUT_LIMIT_EXCEEDED` | Too many terms, work budget exceeded, or a value outside the `double` range. |
+| `SIMULATION_FAILED` | Any other failure. |
+
+Responses never contain `NaN` or `Infinity`. `BridgeCrossCheckTest` compares the
+compiled JavaScript with the JVM for both exports.
 
 ---
 

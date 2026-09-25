@@ -38,6 +38,7 @@ interleaved `(re, im)` layout.
 | `subtract(Complex)` | `Complex` | Subtraction. |
 | `multiply(Complex)` / `multiply(double)` | `Complex` | Multiplication. |
 | `abs()` | `double` | Modulus (`Math.hypot`). |
+| `conjugate()` | `Complex` | Complex conjugate `re − im·i`. |
 | `sqrt()` | `Complex` | Principal square root (finite inputs). |
 | `sqrt1z()` | `Complex` | Principal square root of `1 - this²`. |
 | `equals` / `hashCode` | | Exact `==` comparison on real/imaginary parts (matches the previous behavior; `-0.0` equals `0.0`). |
@@ -70,12 +71,19 @@ primitive `double[]` (interleaved `(re, im)`).
 | `setEntry(int i, Complex v)` | `void` | Sets the amplitude at index `i`. |
 | `getDimension()` | `int` | Number of complex entries. |
 | `getData()` | `Complex[]` | Boxed copy of the amplitudes. |
-| `dotProduct(ComplexVector v)` | `Complex` | Non-conjugated dot product `Σ this[i]·v[i]`. |
+| `dotProduct(ComplexVector v)` | `Complex` | Non-conjugated (bilinear) dot product `Σ this[i]·v[i]`. |
+| `innerProduct(ComplexVector v)` | `Complex` | Hermitian inner product `Σ conj(this[i])·v[i]`; throws `IllegalArgumentException` on a dimension mismatch. |
 | `outerProduct(ComplexVector v)` | `ComplexMatrix` | Outer product, entry `(i,j) = this[i]·v[j]`. |
 | `tensorProduct(ComplexVector v)` | `ComplexVector` | Tensor (Kronecker) product `this ⊗ v`. |
 | `factorize(ComplexVector v)` *(static)* | `ComplexVector[]` | Splits a `2^n` state vector into `n` single-qubit vectors derived from marginal probabilities. |
 | `equals` / `hashCode` | | Element-wise equality (same `==` semantics as `Complex`). |
 | `toString()` | `String` | e.g. `ComplexVector{[(1.0, 0.0), (0.0, 0.0)]}`. |
+
+> **Bilinear vs Hermitian.** For `ψ = (|0> + i|1>)/√2`, `ψ.dotProduct(ψ)` is `0`
+> while `ψ.innerProduct(ψ)` is the norm `1`. Use `innerProduct` (or
+> [`Expectation.overlap`/`fidelity`](observables.md#expectation), which also
+> reject non-finite amplitudes) for quantum overlaps; `dotProduct` keeps its
+> original bilinear meaning for existing callers. Both propagate NaN/Infinity.
 
 > **Note on `factorize`.** It reconstructs each qubit from marginal
 > probabilities, so **relative phases are not recovered** and the result is only

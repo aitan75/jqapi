@@ -16,6 +16,7 @@ when writing a program. Each concept links to its [API reference](../api/README.
 7. [The simulator](#7-the-simulator)
 8. [Measurement](#8-measurement)
 9. [Ordering conventions](#9-ordering-conventions)
+10. [Observables and expectation values](#10-observables-and-expectation-values)
 
 ---
 
@@ -246,5 +247,26 @@ Two conventions matter for reading results correctly:
 
 With these in mind you can predict, for example, that a `ControlledNot(0, 2)`
 applied to `|100>` yields `|101>`.
+
+---
+
+## 10. Observables and expectation values
+
+An observable such as a Hamiltonian is written as a real combination of Pauli
+strings, `H = Σ cₖ Pₖ`, and built as a
+[`PauliSum`](../api/observables.md#paulisum). Pauli labels follow the same
+ordering: in `"ZI"` the `Z` acts on qubit 0.
+
+There are two ways to evaluate `⟨H⟩` for the state a circuit prepares:
+
+- **Exactly**, from the state vector: `Expectation.of(state, h)`. Nothing is
+  measured, so there is no randomness and no uncertainty.
+- **From shots**, as a quantum computer would: `ExpectationSampler.estimate(...)`
+  measures each term in its own basis and reports the estimate together with its
+  standard error. More shots give a smaller error.
+
+For comparing states, `Expectation.overlap(a, b)` returns `⟨a|b⟩` with the first
+vector conjugated, and `Expectation.fidelity(a, b)` returns `|⟨a|b⟩|²`.
+`ComplexVector.dotProduct` does **not** conjugate, so it is not an overlap.
 
 Continue to the [worked examples](examples.md).

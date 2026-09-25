@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { CircuitModel, isCircuitSpec, isUnsupportedCircuitSpec, PAULI_X_MATRIX, type EditorState, type Placement } from './model/circuit';
 import { probabilities } from './model/results';
-import { run, sample } from './wasm/bridge';
+import { parseObservable } from './model/observable';
+import { expectation, run, sample, sampleExpectation } from './wasm/bridge';
 import type { Amplitude, CircuitSpec, ComplexMatrix } from './wasm/types';
 import type { Preset } from './model/presets';
 import { GatePalette, type Tool } from './components/GatePalette';
@@ -9,6 +10,7 @@ import { QubitSelector } from './components/QubitSelector';
 import { PresetSelector } from './components/PresetSelector';
 import { CircuitCanvas } from './components/CircuitCanvas';
 import { ResultsPanel } from './components/ResultsPanel';
+import { ObservablePanel, type ObservableOutcome } from './components/ObservablePanel';
 import { initialLanguage, LANGUAGE_STORAGE_KEY, messages, type Language } from './i18n';
 import './App.css';
 
@@ -71,12 +73,18 @@ export default function App() {
   const [amplitudes, setAmplitudes] = useState<Amplitude[] | null>(null);
   const [sampled, setSampled] = useState<{ shots: number; counts: number[] } | null>(null);
   const [shots, setShots] = useState(1000);
+  const [observableText, setObservableText] = useState('');
+  const [observableOutcome, setObservableOutcome] = useState<ObservableOutcome | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [language, setLanguage] = useState<Language>(initialLanguage);
   const [now, setNow] = useState(() => new Date());
   const text = messages[language];
   const bump = () => setVersion((value) => value + 1);
+  // Empty text means "no observable"; errors are shown live and only skip the ⟨H⟩ part of Run.
+  const parsedObservable = observableText.trim() ? parseObservable(observableText, numQubits) : null;
+  const observableError = parsedObservable && 'code' in parsedObservable ? parsedObservable : null;
+  const validObservable = parsedObservable && !('code' in parsedObservable) ? parsedObservable : null;
 
   const syncModel = () => {
     setNumQubits(modelRef.current.numQubits);
@@ -84,6 +92,7 @@ export default function App() {
     setProbs(null);
     setAmplitudes(null);
     setSampled(null);
+    setObservableOutcome(null);
     bump();
   };
   const mutate = (change: (model: CircuitModel) => boolean | void) => {
@@ -161,6 +170,7 @@ export default function App() {
     if (isRunning) return;
     const shotCount = shots;
     setError(null);
+    setObservableOutcome(null);
     setIsRunning(true);
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     try {
@@ -177,6 +187,17 @@ export default function App() {
         return;
       }
       setSampled(sampleResult);
+      if (validObservable) {
+        const spec = modelRef.current.toSpec();
+        // Exact and sampled values fail independently; both report inside the panel, never the banner.
+        const exact = expectation(spec, validObservable);
+        // The sampler needs two shots per term to estimate a variance.
+        const estimate = shotCount >= 2 ? sampleExpectation(spec, validObservable, shotCount) : null;
+        setObservableOutcome({
+          exact: exact.ok ? exact : exact.error.code,
+          sampled: estimate === null ? 'NEEDS_TWO_SHOTS' : estimate.ok ? estimate : estimate.error.code,
+        });
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -230,6 +251,7 @@ export default function App() {
             <input ref={fileInputRef} type="file" accept="application/json" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) loadFile(file); event.currentTarget.value = ''; }} />
           </div>
           <ResultsPanel messages={text} probs={probs} amplitudes={amplitudes} sampled={sampled} numQubits={numQubits} />
+          <ObservablePanel messages={text} numQubits={numQubits} text={observableText} onChangeText={(value) => { setObservableText(value); setObservableOutcome(null); }} parseError={observableError} outcome={observableOutcome} disabled={isRunning} />
         </main>
       </div>
       <footer className="footer"><time dateTime={now.toISOString()}>{text.systemTime}: {now.toLocaleTimeString(language === 'it' ? 'it-IT' : 'en-GB')}</time></footer>

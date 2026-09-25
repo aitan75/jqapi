@@ -18,6 +18,7 @@ current source.
 8. [Quantum Fourier Transform](#8-quantum-fourier-transform)
 9. [Reproducible shot sampling](#9-reproducible-shot-sampling)
 10. [Classical feed-forward](#10-classical-feed-forward)
+11. [Expectation values of a Hamiltonian](#11-expectation-values-of-a-hamiltonian)
 
 Common imports for the snippets below:
 
@@ -400,3 +401,64 @@ superposition, and complex input states against the transferred amplitudes.
 Circuits with classical operations use CircuitSpec v2. Java and the TeaVM bridge
 execute them; the current grid editor and ASCII renderer reject them explicitly.
 See [the format and execution contract](../api/classical-design.md).
+
+## 11. Expectation values of a Hamiltonian
+
+The energy of a one-parameter ansatz, the core step of a variational algorithm
+(VQE). It is computed exactly from the state vector and estimated from shots, as
+in `Issue108ConsumerFixtureTest`:
+
+```java
+import org.aitan.jqapi.math.ComplexVector;
+import org.aitan.jqapi.observable.Expectation;
+import org.aitan.jqapi.observable.PauliString;
+import org.aitan.jqapi.observable.PauliSum;
+import org.aitan.jqapi.quantum.simulator.ExpectationSampler;
+import org.aitan.jqapi.quantum.simulator.SampledExpectation;
+import org.aitan.jqapi.quantum.simulator.SamplingOptions;
+
+double theta = 2.1;
+Circuit ansatz = new Circuit(1);
+CircuitLevel level = new CircuitLevel();
+level.addGate(new Ry(theta, 0));
+ansatz.addLevel(level);
+
+// H = Z + 0.5 X, whose expectation on Ry(θ)|0> is cos θ + 0.5 sin θ
+PauliSum h = PauliSum.of(
+        new PauliSum.Term(1.0, PauliString.fromLabel("Z")),
+        new PauliSum.Term(0.5, PauliString.fromLabel("X")));
+
+LocalSimulator simulator = new LocalSimulator(ansatz);
+simulator.execute();
+ComplexVector psi = simulator.getQuantumRegister().getRegisterState();
+double exact = Expectation.of(psi, h);
+
+SampledExpectation sampled = ExpectationSampler.estimate(ansatz, h,
+        new SamplingOptions(10_000).withSeed(32));
+// |sampled.value() - exact| is a few sampled.standardError() at most
+```
+
+Each non-identity term gets the requested number of shots (at least 2);
+`sampled.terms()` reports the shots, mean and variance per term. Labels have
+one letter per qubit with qubit 0 first, so on three qubits `"ZIZ"` correlates
+qubits 0 and 2. See the [observables reference](../api/observables.md) and the
+[estimator](../api/simulator.md#expectationsampler).
+
+### Observables in jqapi studio
+
+The browser editor has an **Observable ⟨H⟩** panel under the results. Write one
+term per line — an optional coefficient and one Pauli letter per qubit, q0
+first — and press **Run**. For the preset *Bell State |Φ⁺⟩*:
+
+```text
+ZZ
+0.5 XX
+-1 YY
+```
+
+gives `2.5000` exactly and the same sampled value with standard error 0, because
+the Bell state is an eigenstate of each term. The table lists the exact value,
+sampled mean and shots of every term. Invalid lines are reported with their
+line number while you type. Circuits with measurement or reset show only the
+sampled estimate, and a single shot shows only the exact value. The observable
+is not saved in circuit files or shared links.

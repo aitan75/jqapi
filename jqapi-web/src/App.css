@@ -952,6 +952,21 @@
 .sidebar .gate-btn { padding: 0.35rem 0.55rem; font-size: 0.75rem; }
 .footer { padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); color: var(--text-muted); font: 0.75rem var(--font-mono); text-align: right; }
 
+/* Observable panel */
+.observable-panel .results-header label { cursor: text; }
+.observable-help, .observable-note { margin: 0; color: var(--text-muted); font-size: 0.8rem; }
+.observable-input { width: 100%; box-sizing: border-box; resize: vertical; border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.6rem; background: rgba(255, 255, 255, 0.04); color: var(--text-main); font: 0.85rem var(--font-mono); }
+.observable-input[aria-invalid="true"] { border-color: var(--accent-rose, #f87171); }
+.observable-error { margin: 0; color: var(--accent-rose, #f87171); font-size: 0.8rem; }
+.observable-summary { display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; margin: 0; }
+.observable-summary dt { color: var(--text-muted); font: 0.75rem var(--font-mono); }
+.observable-summary dd { margin: 0.2rem 0 0; color: var(--text-main); font: 600 1.1rem var(--font-mono); }
+.observable-summary dd.observable-note { font: 0.8rem inherit; max-width: 28rem; }
+.observable-table { width: 100%; border-collapse: collapse; font: 0.8rem var(--font-mono); }
+.observable-table th, .observable-table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-subtle); text-align: right; }
+.observable-table th { color: var(--text-muted); font-weight: 500; }
+.observable-table .observable-pauli { text-align: left; letter-spacing: 0.1em; }
+
 @media (max-width: 800px) {
   .editor-layout { grid-template-columns: 1fr; }
   .sidebar { position: static; }
