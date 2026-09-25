@@ -40,6 +40,7 @@ signatures below:
 | Gates | `org.aitan.jqapi.quantum.gates` | [gates.md](gates.md) |
 | Simulator | `org.aitan.jqapi.quantum.simulator` | [simulator.md](simulator.md) |
 | Linear algebra | `org.aitan.jqapi.math` | [math.md](math.md) |
+| Observables (Pauli sums, overlap, expectation) | `org.aitan.jqapi.observable` | [observables.md](observables.md) |
 | Visualization (spec + ASCII renderer) | `org.aitan.jqapi.visualization` | [visualization.md](visualization.md) |
 | OpenQASM 2 import/export | `org.aitan.jqapi.visualization.openqasm` | [openqasm.md](openqasm.md) |
 | Algorithms & utilities | `org.aitan.jqapi`, `org.aitan.jqapi.utils`, `org.aitan.jqapi.exceptions` | (below) |
@@ -81,6 +82,17 @@ Custom: `Oracle`, `GenericGate` (both wrap a user-supplied matrix).
 |------|----------------|
 | `QuantumSimulator` (interface) | Runs a circuit and exposes the resulting register. |
 | `LocalSimulator` | State-vector implementation that applies gates directly to the amplitude vector. |
+| `CircuitSampler` | Reproducible shot sampling of final basis outcomes. |
+| `ExpectationSampler` | Shot-based estimate of a Pauli-sum expectation with standard error. |
+
+### `org.aitan.jqapi.observable` — [full reference](observables.md)
+
+| Type | Responsibility |
+|------|----------------|
+| `Pauli`, `PauliString` | Immutable Pauli tensor products; label character 0 is qubit 0. |
+| `PauliSum` | Immutable real combination of Pauli strings (a Hamiltonian). |
+| `Expectation` | Hermitian overlap, fidelity and exact `⟨ψ\|H\|ψ⟩` without dense operators. |
+| `PauliSumJson` | Deterministic JSON for observables, used by the browser bridge. |
 
 ### `org.aitan.jqapi.math` — [full reference](math.md)
 

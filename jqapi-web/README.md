@@ -27,7 +27,7 @@ the same catalog; raw Java exception messages are never displayed in the UI.
 
 `src/wasm/jqapi.js` is the TeaVM output of the `jqapi-wasm` module (Phase 2b),
 committed here (approach A — no Maven↔npm build wiring). It exposes
-`run(specJson) -> resultJson` and `sample(specJson, shots) -> resultJson`; sampling returns measured outcome counts for 1–10,000 independent shots. `src/wasm/bridge.ts` is the typed wrapper.
+`run(specJson) -> resultJson` and `sample(specJson, shots) -> resultJson`; sampling returns measured outcome counts for 1–10,000 independent shots. `expectation(specJson, observableJson)` and `sampleExpectation(specJson, observableJson, shots)` return exact and shot-based ⟨H⟩ for a Pauli-sum observable ([format and error codes](../docs/api/simulator.md#browser-bridge-expectation-exports)). `src/wasm/bridge.ts` is the typed wrapper; `src/wasm/jqapi.d.ts` declares the exports by hand.
 
 Regenerate it when the bridge or core changes (requires JDK 25 — TeaVM 0.15
 runs under JDK 25 only):
@@ -50,6 +50,18 @@ gate moves every component of that operation together, while dropping it outside
 the grid removes it. Circuits support dynamic wires and columns, undo/redo,
 zoom/pan, JSON/local-storage save-load and shareable URL fragments. Results show
 theoretical probabilities, complete complex amplitudes, magnitude/phase/Bloch details, and observed counts with empirical probabilities for the selected number of shots.
+
+The **Observable ⟨H⟩** panel evaluates a Hamiltonian inside **Run**. Enter one
+term per line, `[coefficient] LABEL`, with one Pauli letter (`I`, `X`, `Y`, `Z`)
+per qubit and q0 first, e.g. `0.5 ZZ`; at most 1024 terms. The panel shows the
+exact value, the sampled value ± standard error with the total shots, and a
+per-term table. Parse errors appear inline with their line number and never
+block the circuit run; an empty panel leaves Run unchanged. Each value can fail
+independently: circuits with measurement or reset have no exact value, a single
+shot has no sampled estimate, and engine limits are reported in the panel rather
+than in the global banner. Editing the circuit or the observable clears the
+result. The observable is an execution input and is not saved in JSON or shared
+links.
 
 `npm run test:e2e` runs the Playwright Bell-circuit smoke test (install Chromium
 once with `npx playwright install chromium`). CI rebuilds the TeaVM asset before
