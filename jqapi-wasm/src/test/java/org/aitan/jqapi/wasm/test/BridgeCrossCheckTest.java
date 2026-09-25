@@ -67,11 +67,16 @@ public class BridgeCrossCheckTest {
     }
 
     private static String runCompiledJs(String spec) throws IOException, InterruptedException {
+        return runCompiledJs("run", jsonString(spec.replace("\n", " ").replace("\r", " ")));
+    }
+
+    /** Calls a compiled export with JavaScript argument expressions and returns its output. */
+    private static String runCompiledJs(String export, String... jsArgs) throws IOException, InterruptedException {
         Path js = Path.of("target", "js", "jqapi.js").toAbsolutePath();
         assertTrue(Files.isRegularFile(js), "TeaVM JS artifact missing (build under JDK 25 first)");
 
         String script = "import * as j from " + jsonString(js.toUri().toString()) + ";"
-                + "process.stdout.write(j.run(" + jsonString(spec.replace("\n", " ").replace("\r", " ")) + "));";
+                + "process.stdout.write(j." + export + "(" + String.join(",", jsArgs) + "));";
         String node;
         Process p;
         try {
@@ -131,6 +136,30 @@ public class BridgeCrossCheckTest {
         String unknown = spec.replace("\"version\":2", "\"version\":99");
         assertEquals("{\"ok\":false,\"error\":{\"code\":\"UNSUPPORTED_SPEC_VERSION\"}}", runCompiledJs(unknown));
         assertEquals(JqapiBridge.run(unknown), JqapiBridge.sample(unknown, 1));
+    }
+
+    @Test
+    void compiledJs_matchesJvm_forObservableExpectations() throws IOException, InterruptedException {
+        String spec = "{\"version\":1,\"numQubits\":2,\"levels\":["
+                + "{\"gates\":[{\"kind\":\"H\",\"targets\":[0],\"controls\":[],\"params\":{}},"
+                + "{\"kind\":\"RX\",\"targets\":[1],\"controls\":[],\"params\":{\"theta\":0.7}}]},"
+                + "{\"gates\":[{\"kind\":\"S\",\"targets\":[0],\"controls\":[],\"params\":{}}]},"
+                + "{\"gates\":[{\"kind\":\"CNOT\",\"targets\":[1],\"controls\":[0],\"params\":{}}]}]}";
+        String h = BridgeExpectationTest.observable(2, 0.5, "ZI", -0.8, "XY", 0.3, "YY", 1.1, "IX", 0.2, "II");
+        String jvm = JqapiBridge.expectation(spec, h);
+        String node = runCompiledJs("expectation", jsonString(spec), jsonString(h));
+        for (int i = 0; i <= 5; i++) {
+            assertEquals(BridgeExpectationTest.number(jvm, "value", i), BridgeExpectationTest.number(node, "value", i), 1e-9,
+                    "value #" + i + "; node output: " + node);
+        }
+
+        String bell = BridgeExpectationTest.BELL;
+        String zz = BridgeExpectationTest.observable(2, 1, "ZZ", 0.5, "II");
+        assertEquals(JqapiBridge.sampleExpectation(bell, zz, 50), runCompiledJs("sampleExpectation", jsonString(bell), jsonString(zz), "50"));
+        String measured = BridgeExpectationTest.MEASURED;
+        String z = BridgeExpectationTest.observable(1, 1, "Z");
+        assertEquals(JqapiBridge.expectation(measured, z), runCompiledJs("expectation", jsonString(measured), jsonString(z)));
+        assertEquals(JqapiBridge.sampleExpectation(bell, "{}", 1), runCompiledJs("sampleExpectation", jsonString(bell), jsonString("{}"), "1"));
     }
 
     /** Minimal JSON string literal for embedding a value in the node script. */
