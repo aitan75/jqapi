@@ -144,6 +144,11 @@ public final class Complex {
         return result;
     }
 
+    /** @return the complex conjugate (a - bi) */
+    public Complex conjugate() {
+        return new Complex(real, -imaginary);
+    }
+
     /** @return this complex number formatted as {@code (real, imaginary)} */
     @Override
     public String toString() {

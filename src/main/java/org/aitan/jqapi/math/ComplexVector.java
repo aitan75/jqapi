@@ -102,6 +102,25 @@ public class ComplexVector {
     }
 
     /**
+     * Hermitian inner product {@code Σ conj(this[i]) · vector[i]}. Like
+     * {@link #dotProduct}, non-finite entries propagate; quantum-state callers
+     * should use {@code Expectation.overlap}, which rejects them.
+     *
+     * @param vector the right-hand vector, of the same dimension
+     * @return the inner product
+     */
+    public Complex innerProduct(ComplexVector vector) {
+        if (getDimension() != vector.getDimension())
+            throw new IllegalArgumentException("dimension mismatch: " + getDimension() + " vs " + vector.getDimension());
+        Complex sum = Complex.ZERO;
+        int d = getDimension();
+        for (int i = 0; i < d; i++) {
+            sum = sum.add(this.getEntry(i).conjugate().multiply(vector.getEntry(i)));
+        }
+        return sum;
+    }
+
+    /**
      * @param vector the right-hand vector
      * @return the tensor (Kronecker) product of this vector with {@code vector}
      */
