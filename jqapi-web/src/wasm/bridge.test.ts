@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { run, sample } from './bridge';
-import type { CircuitSpec } from './types';
+import { expectation, run, sample, sampleExpectation } from './bridge';
+import type { CircuitSpec, Observable } from './types';
 import { CircuitModel } from '../model/circuit';
 
 function amplitudesOf(spec: CircuitSpec) {
@@ -167,6 +167,55 @@ describe('wasm bridge', () => {
   });
 });
 
+
+describe('observable expectation', () => {
+  const observable = (numQubits: number, ...terms: [number, string][]): Observable => ({
+    numQubits, terms: terms.map(([coeff, pauli]) => ({ coeff, pauli })),
+  });
+  const measured: CircuitSpec = { version: 2, numQubits: 1, numClassicalBits: 1, levels: [
+    { gates: [{ kind: 'X', targets: [0], controls: [], params: {} }] },
+    { gates: [{ kind: 'MEASUREMENT', targets: [0], controls: [], params: {}, classicalTarget: 0 }] },
+  ] };
+
+  it('computes exact Bell correlations with per-term values', () => {
+    const result = expectation(bell, observable(2, [0.5, 'ZZ'], [-0.25, 'YY']));
+    if (!result.ok) throw new Error(`Unexpected error: ${result.error.code}`);
+    expect(result.value).toBeCloseTo(0.75, 12);
+    expect(result.terms.map((term) => term.pauli)).toEqual(['ZZ', 'YY']);
+    expect(result.terms[0].value).toBeCloseTo(1, 12);
+    expect(result.terms[1].value).toBeCloseTo(-1, 12);
+    expect(result.terms[1].coeff).toBe(-0.25);
+  });
+
+  it('samples eigenstates deterministically with shot allocation and uncertainty', () => {
+    expect(sampleExpectation(bell, observable(2, [1, 'ZZ'], [0.5, 'II']), 100)).toEqual({
+      ok: true, value: 1.5, standardError: 0, totalShots: 100, terms: [
+        { coeff: 1, pauli: 'ZZ', shots: 100, mean: 1, variance: 0 },
+        { coeff: 0.5, pauli: 'II', shots: 0, mean: 1, variance: 0 },
+      ],
+    });
+  });
+
+  it('rejects exact values for non-unitary circuits but samples them', () => {
+    expect(expectation(measured, observable(1, [1, 'Z']))).toEqual({ ok: false, error: { code: 'NON_UNITARY_CIRCUIT' } });
+    const sampled = sampleExpectation(measured, observable(1, [1, 'Z']), 10);
+    if (!sampled.ok) throw new Error(`Unexpected error: ${sampled.error.code}`);
+    expect(sampled.value).toBe(-1);
+  });
+
+  it('maps invalid inputs to stable codes', () => {
+    const invalid = { ok: false, error: { code: 'INVALID_OBSERVABLE' } };
+    expect(expectation(bell, observable(2, [1, 'ZQ']))).toEqual(invalid);
+    expect(expectation(bell, observable(1, [1, 'Z']))).toEqual(invalid);
+    expect(sampleExpectation(bell, observable(2), 10)).toEqual(invalid);
+    for (const shots of [0, 1, 2.5, 10_001, Number.NaN]) {
+      expect(sampleExpectation(bell, observable(2, [1, 'ZZ']), shots)).toEqual({ ok: false, error: { code: 'INVALID_SHOT_COUNT' } });
+    }
+    const unsupported = { ok: false, error: { code: 'UNSUPPORTED_SPEC_VERSION' } };
+    expect(expectation({ ...bell, version: 99 }, observable(2, [1, 'ZZ']))).toEqual(unsupported);
+    expect(sampleExpectation({ ...bell, version: 99 }, observable(2, [1, 'ZZ']), 10)).toEqual(unsupported);
+  });
+});
 
 describe('classical v2 execution', () => {
   const spec: CircuitSpec = {
