@@ -45,13 +45,7 @@ public final class CircuitSampler {
         int[] classicalIndexes = options.classicalIndexesFor(circuit.getNumClassicalBits());
         int[] indexes = options.indexesFor(size);
         long work = (long) options.shots() * (1L << size);
-        long passes = 1;
-        for (CircuitLevel level : circuit.getLevels()) {
-            for (Gate gate : level.getGates()) {
-                passes += gate.getIndexes().size();
-            }
-        }
-        if (work > options.maxWork() / passes) {
+        if (work > options.maxWork() / passes(circuit)) {
             throw new JQApiLimitException("Sampling exceeds the amplitude-visit work budget");
         }
         DoubleSupplier random = options.newRandom();
@@ -80,5 +74,16 @@ public final class CircuitSampler {
             counts[outcome]++;
         }
         return new SamplingResult(options.shots(), indexes, counts, classicalIndexes, classicalCounts);
+    }
+
+    /** Amplitude passes per shot: final readout plus one per gate index, identities included. */
+    static long passes(Circuit circuit) {
+        long passes = 1;
+        for (CircuitLevel level : circuit.getLevels()) {
+            for (Gate gate : level.getGates()) {
+                passes += gate.getIndexes().size();
+            }
+        }
+        return passes;
     }
 }
