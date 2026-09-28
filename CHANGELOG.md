@@ -5,6 +5,31 @@ the published release notes and source archives.
 
 ## Unreleased
 
+### Added
+
+- OpenQASM 2 import and export for a documented subset, including measurement,
+  reset, and one-bit `if` conditions (`OpenQasmParser`, `OpenQasmSerializer`).
+- Pauli observables: `PauliString`, `PauliSum`, Hermitian overlap, fidelity and
+  exact expectation values without dense operators, plus shot-based estimates
+  with `ExpectationSampler`. The TeaVM bridge exports `expectation` and
+  `sampleExpectation`, and the studio adds an Observable ⟨H⟩ panel.
+- `ParametricCircuit` templates with named parameters, validated binding to
+  runnable circuits or `CircuitSpec`, and independent runtime gates per binding.
+- Scientific reference tests against committed analytic and pinned Qiskit
+  fixtures, and reproducible JVM/browser benchmarks with a documented baseline.
+
+### Fixed
+
+- `U3` no longer produces NaN amplitudes when `phi + lambda` overflows for
+  extremely large finite angles.
+- OpenQASM interop bitstring conversion is tested, and CI validates exported
+  programs with an external OpenQASM parser.
+
+### Changed
+
+- Corrected the documented TeaVM requirement to JDK 25 exactly and refreshed the
+  README with a studio overview and shots demo.
+
 ## 1.1.1 - 2026-09-24
 
 ### Added
