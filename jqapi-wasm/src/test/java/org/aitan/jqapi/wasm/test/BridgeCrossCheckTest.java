@@ -58,6 +58,35 @@ public class BridgeCrossCheckTest {
     }
 
     @ParameterizedTest
+    @ValueSource(doubles = {Double.MAX_VALUE, -Double.MAX_VALUE, 1e300})
+    void compiledJs_extremeU3MatchesJvmDecomposition(double phi) throws IOException, InterruptedException {
+        double lambda = phi == 1e300 ? 0.37 : phi;
+        String prefix = "{\"version\":1,\"numQubits\":1,\"levels\":["
+                + "{\"gates\":[{\"kind\":\"H\",\"targets\":[0],\"controls\":[]}]},";
+        String u3 = prefix + "{\"gates\":[{\"kind\":\"U3\",\"targets\":[0],\"controls\":[],"
+                + "\"params\":{\"theta\":0.73,\"phi\":" + phi + ",\"lambda\":" + lambda + "}}]}]}";
+        String reference = prefix
+                + "{\"gates\":[{\"kind\":\"PHASE\",\"targets\":[0],\"controls\":[],\"params\":{\"theta\":" + lambda + "}}]},"
+                + "{\"gates\":[{\"kind\":\"RY\",\"targets\":[0],\"controls\":[],\"params\":{\"theta\":0.73}}]},"
+                + "{\"gates\":[{\"kind\":\"PHASE\",\"targets\":[0],\"controls\":[],\"params\":{\"theta\":" + phi + "}}]}]}";
+        List<double[]> expected = parseAmplitudes(JqapiBridge.run(reference));
+        assertEquals(2, expected.size());
+        for (String result : List.of(JqapiBridge.run(u3), runCompiledJs(u3))) {
+            List<double[]> actual = parseAmplitudes(result);
+            assertEquals(2, actual.size(), "Expected two finite amplitudes: " + result);
+            double norm = 0;
+            for (int i = 0; i < 2; i++) {
+                for (int part = 0; part < 2; part++) {
+                    assertTrue(Double.isFinite(actual.get(i)[part]));
+                    assertEquals(expected.get(i)[part], actual.get(i)[part], 1e-12);
+                    norm += actual.get(i)[part] * actual.get(i)[part];
+                }
+            }
+            assertEquals(1.0, norm, 1e-12);
+        }
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"+1", "01", "1.", ".1", "1e+"})
     void compiledJs_rejectsMalformedNumbersLikeJvm(String number) throws IOException, InterruptedException {
         String spec = BELL.replace("\"version\":1", "\"version\":" + number);

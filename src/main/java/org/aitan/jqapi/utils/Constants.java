@@ -156,9 +156,12 @@ public class Constants {
         double c = Math.cos(theta / 2);
         double s = Math.sin(theta / 2);
         Complex m00 = new Complex(c, 0);
-        Complex m01 = Complex.expI(lambda).multiply(-s);
-        Complex m10 = Complex.expI(phi).multiply(s);
-        Complex m11 = Complex.expI(phi + lambda).multiply(c);
+        Complex phiPhase = Complex.expI(phi);
+        Complex lambdaPhase = Complex.expI(lambda);
+        Complex m01 = lambdaPhase.multiply(-s);
+        Complex m10 = phiPhase.multiply(s);
+        // Form exp(i*phi) * exp(i*lambda) without overflowing or rounding their sum.
+        Complex m11 = phiPhase.multiply(lambdaPhase).multiply(c);
         return ComplexMatrix.createMatrixWithData(new Complex[][]{
             {m00, m01},
             {m10, m11}});

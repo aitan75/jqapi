@@ -124,6 +124,10 @@ single-qubit rotation:
 `[[cos(θ/2), −e^(iλ)·sin(θ/2)], [e^(iφ)·sin(θ/2), e^(i(φ+λ))·cos(θ/2)]]`.
 Note `U3(π,0,π) = X`, `U3(π/2,0,π) = H`, `U3(0,0,λ) = P(λ)`.
 
+The combined phase is evaluated as `exp(iφ) * exp(iλ)`, avoiding overflow
+and loss of the smaller angle when adding large finite angles. This keeps
+the matrix consistent with `P(φ) Ry(θ) P(λ)` within floating-point tolerance.
+
 ## Multi-qubit gates
 
 ### `ControlledNot`
