@@ -1852,20 +1852,22 @@ oaju_Constants_phaseMatrix = $theta => {
     return oajm_ComplexMatrix_createMatrixWithData(var$2);
 },
 oaju_Constants_u3Matrix = ($theta, $phi, $lambda) => {
-    let var$4, $c, $s, $m00, $m01, $m10, $m11, var$11, var$12;
+    let var$4, $c, $s, $m00, $phiPhase, $lambdaPhase, $m01, $m10, $m11, var$13, var$14;
     oaju_Constants_$callClinit();
     var$4 = $theta / 2.0;
     $c = jl_Math_cos(var$4);
     $s = jl_Math_sin(var$4);
     $m00 = oajm_Complex__init_($c, 0.0);
-    $m01 = oajm_Complex_multiply(oajm_Complex_expI($lambda),  -$s);
-    $m10 = oajm_Complex_multiply(oajm_Complex_expI($phi), $s);
-    $m11 = oajm_Complex_multiply(oajm_Complex_expI($phi + $lambda), $c);
-    var$11 = $rt_createArray($rt_arraycls(oajm_Complex), 2);
-    var$12 = var$11.data;
-    var$12[0] = $rt_wrapArray(oajm_Complex, [$m00, $m01]);
-    var$12[1] = $rt_wrapArray(oajm_Complex, [$m10, $m11]);
-    return oajm_ComplexMatrix_createMatrixWithData(var$11);
+    $phiPhase = oajm_Complex_expI($phi);
+    $lambdaPhase = oajm_Complex_expI($lambda);
+    $m01 = oajm_Complex_multiply($lambdaPhase,  -$s);
+    $m10 = oajm_Complex_multiply($phiPhase, $s);
+    $m11 = oajm_Complex_multiply(oajm_Complex_multiply0($phiPhase, $lambdaPhase), $c);
+    var$13 = $rt_createArray($rt_arraycls(oajm_Complex), 2);
+    var$14 = var$13.data;
+    var$14[0] = $rt_wrapArray(oajm_Complex, [$m00, $m01]);
+    var$14[1] = $rt_wrapArray(oajm_Complex, [$m10, $m11]);
+    return oajm_ComplexMatrix_createMatrixWithData(var$13);
 },
 oaju_Constants__clinit_ = () => {
     let var$1, var$2, var$3, var$4, var$5;
@@ -2983,7 +2985,7 @@ jm_BigInteger_pow = ($this, $exp) => {
             while (!$this.$testBit($x)) {
                 $x = $x + 1 | 0;
             }
-            return (jm_BigInteger_getPowerOfTwo($rt_imul($x, $exp))).$multiply1(($this.$shiftRight0($x)).$pow1($exp));
+            return (jm_BigInteger_getPowerOfTwo($rt_imul($x, $exp))).$multiply2(($this.$shiftRight0($x)).$pow1($exp));
         }
     }
     return $this;
@@ -7865,7 +7867,7 @@ jm_BigDecimal_doubleValue = $this => {
             return $sign * Infinity;
         $mantisa = (jm_BigDecimal_getUnscaledValue($this)).$abs1();
         if ($this.$scale <= 0)
-            var$5 = $mantisa.$multiply1(jm_Multiplication_powerOf10(Long_fromInt( -$this.$scale | 0)));
+            var$5 = $mantisa.$multiply2(jm_Multiplication_powerOf10(Long_fromInt( -$this.$scale | 0)));
         else {
             $powerOfTen = jm_Multiplication_powerOf10(Long_fromInt($this.$scale));
             $k = 100 - Long_lo($powerOfTwo) | 0;
@@ -8632,12 +8634,12 @@ jm_Multiplication_pow = ($acc, $exponent) => {
     $res = jm_BigInteger_ONE;
     while ($exponent > 1) {
         if ($exponent & 1)
-            $res = $res.$multiply1($acc);
-        $acc_0 = $acc.$numberLength == 1 ? $acc.$multiply1($acc) : jm_BigInteger__init_8(1, jm_Multiplication_square($acc.$digits, $acc.$numberLength, $rt_createIntArray($acc.$numberLength << 1)));
+            $res = $res.$multiply2($acc);
+        $acc_0 = $acc.$numberLength == 1 ? $acc.$multiply2($acc) : jm_BigInteger__init_8(1, jm_Multiplication_square($acc.$digits, $acc.$numberLength, $rt_createIntArray($acc.$numberLength << 1)));
         $exponent = $exponent >> 1;
         $acc = $acc_0;
     }
-    var$5 = $res.$multiply1($acc);
+    var$5 = $res.$multiply2($acc);
     return var$5;
 },
 jm_Multiplication_square = ($a, $aLen, $res) => {
@@ -8683,7 +8685,7 @@ jm_Multiplication_square = ($a, $aLen, $res) => {
 },
 jm_Multiplication_multiplyByTenPow = ($val, $exp) => {
     jm_Multiplication_$callClinit();
-    return Long_ge($exp, Long_fromInt(jm_Multiplication_tenPows.data.length)) ? $val.$multiply1(jm_Multiplication_powerOf10($exp)) : jm_Multiplication_multiplyByPositiveInt($val, jm_Multiplication_tenPows.data[Long_lo($exp)]);
+    return Long_ge($exp, Long_fromInt(jm_Multiplication_tenPows.data.length)) ? $val.$multiply2(jm_Multiplication_powerOf10($exp)) : jm_Multiplication_multiplyByPositiveInt($val, jm_Multiplication_tenPows.data[Long_lo($exp)]);
 },
 jm_Multiplication_powerOf10 = $exp => {
     let $intExp, $byteArraySize, $powerOfFive, $longExp, var$6, var$7, var$8;
@@ -8708,10 +8710,10 @@ jm_Multiplication_powerOf10 = $exp => {
     var$7 = $powerOfFive;
     var$8 = $longExp;
     while (Long_gt(var$8, Long_fromInt(2147483647))) {
-        var$7 = var$7.$multiply1($powerOfFive);
+        var$7 = var$7.$multiply2($powerOfFive);
         var$8 = Long_sub(var$8, Long_fromInt(2147483647));
     }
-    var$7 = var$7.$multiply1(jm_Multiplication_bigFivePows.data[1].$pow1(var$6));
+    var$7 = var$7.$multiply2(jm_Multiplication_bigFivePows.data[1].$pow1(var$6));
     var$7 = var$7.$shiftLeft0(2147483647);
     while (Long_gt($longExp, Long_fromInt(2147483647))) {
         var$7 = var$7.$shiftLeft0(2147483647);
@@ -8742,8 +8744,8 @@ jm_Multiplication__clinit_ = () => {
         var$3 = jm_Multiplication_bigFivePows.data;
         var$4 = jm_Multiplication_bigFivePows.data;
         var$5 = $i - 1 | 0;
-        var$3[$i] = var$4[var$5].$multiply1(jm_Multiplication_bigFivePows.data[1]);
-        jm_Multiplication_bigTenPows.data[$i] = jm_Multiplication_bigTenPows.data[var$5].$multiply1(jm_BigInteger_TEN);
+        var$3[$i] = var$4[var$5].$multiply2(jm_Multiplication_bigFivePows.data[1]);
+        jm_Multiplication_bigTenPows.data[$i] = jm_Multiplication_bigTenPows.data[var$5].$multiply2(jm_BigInteger_TEN);
         $i = $i + 1 | 0;
     }
 };
@@ -13578,7 +13580,7 @@ jl_Thread, 0, jl_Object, [jl_Runnable], 1, 0, () => jl_Thread_$callClinit(), ["$
 oajqs_SampledExpectation, 0, jl_Record, [], 17, 0, 0, ["$_init_83", $rt_wrapFunction4(oajqs_SampledExpectation__init_), "$value", $rt_wrapFunction0(oajqs_SampledExpectation_value), "$standardError", $rt_wrapFunction0(oajqs_SampledExpectation_standardError), "$totalShots", $rt_wrapFunction0(oajqs_SampledExpectation_totalShots), "$terms", $rt_wrapFunction0(oajqs_SampledExpectation_terms)],
 jm_BigInteger, 0, jl_Number, [jl_Comparable, ji_Serializable], 1, 0, () => jm_BigInteger_$callClinit(), ["$_init_", $rt_wrapFunction1(jm_BigInteger__init_4), "$_init_23", $rt_wrapFunction2(jm_BigInteger__init_1), "$_init_26", $rt_wrapFunction2(jm_BigInteger__init_3), "$_init_25", $rt_wrapFunction3(jm_BigInteger__init_5), "$_init_24", $rt_wrapFunction2(jm_BigInteger__init_2), "$_init_72", $rt_wrapFunction2(jm_BigInteger__init_7), "$abs1", $rt_wrapFunction0(jm_BigInteger_abs), "$negate", $rt_wrapFunction0(jm_BigInteger_negate),
 "$add4", $rt_wrapFunction1(jm_BigInteger_add), "$subtract0", $rt_wrapFunction1(jm_BigInteger_subtract), "$signum", $rt_wrapFunction0(jm_BigInteger_signum), "$shiftRight0", $rt_wrapFunction1(jm_BigInteger_shiftRight), "$shiftLeft0", $rt_wrapFunction1(jm_BigInteger_shiftLeft), "$shiftLeftOneBit0", $rt_wrapFunction0(jm_BigInteger_shiftLeftOneBit), "$bitLength2", $rt_wrapFunction0(jm_BigInteger_bitLength), "$testBit", $rt_wrapFunction1(jm_BigInteger_testBit), "$getLowestSetBit", $rt_wrapFunction0(jm_BigInteger_getLowestSetBit),
-"$longValue", $rt_wrapFunction0(jm_BigInteger_longValue), "$compareTo", $rt_wrapFunction1(jm_BigInteger_compareTo), "$equals", $rt_wrapFunction1(jm_BigInteger_equals), "$equalsArrays", $rt_wrapFunction1(jm_BigInteger_equalsArrays), "$multiply1", $rt_wrapFunction1(jm_BigInteger_multiply), "$pow1", $rt_wrapFunction1(jm_BigInteger_pow), "$divideAndRemainder", $rt_wrapFunction1(jm_BigInteger_divideAndRemainder), "$cutOffLeadingZeroes", $rt_wrapFunction0(jm_BigInteger_cutOffLeadingZeroes), "$getFirstNonzeroDigit",
+"$longValue", $rt_wrapFunction0(jm_BigInteger_longValue), "$compareTo", $rt_wrapFunction1(jm_BigInteger_compareTo), "$equals", $rt_wrapFunction1(jm_BigInteger_equals), "$equalsArrays", $rt_wrapFunction1(jm_BigInteger_equalsArrays), "$multiply2", $rt_wrapFunction1(jm_BigInteger_multiply), "$pow1", $rt_wrapFunction1(jm_BigInteger_pow), "$divideAndRemainder", $rt_wrapFunction1(jm_BigInteger_divideAndRemainder), "$cutOffLeadingZeroes", $rt_wrapFunction0(jm_BigInteger_cutOffLeadingZeroes), "$getFirstNonzeroDigit",
 $rt_wrapFunction0(jm_BigInteger_getFirstNonzeroDigit)],
 jl_ArithmeticException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_", $rt_wrapFunction1(jl_ArithmeticException__init_0)],
 jl_AutoCloseable, 0, jl_Object, [], 1537, 0, 0, 0,
@@ -13725,7 +13727,7 @@ oti_AsyncCallback, 0, jl_Object, [], 1537, 0, 0, 0,
 oajvs_CircuitSpec$_init_$lambda$_0_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvs_CircuitSpec$_init_$lambda$_0_0__init_), "$apply0", $rt_wrapFunction1(oajvs_CircuitSpec$_init_$lambda$_0_0_apply0), "$apply1", $rt_wrapFunction1(oajvs_CircuitSpec$_init_$lambda$_0_0_apply)],
 juf_DoubleSupplier, 0, jl_Object, [], 1537, 0, 0, 0,
 oajvs_CircuitSpec$_init_$lambda$_0_1, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvs_CircuitSpec$_init_$lambda$_0_1__init_), "$test", $rt_wrapFunction1(oajvs_CircuitSpec$_init_$lambda$_0_1_test0), "$test2", $rt_wrapFunction1(oajvs_CircuitSpec$_init_$lambda$_0_1_test)],
-oajm_Complex, "Complex", 17, jl_Object, [], 17, 0, () => oajm_Complex_$callClinit(), ["$_init_17", $rt_wrapFunction2(oajm_Complex__init_0), "$getReal", $rt_wrapFunction0(oajm_Complex_getReal), "$getImaginary", $rt_wrapFunction0(oajm_Complex_getImaginary), "$add3", $rt_wrapFunction1(oajm_Complex_add), "$multiply2", $rt_wrapFunction1(oajm_Complex_multiply0), "$multiply", $rt_wrapFunction1(oajm_Complex_multiply), "$equals", $rt_wrapFunction1(oajm_Complex_equals), "$hashCode1", $rt_wrapFunction0(oajm_Complex_hashCode),
+oajm_Complex, "Complex", 17, jl_Object, [], 17, 0, () => oajm_Complex_$callClinit(), ["$_init_17", $rt_wrapFunction2(oajm_Complex__init_0), "$getReal", $rt_wrapFunction0(oajm_Complex_getReal), "$getImaginary", $rt_wrapFunction0(oajm_Complex_getImaginary), "$add3", $rt_wrapFunction1(oajm_Complex_add), "$multiply0", $rt_wrapFunction1(oajm_Complex_multiply0), "$multiply", $rt_wrapFunction1(oajm_Complex_multiply), "$equals", $rt_wrapFunction1(oajm_Complex_equals), "$hashCode1", $rt_wrapFunction0(oajm_Complex_hashCode),
 "$conjugate", $rt_wrapFunction0(oajm_Complex_conjugate), "$toString", $rt_wrapFunction0(oajm_Complex_toString)],
 oajvs_GateKind, "GateKind", 11, jl_Enum, [], 65553, 0, () => oajvs_GateKind_$callClinit(), 0,
 jlr_Type, 0, jl_Object, [], 1537, 0, 0, 0,
