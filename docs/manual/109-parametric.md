@@ -67,3 +67,6 @@ excludes map construction, simulation and serialization. No sampling RNG is used
 This is an exploratory local measurement, not a speedup claim or a capacity
 limit. JVM compilation, garbage collection and machine load can affect results;
 compare repeated runs on the same named environment and report the spread.
+
+A [recorded local run](109-reuse-measurement.md) includes all samples and the
+exact implementation commit.
