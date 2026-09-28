@@ -1,98 +1,135 @@
 package org.aitan.jqapi.quantum;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import org.aitan.jqapi.JQAPIConfig;
-import org.aitan.jqapi.quantum.gates.*;
-import org.aitan.jqapi.visualization.spec.*;
+import org.aitan.jqapi.visualization.CircuitSpecs;
+import org.aitan.jqapi.visualization.spec.CircuitSpec;
+import org.aitan.jqapi.visualization.spec.GateKind;
+import org.aitan.jqapi.visualization.spec.GateSpec;
+import org.aitan.jqapi.visualization.spec.LevelSpec;
 
+/**
+ * Immutable, reusable sequence of parameterized gates. Each placement occupies
+ * its own level, in declaration order; qubit zero is the most significant bit.
+ * Bindings contain exactly the declared names and finite, non-null values.
+ * Symbolic template serialization is unsupported; use {@link #bindToSpec(Map)}
+ * to serialize a concrete binding without losing its angles.
+ */
 public final class ParametricCircuit {
     private final int inputSize;
     private final JQAPIConfig config;
     private final List<ParametricGate> gates;
+    private final Set<String> parameterNames;
 
+    /**
+     * An immutable placement. RX/RY/RZ/PHASE take one name (theta); U3 takes
+     * three names in theta, phi, lambda order. Names may repeat, including
+     * within U3. Multiple targets apply the same single-qubit gate to each wire.
+     */
     public static final class ParametricGate {
-        private final String kind;
+        private final GateKind kind;
         private final int[] indexes;
         private final String[] params;
+
+        /** Creates a placement with nonempty, distinct, nonnegative targets. */
         public ParametricGate(String kind, int[] indexes, String... params) {
-            if (indexes == null || indexes.length == 0) throw new IllegalArgumentException("indexes required");
-            this.kind = Objects.requireNonNull(kind, "kind");
-            this.indexes = java.util.Arrays.copyOf(indexes, indexes.length);
-            this.params = java.util.Arrays.copyOf(params, params.length);
-        }
-        public String kind() { return kind; }
-        public int[] indexes() { return java.util.Arrays.copyOf(indexes, indexes.length); }
-        public String[] params() { return java.util.Arrays.copyOf(params, params.length); }
-    }
-
-    public ParametricCircuit(int inputSize, JQAPIConfig config, List<ParametricGate> gates) {
-        this.inputSize = inputSize;
-        this.config = config;
-        this.gates = List.copyOf(gates);
-    }
-
-    public Circuit bind(Map<String, Double> params) {
-        Objects.requireNonNull(params, "params");
-        Set<String> expected = new HashSet<>();
-        for (ParametricGate g : gates) {
-            for (String p : g.params()) expected.add(p);
-            int arity = switch (g.kind) {
-                case "RX", "RY", "RZ", "PHASE" -> 1;
-                case "U3" -> 3;
-                default -> throw new IllegalArgumentException("Unknown kind: " + g.kind);
-            };
-            if (g.params().length != arity) throw new IllegalArgumentException(
-                "Gate " + g.kind + " expects " + arity + " params, got " + g.params().length);
-        }
-        if (!expected.equals(params.keySet())) throw new IllegalArgumentException(
-            "Binding keys mismatch: expected " + expected + ", got " + params.keySet());
-        for (String p : params.keySet()) {
-            Double v = params.get(p);
-            if (!Double.isFinite(v)) throw new IllegalArgumentException("Non-finite param: " + p);
-        }
-        Circuit circuit = new Circuit(inputSize, config);
-        for (ParametricGate g : gates) {
-            CircuitLevel level = new CircuitLevel();
-            Gate gate = buildGate(g, params);
-            level.addGate(gate);
-            circuit.addLevel(level);
-        }
-        return circuit;
-    }
-
-    public CircuitSpec bindToSpec(Map<String, Double> params) {
-        bind(params); // valida
-        List<GateSpec> gateSpecs = new ArrayList<>();
-        for (ParametricGate g : gates) {
-            Map<String, Double> named = new HashMap<>();
-            String[] ps = g.params();
-            named.put(ps[0], params.get(ps[0]));
-            if (g.kind().equals("U3")) {
-                named.put(ps[1], params.get(ps[1]));
-                named.put(ps[2], params.get(ps[2]));
-            }
-            GateKind kind = switch (g.kind()) {
+            this.kind = switch (Objects.requireNonNull(kind, "kind")) {
                 case "RX" -> GateKind.RX;
                 case "RY" -> GateKind.RY;
                 case "RZ" -> GateKind.RZ;
                 case "PHASE" -> GateKind.PHASE;
                 case "U3" -> GateKind.U3;
-                default -> throw new IllegalArgumentException("Unknown kind: " + g.kind());
+                default -> throw new IllegalArgumentException("Unsupported parametric kind: " + kind);
             };
-            List<Integer> targets = Arrays.stream(g.indexes()).boxed().toList();
-            gateSpecs.add(new GateSpec(kind, targets, List.of(), named, null));
+            Objects.requireNonNull(indexes, "indexes");
+            Objects.requireNonNull(params, "params");
+            this.indexes = indexes.clone();
+            this.params = params.clone();
+            if (this.indexes.length == 0) {
+                throw new IllegalArgumentException("At least one target is required");
+            }
+            Set<Integer> targets = new LinkedHashSet<>();
+            for (int index : this.indexes) {
+                if (index < 0 || !targets.add(index)) {
+                    throw new IllegalArgumentException("Targets must be distinct and nonnegative: " + index);
+                }
+            }
+            int arity = this.kind == GateKind.U3 ? 3 : 1;
+            if (this.params.length != arity) {
+                throw new IllegalArgumentException("Gate " + kind + " expects " + arity + " parameter names");
+            }
+            for (String name : this.params) {
+                if (name == null || name.isBlank()) {
+                    throw new IllegalArgumentException("Parameter names must be nonblank");
+                }
+            }
         }
-        return CircuitSpec.of(inputSize, List.of(new LevelSpec(gateSpecs)));
+
+        public String kind() { return kind.name(); }
+        public int[] indexes() { return indexes.clone(); }
+        public String[] params() { return params.clone(); }
     }
 
-    private Gate buildGate(ParametricGate g, Map<String, Double> params) {
-        return switch (g.kind) {
-            case "RX" -> new Rx(params.get(g.params()[0]), Arrays.stream(g.indexes()).boxed().toArray(Integer[]::new));
-            case "RY" -> new Ry(params.get(g.params()[0]), Arrays.stream(g.indexes()).boxed().toArray(Integer[]::new));
-            case "RZ" -> new Rz(params.get(g.params()[0]), Arrays.stream(g.indexes()).boxed().toArray(Integer[]::new));
-            case "PHASE" -> new Phase(params.get(g.params()[0]), Arrays.stream(g.indexes()).boxed().toArray(Integer[]::new));
-            case "U3" -> new U3(params.get(g.params()[0]), params.get(g.params()[1]), params.get(g.params()[2]), Arrays.stream(g.indexes()).boxed().toArray(Integer[]::new));
-            default -> throw new IllegalArgumentException("Unsupported parametric kind: " + g.kind);
-        };
+    /** Creates a template, validating qubit limits and all target indexes immediately. */
+    public ParametricCircuit(int inputSize, JQAPIConfig config, List<ParametricGate> gates) {
+        this.config = Objects.requireNonNull(config, "config");
+        // Reuse Circuit's resource validation without allocating a simulator or state vector.
+        new Circuit(inputSize, config);
+        this.inputSize = inputSize;
+        this.gates = List.copyOf(gates);
+        Set<String> names = new LinkedHashSet<>();
+        for (ParametricGate gate : this.gates) {
+            for (int index : gate.indexes) {
+                if (index >= inputSize) {
+                    throw new IllegalArgumentException("Target outside circuit: " + index);
+                }
+            }
+            names.addAll(Arrays.asList(gate.params));
+        }
+        this.parameterNames = Set.copyOf(names);
+    }
+
+    /** Returns a fresh executable circuit with no shared mutable gates or simulator state. */
+    public Circuit bind(Map<String, Double> params) {
+        return CircuitSpecs.toCircuit(bindToSpec(params), config);
+    }
+
+    /**
+     * Returns a lossless concrete spec. Symbolic names are resolved into canonical
+     * theta/phi/lambda keys, preserving every placement's level and target order.
+     * @throws IllegalArgumentException if keys differ or a value is null or non-finite
+     */
+    public CircuitSpec bindToSpec(Map<String, Double> params) {
+        Objects.requireNonNull(params, "params");
+        Map<String, Double> values = new LinkedHashMap<>(params);
+        if (!parameterNames.equals(values.keySet())) {
+            throw new IllegalArgumentException("Binding keys mismatch: expected " + parameterNames
+                    + ", got " + values.keySet());
+        }
+        for (Map.Entry<String, Double> entry : values.entrySet()) {
+            if (entry.getValue() == null || !Double.isFinite(entry.getValue())) {
+                throw new IllegalArgumentException("Parameter must be finite and non-null: " + entry.getKey());
+            }
+        }
+        List<LevelSpec> levels = new ArrayList<>(gates.size());
+        for (ParametricGate gate : gates) {
+            Map<String, Double> named = new LinkedHashMap<>();
+            named.put("theta", values.get(gate.params[0]));
+            if (gate.kind == GateKind.U3) {
+                named.put("phi", values.get(gate.params[1]));
+                named.put("lambda", values.get(gate.params[2]));
+            }
+            List<Integer> targets = Arrays.stream(gate.indexes).boxed().toList();
+            GateSpec spec = new GateSpec(gate.kind, targets, List.of(), named, null);
+            levels.add(new LevelSpec(List.of(spec)));
+        }
+        return CircuitSpec.of(inputSize, levels);
     }
 }

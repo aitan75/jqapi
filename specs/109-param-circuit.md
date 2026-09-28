@@ -1,5 +1,13 @@
 # #109 Parameterized circuit templates and binding
 
-Scope: `ParametricCircuit` wrapper + `bind(Map<String, Double>)` che produce `Circuit` concreto. Validazione input obbligatoria. Nessuna mutazione di `Gate`; round-trip `CircuitSpec` preserva valori legati.
+Scope: immutable `ParametricCircuit` with validated named bindings for
+RX/RY/RZ/PHASE/U3. `bind` creates independent concrete circuits; `bindToSpec`
+retains gate kinds, canonical angle keys, target order and sequential levels.
+Names may repeat within and between gates. Public inputs and resource budgets
+are validated before execution; qubit zero remains the most significant bit.
 
-Copertura: Rx/Ry/Rz/Phase/U3 con parametri nominati; un parametro può apparire in più posizioni; ordinamento documentato.
+Symbolic serialization is unsupported. Concrete specs round-trip through JSON;
+runtime `CircuitSpecs.toSpec` remains best-effort and loses parametric metadata.
+
+See [API](../docs/api/109-param-circuit.md) and
+[manual / reproducible reuse measurement](../docs/manual/109-parametric.md).
