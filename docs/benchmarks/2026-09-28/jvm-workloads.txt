@@ -1,0 +1,17 @@
+timestamp=2026-09-28T14:55:29.410062Z
+commit=0df12f0c13144d3c9764ec2ea43fc50536b4ded6
+workingTree=dirty
+machine=Apple-M2-8-cores-24GiB
+os=Mac OS X 26.6.2 aarch64
+jvm=Java HotSpot(TM) 64-Bit Server VM 25.0.3+9-LTS-195
+jvmArgs=[-Xms256m, -Xmx1g, -Dbenchmark.commit=0df12f0c13144d3c9764ec2ea43fc50536b4ded6, -Dbenchmark.tree=dirty-issue-112-harness-only, -Dbenchmark.machine=Apple-M2-8-cores-24GiB]
+processors=8
+maxHeapBytes=1073741824
+warmup=3, repetitions=7, execution=sequential
+memoryMetric=sum of heap-pool peak used bytes since reset; not simultaneous live peak or RSS
+workload,qubits,minMs,medianMs,maxMs,heapPoolPeakSumBytes,stateVectorLowerBoundBytes,samplesMs
+configuredLimits=maxQubits:24/maxSearchQubits:12; requestedSearchLimit=12
+samplingSeed=112; groverRandom=production SecureRandom (retry timing may vary); shots=1000
+H-all-X-H-all-including-construction,20,113.664291,119.723083,136.434875,389154464,16777216,"[119.723083, 115.340167, 120.5065, 127.75325, 119.102584, 136.434875, 113.664291]"
+grover-excluding-list-construction,12,0.809125,0.877708,1.357250,257558176,65536,"[1.35725, 0.925583, 0.920667, 0.862875, 0.877708, 0.829458, 0.809125]"
+sample-H-all-shots-1000,8,10.186250,11.022959,18.202250,350604672,4096,"[17.997916, 18.20225, 11.293666, 11.022959, 10.885, 10.18625, 10.641083]"

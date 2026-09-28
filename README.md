@@ -205,23 +205,19 @@ State vectors grow as 2^n, so registers, circuits and searches are bounded by `J
 - per-instance: build a config with `JQAPIConfig.of(maxQubits, maxSearchQubits)` and pass it to `new Circuit(size, config)` or `Algorithm.search(list, filter, config)`
 - exceeding a limit throws the unchecked `JQApiLimitException`
 
-### Historical benchmark (pre-#15 search)
+### Scientific validation and measured workloads
 
-These values were measured with `MemoryLimitBenchmark` on a MacBook Pro (Apple M2, 8 cores, 24 GB RAM), macOS/aarch64, OpenJDK 25, and the default JVM max heap of 6144 MB. The search values use the pre-#15 dense-oracle implementation, so they are historical results, not current search ceilings:
+[Scientific reference fixtures](docs/manual/scientific-validation.md) cover analytic
+states, independently generated unitary operators, MSB ordering, measurement and
+classical distributions. They run in normal Maven verification without an external
+simulator dependency.
 
-| Metric | Measured |
-|--------|----------|
-| Max register qubits completed | **26** (2^26 amplitudes; n=27 → `OutOfMemoryError`) |
-| 3-level circuit at the default (24 qubits) | ~20 s |
-| Historical max search qubits completed | **14** (list of 16384, ~146 s — over the 120 s/step budget) |
-| Historical search at the default (12 qubits) | list of 4096 in ~5.4 s |
-
-Since #15, `Algorithm.search` applies the phase oracle and diffusion operator in place on the state vector, so its memory profile matches the simulator (O(2^n)). Re-run the benchmark on your machine before treating a search limit as current:
-
-```bash
-mvn test-compile
-mvn -q exec:java -Dexec.classpathScope=test -Dexec.mainClass=org.aitan.jqapi.benchmark.MemoryLimitBenchmark
-```
+The [reproducible benchmark protocol](docs/benchmarks/README.md) and
+[2026-09-28 JVM/browser baseline](docs/benchmarks/2026-09-28/README.md) record
+post-#15 Grover, representative gates and sampling, with environment, warmup,
+repetitions, memory qualifications and browser payload sizes. These observations
+supersede the old dense-oracle search numbers for current-workload guidance;
+configured limits are not demonstrated device capacities.
 
 ## Supported gates
 

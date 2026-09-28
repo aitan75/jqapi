@@ -334,3 +334,14 @@ sampling histogram allocation is checked against `maxWork` before allocation.
 
 See the [v2 contract and migration](classical-design.md) for JSON and capability
 handling, and the [manual example](../manual/examples.md#10-classical-feed-forward).
+
+## Numerical and statistical validation contracts
+
+The [scientific validation guide](../manual/scientific-validation.md) defines state-vector
+error metrics, valid global-phase comparisons, exact controlled-operator comparisons,
+MSB/classical ordering and seeded sampling confidence bounds. These are reference-test
+tolerances, not a universal accuracy guarantee for arbitrary circuit depths.
+
+[Standalone resource benchmarks](../benchmarks/README.md) measure concrete workloads
+separately from correctness CI. Configuration guards and sampling work budgets do not
+guarantee that every permitted workload fits a particular JVM or browser.

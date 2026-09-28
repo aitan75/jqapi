@@ -10,15 +10,17 @@ import org.aitan.jqapi.quantum.Circuit;
 import org.aitan.jqapi.quantum.CircuitLevel;
 import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 import org.aitan.jqapi.quantum.simulator.QuantumSimulator;
+import org.aitan.jqapi.quantum.simulator.CircuitSampler;
+import org.aitan.jqapi.quantum.simulator.SamplingOptions;
 import org.aitan.jqapi.quantum.gates.Hadamard;
 import org.aitan.jqapi.quantum.gates.PauliX;
 
 /**
  * Standalone stress benchmark that measures the <em>real</em> ceiling of the
  * simulator on the running machine — the defaults (24 qubits / 12 search
- * qubits) are conservative theoretical values, while boxed {@code Complex}
- * amplitudes cost far more than a raw {@code double[2]}, so the empirical limit
- * differs.
+ * qubits) are configuration guards, not demonstrated capacity. The state uses
+ * interleaved primitive doubles; snapshots and serialization add overhead.
+ * Use {@code --baseline} for bounded, repeated workloads instead of exhaustion.
  * <p>
  * This class is intentionally <strong>NOT</strong> a JUnit test: it has no
  * {@code @Test} method and its name does not match the surefire include
@@ -48,12 +50,55 @@ public final class MemoryLimitBenchmark {
     }
 
     public static void main(String[] args) {
+        if (args.length == 1 && args[0].equals("--baseline")) {
+            runBaseline();
+            return;
+        }
+        if (args.length != 0) throw new IllegalArgumentException("Usage: MemoryLimitBenchmark [--baseline]");
         printEnvironment();
 
         int maxQubitsReached = runQubitLoop();
         SearchResult searchResult = runSearchLoop();
 
         printSummary(maxQubitsReached, searchResult);
+    }
+
+    private static void runBaseline() {
+        int warmup = BenchmarkSupport.integer("warmup", 3, 1, 1000);
+        int repetitions = BenchmarkSupport.integer("repetitions", 7, 1, 1000);
+        int qubits = BenchmarkSupport.integer("qubits", 20, 2, 24);
+        int searchQubits = BenchmarkSupport.integer("searchQubits", 12, 2, 16);
+        int sampleQubits = BenchmarkSupport.integer("sampleQubits", 8, 2, 12);
+        int shots = BenchmarkSupport.integer("shots", 1000, 1, SamplingOptions.MAX_SHOTS);
+        BenchmarkSupport.checkMemory(qubits);
+        BenchmarkSupport.checkMemory(searchQubits);
+        BenchmarkSupport.checkMemory(sampleQubits);
+        BenchmarkSupport.environment(warmup, repetitions);
+        System.out.println("configuredLimits=maxQubits:24/maxSearchQubits:12; requestedSearchLimit=" + searchQubits);
+        System.out.println("samplingSeed=112; groverRandom=production SecureRandom (retry timing may vary); shots=" + shots);
+        BenchmarkSupport.measure("H-all-X-H-all-including-construction", qubits, warmup, repetitions,
+                () -> executeRepresentativeCircuit(qubits, JQAPIConfig.sequential(24)));
+        List<Integer> list = IntStream.range(0, 1 << searchQubits).boxed().toList();
+        Integer target = list.size() - 1;
+        JQAPIConfig config = JQAPIConfig.of(24, searchQubits).withParallel(false, 1);
+        BenchmarkSupport.measure("grover-excluding-list-construction", searchQubits, warmup, repetitions, () -> {
+            try {
+                if (!target.equals(Algorithm.search(list, target::equals, config))) {
+                    throw new IllegalStateException("Incorrect Grover result");
+                }
+            } catch (org.aitan.jqapi.exceptions.JQApiException exception) {
+                throw new IllegalStateException("Grover failed", exception);
+            }
+        });
+        Circuit circuit = new Circuit(sampleQubits, JQAPIConfig.sequential(24));
+        CircuitLevel level = new CircuitLevel();
+        level.addGate(new Hadamard(IntStream.range(0, sampleQubits).boxed().toArray(Integer[]::new)));
+        circuit.addLevel(level);
+        SamplingOptions options = new SamplingOptions(shots).withSeed(112);
+        BenchmarkSupport.measure("sample-H-all-shots-" + shots, sampleQubits, warmup, repetitions, () -> {
+            int total = java.util.Arrays.stream(CircuitSampler.sample(circuit, options).counts()).sum();
+            if (total != shots) throw new IllegalStateException("Incorrect shot count");
+        });
     }
 
     // ------------------------------------------------------------------
@@ -115,7 +160,11 @@ public final class MemoryLimitBenchmark {
     }
 
     private static void executeRepresentativeCircuit(int n) {
-        Circuit circuit = new Circuit(n, UNCAPPED);
+        executeRepresentativeCircuit(n, UNCAPPED);
+    }
+
+    private static void executeRepresentativeCircuit(int n, JQAPIConfig config) {
+        Circuit circuit = new Circuit(n, config);
         Integer[] all = IntStream.range(0, n).boxed().toArray(Integer[]::new);
 
         CircuitLevel hLevel = new CircuitLevel();
@@ -201,7 +250,7 @@ public final class MemoryLimitBenchmark {
         System.out.println("Max search list size : " + searchResult.listSize);
         System.out.println("Slowest search (ms)  : " + searchResult.elapsedMs);
         System.out.println("Search stop reason   : " + searchResult.stopReason);
-        System.out.println("Peak used heap (MB)  : " + toMb(usedHeapBytes()) + " (post-GC snapshot)");
+        System.out.println("Used heap after GC (MB): " + toMb(usedHeapBytes()) + " (snapshot, not peak)");
         System.out.println("========================================================");
     }
 

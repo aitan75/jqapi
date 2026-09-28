@@ -184,3 +184,9 @@ Next, read the [core concepts](concepts.md), then work through the
 
 Runnable, verified examples live in the test suite under
 `src/test/java/org/aitan/jqapi/test/`.
+
+## Scientific validation and resource measurements
+
+See [Scientific validation](scientific-validation.md) for independent fixture generation,
+comparison contracts and requirements for new algorithm/noise references, and the
+[benchmark protocol](../benchmarks/README.md) for reproducible JVM/browser measurements.

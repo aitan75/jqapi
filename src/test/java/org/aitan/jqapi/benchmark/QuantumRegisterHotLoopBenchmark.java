@@ -5,6 +5,7 @@ import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.aitan.jqapi.JQAPIConfig;
 import org.aitan.jqapi.math.ComplexMatrix;
 import org.aitan.jqapi.quantum.QuantumRegister;
 import org.aitan.jqapi.utils.Constants;
@@ -33,12 +34,30 @@ public final class QuantumRegisterHotLoopBenchmark {
     }
 
     public static void main(String[] args) {
+        if (args.length == 1 && args[0].equals("--baseline")) {
+            runBaseline();
+            return;
+        }
+        if (args.length != 0) throw new IllegalArgumentException("Usage: QuantumRegisterHotLoopBenchmark [--baseline]");
         printEnvironment();
         System.out.printf("%-6s %-14s %-14s %-14s%n", "n", "gate", "ns/op", "bytes/op");
         for (int n : QUBIT_COUNTS) {
             runCase(n, "1-qubit(H)", Constants.HADAMARD_MATRIX, Collections.singletonList(0));
             runCase(n, "2-qubit(CNOT)", Constants.CONTROLLED_NOT_MATRIX, Arrays.asList(0, n - 1));
         }
+    }
+
+    private static void runBaseline() {
+        int warmup = BenchmarkSupport.integer("warmup", 50, 1, 1000);
+        int repetitions = BenchmarkSupport.integer("repetitions", 200, 1, 1000);
+        int n = BenchmarkSupport.integer("qubits", 20, 2, 24);
+        BenchmarkSupport.checkMemory(n);
+        BenchmarkSupport.environment(warmup, repetitions);
+        QuantumRegister register = new QuantumRegister(n, JQAPIConfig.sequential(24));
+        BenchmarkSupport.measure("H-q0-existing-register", n, warmup, repetitions,
+                () -> register.applyOperator(Constants.HADAMARD_MATRIX, List.of(0)));
+        BenchmarkSupport.measure("CNOT-q0-qLast-existing-register", n, warmup, repetitions,
+                () -> register.applyOperator(Constants.CONTROLLED_NOT_MATRIX, List.of(0, n - 1)));
     }
 
     private static void runCase(int n, String gateLabel, ComplexMatrix gate, List<Integer> targets) {

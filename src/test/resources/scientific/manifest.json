@@ -1,0 +1,26 @@
+{
+  "generator": "src/test/python/scientific_references.py",
+  "generator_sha256": "73c4abadfa4dcce4210d84d13f903d4feb3dbdf38dabf1e4a2f7aca07a51154e",
+  "python": "3.14.7",
+  "packages": {
+    "qiskit": "2.5.2",
+    "numpy": "2.5.3"
+  },
+  "backend": "qiskit.quantum_info.Statevector / Operator (complex128, no shots)",
+  "ordering": "q0 MSB; bit-reverse Qiskit state indices and BOTH operator axes",
+  "operator_layout": "row-major real imaginary; exact phase convention",
+  "seed": null,
+  "files_sha256": {
+    "asymmetric-unitary.probabilities": "b2cd1af5c5c6eecc840af347714f7e0d7a327231dbf75b419ceea38bab1eaa6c",
+    "asymmetric-unitary.qasm": "83566b218bcbf6c2db2d8a21a5aa2307436f2930feda4ed50dc45b2bba95ab09",
+    "asymmetric-unitary.state": "ba4cdb0cb4d2dfe0a88077165c33e7ecc632abbb81e9daa06b004f683efcd26a",
+    "biased-measurement.classical-probabilities": "2163994f0712eb74990b04770db7dc7ae1112afdc2109e213b69486a33ee408b",
+    "biased-measurement.probabilities": "51f8774a34de551def58499c965f468c5f503f6323d70a863595e61929f568a5",
+    "biased-measurement.qasm": "011e524df2a5941d36ff79b1a725900e8a7588f1b1e126c4fc3d9c3522d9b2de",
+    "biased-measurement.state": "4ac24067825dd9e9bb3164d9e811e52c7811275cbd2996c274223a75620c4688",
+    "controlled-operator.operator": "bc9840bb139e1d15c59dbd894a126ae6d536aaa10fbf87cd0f7124bc4abd20dd",
+    "controlled-operator.probabilities": "57cdcac7158c13590b1c572b135647bde85579456fed6559805c35d49c7896e5",
+    "controlled-operator.qasm": "97a9b5c950608aa2cec89bf5cbff363f05f6b571d1692cee9a09fab867dfb83f",
+    "controlled-operator.state": "b15c71808d9ea730205706a64096a73a9f85f8e31064c9f38e8fac6d6dd3a05d"
+  }
+}
