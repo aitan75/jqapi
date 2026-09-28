@@ -29,8 +29,19 @@ def save(name, text, state):
     np.savetxt(FIXTURES / f"{name}.state", np.column_stack((state.real, state.imag)), fmt="%.17g")
 
 
+def generate_classical():
+    FIXTURES.mkdir(parents=True, exist_ok=True)
+    circuit = QuantumCircuit(2, 2)
+    circuit.x(0)
+    circuit.measure(0, 1)
+    circuit.measure(1, 0)
+    text = qasm2.dumps(circuit)
+    (FIXTURES / "qiskit-classical.qasm").write_text(text.rstrip() + "\n")
+    print("Generated classical bitstring fixture.")
+
 def generate():
     FIXTURES.mkdir(parents=True, exist_ok=True)
+    generate_classical()
     circuit = QuantumCircuit(3)
     circuit.h(0)
     circuit.x(2)

@@ -65,6 +65,24 @@ class OpenQasmInteropTest {
         writeExport("dynamic", output, null);
     }
 
+    @Test
+    void bitstringConversionReversesBitOrderForClassicalAddresses() throws IOException {
+        var spec = OpenQasmParser.parse(resource("qiskit-classical.qasm"));
+        assertTrue(spec.numClassicalBits() > 0);
+        var measurementGates = spec.levels().stream()
+                .flatMap(level -> level.gates().stream())
+                .filter(g -> g.kind() == org.aitan.jqapi.visualization.spec.GateKind.MEASUREMENT)
+                .toList();
+        // Fixture: measure q[0] -> c[1]; measure q[1] -> c[0]
+        assertEquals(1, measurementGates.get(0).classicalTarget());
+        assertEquals(0, measurementGates.get(1).classicalTarget());
+        // Deterministic simulation with x gates: classical records must match targets
+        var simulation = simulate(spec, 0.5);
+        var records = simulation.extractClassicalRecords();
+        assertEquals(1, records.get(1).bit());
+        assertEquals(0, records.get(0).bit());
+    }
+
     private static void writeExport(String name, String qasm, ComplexVector state) throws IOException {
         Path directory = Path.of("target", "openqasm-interop");
         Files.createDirectories(directory);

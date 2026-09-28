@@ -13,6 +13,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  openqasm-interop:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - uses: actions/setup-python@85d73e7a78c2ed510645ede4426bba52a1fb6012 # v5.6.0
+        with:
+          python-version: '3.12'
+      - name: Build and test core
+        run: mvn -B test -Dtest='OpenQasm*'
+      - name: Run external parser validation
+        run: |
+          python -m venv /tmp/jqapi-qasm-check
+          /tmp/jqapi-qasm-check/bin/pip install --quiet -r src/test/python/requirements-openqasm.txt
+          /tmp/jqapi-qasm-check/bin/python src/test/python/openqasm_interop.py
+
   build:
     runs-on: ubuntu-latest
     env:
