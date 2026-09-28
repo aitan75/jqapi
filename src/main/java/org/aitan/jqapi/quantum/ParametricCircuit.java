@@ -3,6 +3,7 @@ package org.aitan.jqapi.quantum;
 import java.util.*;
 import org.aitan.jqapi.JQAPIConfig;
 import org.aitan.jqapi.quantum.gates.*;
+import org.aitan.jqapi.visualization.spec.*;
 
 public final class ParametricCircuit {
     private final int inputSize;
@@ -10,15 +11,16 @@ public final class ParametricCircuit {
     private final List<ParametricGate> gates;
 
     public static final class ParametricGate {
-        public final String kind; // "RX","RY","RZ","PHASE","U3"
-        public final int[] indexes;
-        public final String[] params; // param names in order
+        private final String kind;
+        private final int[] indexes;
+        private final String[] params;
         public ParametricGate(String kind, int[] indexes, String... params) {
             if (indexes == null || indexes.length == 0) throw new IllegalArgumentException("indexes required");
             this.kind = Objects.requireNonNull(kind, "kind");
             this.indexes = java.util.Arrays.copyOf(indexes, indexes.length);
             this.params = java.util.Arrays.copyOf(params, params.length);
         }
+        public String kind() { return kind; }
         public int[] indexes() { return java.util.Arrays.copyOf(indexes, indexes.length); }
         public String[] params() { return java.util.Arrays.copyOf(params, params.length); }
     }
@@ -56,6 +58,31 @@ public final class ParametricCircuit {
             circuit.addLevel(level);
         }
         return circuit;
+    }
+
+    public CircuitSpec bindToSpec(Map<String, Double> params) {
+        bind(params); // valida
+        List<GateSpec> gateSpecs = new ArrayList<>();
+        for (ParametricGate g : gates) {
+            Map<String, Double> named = new HashMap<>();
+            String[] ps = g.params();
+            named.put(ps[0], params.get(ps[0]));
+            if (g.kind().equals("U3")) {
+                named.put(ps[1], params.get(ps[1]));
+                named.put(ps[2], params.get(ps[2]));
+            }
+            GateKind kind = switch (g.kind()) {
+                case "RX" -> GateKind.RX;
+                case "RY" -> GateKind.RY;
+                case "RZ" -> GateKind.RZ;
+                case "PHASE" -> GateKind.PHASE;
+                case "U3" -> GateKind.U3;
+                default -> throw new IllegalArgumentException("Unknown kind: " + g.kind());
+            };
+            List<Integer> targets = Arrays.stream(g.indexes()).boxed().toList();
+            gateSpecs.add(new GateSpec(kind, targets, List.of(), named, null));
+        }
+        return CircuitSpec.of(inputSize, List.of(new LevelSpec(gateSpecs)));
     }
 
     private Gate buildGate(ParametricGate g, Map<String, Double> params) {

@@ -2,13 +2,17 @@
 
 ## ParametricCircuit
 
-Wrapper immutabile attorno a una topologia di gate parametrici. `bind(Map<String, Double>)` produce un `Circuit` concreto con parametri nominati sostituiti.
+Immutable wrapper around a parametric gate topology. `bind(Map<String, Double>)` produces a concrete `Circuit`; `bindToSpec(...)` produces a lossless concrete `CircuitSpec` with named parameters preserved.
 
-## Ordine parametri
+## Parameter ordering
 
-- `RX`, `RY`, `RZ`, `PHASE`: un parametro `theta`.
-- `U3`: tre parametri in ordine `theta`, `phi`, `lambda`.
+- `RX`, `RY`, `RZ`, `PHASE`: `theta`.
+- `U3`: `theta`, `phi`, `lambda` (declaration order).
 
-## Validazione
+## Validation
 
-Binding rifiuta chiavi mancanti, chiavi extra, parametri non finiti, e arity sbagliata.
+Binding rejects missing/extra keys, wrong arity, non-finite values, and external mutation.
+
+## Serialization
+
+`bindToSpec()` emits concrete `GateSpec` with parameter maps; no silent GENERIC flattening.
