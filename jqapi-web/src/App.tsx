@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { CircuitModel, isCircuitSpec, isUnsupportedCircuitSpec, PAULI_X_MATRIX, type EditorState, type Placement } from './model/circuit';
 import { probabilities } from './model/results';
 import { parseObservable } from './model/observable';
-import { expectation, run, sample, sampleExpectation } from './wasm/bridge';
-import type { Amplitude, CircuitSpec, ComplexMatrix } from './wasm/types';
+import { expectation, trace, sample, sampleExpectation } from './wasm/bridge';
+import type { CircuitSpec, ComplexMatrix, TraceFrame, EngineErrorCode } from './wasm/types';
 import type { Preset } from './model/presets';
 import { GatePalette, type Tool } from './components/GatePalette';
 import { QubitSelector } from './components/QubitSelector';
 import { PresetSelector } from './components/PresetSelector';
 import { CircuitCanvas } from './components/CircuitCanvas';
+import { Timeline } from './components/Timeline';
+import { TeleportationGuide } from './components/TeleportationGuide';
 import { ResultsPanel } from './components/ResultsPanel';
 import { ObservablePanel, type ObservableOutcome } from './components/ObservablePanel';
 import { initialLanguage, LANGUAGE_STORAGE_KEY, messages, type Language } from './i18n';
@@ -69,8 +71,18 @@ export default function App() {
   const [zoom, setZoom] = useState(1);
   const [undoStack, setUndoStack] = useState<EditorState[]>([]);
   const [redoStack, setRedoStack] = useState<EditorState[]>([]);
-  const [probs, setProbs] = useState<number[] | null>(null);
-  const [amplitudes, setAmplitudes] = useState<Amplitude[] | null>(null);
+  const [condition, setCondition] = useState('');
+  const [seed, setSeed] = useState(1);
+  const [live, setLive] = useState<{ frames: TraceFrame[]; columns: number[]; qubits: number; revision: number } | null>(null);
+  const [frameIndex, setFrameIndex] = useState(0);
+  const [pending, setPending] = useState(true);
+  const [liveError, setLiveError] = useState<EngineErrorCode | null>(null);
+  const revision = useRef(0);
+  const [guided, setGuided] = useState(false);
+  const [guideAngles, setGuideAngles] = useState({ theta: Math.PI / 3, phi: Math.PI / 4 });
+  const frame = live?.frames[frameIndex];
+  const amplitudes = frame?.amplitudes ?? null;
+  const probs = amplitudes ? probabilities(amplitudes) : null;
   const [sampled, setSampled] = useState<{ shots: number; counts: number[] } | null>(null);
   const [shots, setShots] = useState(1000);
   const [observableText, setObservableText] = useState('');
@@ -89,18 +101,27 @@ export default function App() {
   const syncModel = () => {
     setNumQubits(modelRef.current.numQubits);
     setColumns(modelRef.current.columns);
-    setProbs(null);
-    setAmplitudes(null);
+    setCondition((value) => value && Number(value.split(':')[0]) >= modelRef.current.numQubits ? '' : value);
+    revision.current++;
+    setPending(true);
+    setLiveError(null);
+    setGuided(false);
     setSampled(null);
     setObservableOutcome(null);
     bump();
   };
-  const mutate = (change: (model: CircuitModel) => boolean | void) => {
+  const mutate = (change: (model: CircuitModel) => boolean | void, keepGuide = false) => {
     const previous = modelRef.current.snapshot();
-    if (change(modelRef.current) === false) return false;
+    try {
+      if (change(modelRef.current) === false) return false;
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+      return false;
+    }
     setUndoStack((history) => [...history.slice(-49), previous]);
     setRedoStack([]);
     syncModel();
+    if (keepGuide) setGuided(true);
     return true;
   };
   const loadSpec = (spec: CircuitSpec) => {
@@ -123,6 +144,32 @@ export default function App() {
     return () => window.clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const requestId = revision.current;
+    const timer = window.setTimeout(() => {
+      const spec = modelRef.current.toSpec();
+      const columns = [...modelRef.current.serializedColumns];
+      const result = trace(spec, seed);
+      if (requestId !== revision.current) return;
+      setPending(false);
+      if (!result.ok) {
+        setLiveError(result.error.code);
+        setLive(null);
+        return;
+      }
+      setLiveError(null);
+      setLive({ frames: result.frames, columns, qubits: spec.numQubits, revision: requestId });
+      setFrameIndex(result.frames.length - 1);
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [version, seed]);
+
+  const rerun = () => {
+    revision.current++;
+    setPending(true);
+    setSeed((previous) => (previous + 0x6d2b79f5) | 0);
+  };
+
   const place = (qubit: number, step: number, selected = tool) => {
     if (!selected) return;
     try {
@@ -131,6 +178,10 @@ export default function App() {
         return;
       }
       const placement = placementFor(selected, theta, phi, lambda, matrixText);
+      if (placement && condition && ['H', 'X', 'Y', 'Z', 'S', 'T', 'RX', 'RY', 'RZ', 'PHASE', 'U3'].includes(placement.kind)) {
+        const [bitIndex, expected] = condition.split(':').map(Number);
+        if (bitIndex < numQubits) Object.assign(placement, { condition: { bitIndex, expected } });
+      }
       mutate((model) => placement ? model.place(qubit, step, placement) : model.removeGate(qubit, step));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -161,26 +212,23 @@ export default function App() {
   const onSelectPreset = (preset: Preset) => {
     const model = new CircuitModel(preset.qubits);
     preset.load(model);
+    if (preset.id === 'teleportation') setGuideAngles({ theta: Math.PI / 3, phi: Math.PI / 4 });
     modelRef.current = model;
     setUndoStack([]);
     setRedoStack([]);
     syncModel();
+    setGuided(preset.id === 'teleportation');
   };
   const onRun = async () => {
     if (isRunning) return;
     const shotCount = shots;
+    const requestId = revision.current;
     setError(null);
     setObservableOutcome(null);
     setIsRunning(true);
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     try {
-      const result = run(modelRef.current.toSpec());
-      if (!result.ok) {
-        setError(text.errors[result.error.code]);
-        return;
-      }
-      setAmplitudes(result.amplitudes);
-      setProbs(probabilities(result.amplitudes));
+      if (requestId !== revision.current) return;
       const sampleResult = sample(modelRef.current.toSpec(), shotCount);
       if (!sampleResult.ok) {
         setError(text.errors[sampleResult.error.code]);
@@ -234,12 +282,12 @@ export default function App() {
       <div className="editor-layout">
         <aside className="sidebar">
           <div className="circuit-settings"><QubitSelector messages={text} value={numQubits} onChange={(value) => mutate((model) => model.setNumQubits(value))} /><div className="editor-actions"><button type="button" onClick={() => mutate((model) => model.setColumns(model.columns - 1))} disabled={columns <= 1}>− step</button><span>{columns} steps</span><button type="button" onClick={() => mutate((model) => model.setColumns(model.columns + 1))}>+ step</button></div></div>
-          <GatePalette messages={text} tool={tool} onSelect={setTool} theta={theta} phi={phi} lambda={lambda} matrixText={matrixText} qftWidth={qftWidth} onChangeTheta={setTheta} onChangePhi={setPhi} onChangeLambda={setLambda} onChangeMatrixText={setMatrixText} onChangeQftWidth={(value) => setQftWidth(Math.max(1, Math.trunc(value) || 1))} />
+          <GatePalette condition={condition} numQubits={numQubits} onChangeCondition={setCondition} messages={text} tool={tool} onSelect={setTool} theta={theta} phi={phi} lambda={lambda} matrixText={matrixText} qftWidth={qftWidth} onChangeTheta={setTheta} onChangePhi={setPhi} onChangeLambda={setLambda} onChangeMatrixText={setMatrixText} onChangeQftWidth={(value) => setQftWidth(Math.max(1, Math.trunc(value) || 1))} />
           <PresetSelector messages={text} onSelectPreset={onSelectPreset} />
         </aside>
         <main className="workspace">
           {error && <div className="error" role="alert" onClick={() => setError(null)}><span>⚠️ {error}</span><span>✕ Dismiss</span></div>}
-          <CircuitCanvas messages={text} model={modelRef.current} onDropCell={place} onMoveCell={move} onRemoveGate={(qubit, step) => mutate((model) => model.removeGate(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} isRunning={isRunning} />
+          <CircuitCanvas activeColumn={!pending && frame && live ? live.columns[frame.level] : undefined} messages={text} model={modelRef.current} onDropCell={place} onMoveCell={move} onRemoveGate={(qubit, step) => mutate((model) => model.removeGate(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} isRunning={isRunning} />
           <div className="circuit-actions" role="toolbar" aria-label={text.circuitActions}>
             <label className="shots-input">{text.shots}<input type="number" min="1" max="10000" step="1" value={shots} onChange={(event) => setShots(Math.max(1, Math.min(10_000, Math.trunc(Number(event.target.value) || 1))))} disabled={isRunning} /></label>
             <button className={`run${isRunning ? ' running' : ''}`} type="button" onClick={onRun} disabled={isRunning}>▶ {text.runSimulation}</button>
@@ -250,7 +298,16 @@ export default function App() {
             <button type="button" className="clear-circuit" onClick={() => mutate((model) => model.reset())}>{text.clearCircuit}</button>
             <input ref={fileInputRef} type="file" accept="application/json" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) loadFile(file); event.currentTarget.value = ''; }} />
           </div>
-          <ResultsPanel messages={text} probs={probs} amplitudes={amplitudes} sampled={sampled} numQubits={numQubits} />
+          <section className="live-state" aria-label={text.live.title} aria-busy={pending}>
+            <div className="live-toolbar"><h2>{text.live.title}</h2><button type="button" onClick={rerun} disabled={pending}>{text.live.rerun}</button><span>{text.live.seed}: {seed}</span></div>
+            {pending && <p role="status">{text.live.pending}</p>}
+            {liveError && <p role="alert">{text.errors[liveError]}</p>}
+            {live && <fieldset disabled={pending}><Timeline key={live.revision} frames={live.frames} index={frameIndex} onChange={setFrameIndex} numQubits={live.qubits} messages={text} /></fieldset>}
+            {guided && <TeleportationGuide theta={guideAngles.theta} phi={guideAngles.phi} frame={!pending ? frame : undefined} messages={text} onAngles={(theta, phi) => {
+              if (mutate((model) => model.place(0, 0, { kind: 'U3', theta, phi, lambda: 0 }), true)) setGuideAngles({ theta, phi });
+            }} />}
+            <ResultsPanel messages={text} probs={probs} amplitudes={amplitudes} sampled={sampled} numQubits={live?.qubits ?? numQubits} />
+          </section>
           <ObservablePanel messages={text} numQubits={numQubits} text={observableText} onChangeText={(value) => { setObservableText(value); setObservableOutcome(null); }} parseError={observableError} outcome={observableOutcome} disabled={isRunning} />
         </main>
       </div>

@@ -94,7 +94,7 @@ test('removes a gate dropped outside the grid', async ({ page }) => {
   await expect(theoreticalResults(page).getByText('100.0%')).toBeVisible();
 });
 
-test('shows amplitude magnitude, phase, and a Bloch indicator on hover', async ({ page }) => {
+test('shows amplitude magnitude and phase on hover, with a reduced Bloch sphere', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Qubits:').fill('1');
   await page.getByText('Gates', { exact: true }).click();
@@ -107,7 +107,7 @@ test('shows amplitude magnitude, phase, and a Bloch indicator on hover', async (
   const tooltip = row.locator('.amplitude-tooltip');
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText('|cᵢ|');
-  await expect(tooltip).toContainText('r⃗ = (');
+  await expect(page.getByRole('region', { name: 'Reduced Bloch sphere' })).toContainText('r = (1.000, 0.000, 0.000)');
 });
 
 test('groups gates and presets in localized menus', async ({ page }) => {

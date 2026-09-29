@@ -2,8 +2,6 @@ import type { CircuitSpec, ComplexMatrix, Gate } from '../wasm/types';
 
 export const DEFAULT_COLUMNS = 8;
 export const MAX_QUBITS = 8;
-/** CircuitSpec format version supported by the editor (mirrors `CircuitSpec.CURRENT_VERSION`). */
-export const CURRENT_VERSION = 1;
 /** Mirrors `CircuitSpecJson.MAX_GATES`: total gate placements accepted from untrusted input. */
 export const MAX_GATES = 100_000;
 /** Upper bound on levels accepted from untrusted input; bounds the editor grid before it is built. */
@@ -26,10 +24,13 @@ export type RotationKind = 'RX' | 'RY' | 'RZ' | 'PHASE';
 export type ControlledKind = 'CNOT' | 'CZ' | 'CY';
 export type MatrixKind = 'ORACLE' | 'GENERIC';
 
+export type Condition = { bitIndex: number; expected: 0 | 1 };
+
 export type Placement =
-  | { kind: SingleQubitFixedKind }
-  | { kind: RotationKind; theta: number }
-  | { kind: 'U3'; theta: number; phi: number; lambda: number }
+  | { kind: Exclude<SingleQubitFixedKind, 'MEASUREMENT' | 'RESET'>; condition?: Condition }
+  | { kind: 'MEASUREMENT' | 'RESET' }
+  | { kind: RotationKind; theta: number; condition?: Condition }
+  | { kind: 'U3'; theta: number; phi: number; lambda: number; condition?: Condition }
   | { kind: ControlledKind; role: 'control' | 'target' }
   | { kind: 'CONTROLLED_PHASE'; role: 'control' | 'target'; theta: number }
   | { kind: 'SWAP'; role: 'swap' }
@@ -42,12 +43,15 @@ export interface EditorState {
   numQubits: number;
   columns: number;
   cells: (Placement | null)[][];
+  classicalMode?: boolean;
 }
 
 /** Mutable grid, kept separate from React so serialization stays CircuitSpec-compatible. */
 export class CircuitModel {
   numQubits: number;
   columns: number;
+  classicalMode = false;
+  serializedColumns: number[] = [];
   private cells: (Placement | null)[][];
 
   constructor(numQubits: number, columns = DEFAULT_COLUMNS) {
@@ -71,6 +75,9 @@ export class CircuitModel {
   }
 
   setNumQubits(n: number): void {
+    if (this.cells.some((row) => row.some((cell) => cell && 'condition' in cell && cell.condition && cell.condition.bitIndex >= n))) {
+      throw new Error('Remove conditions referring to classical bits outside the new register first.');
+    }
     this.resize(n, this.columns);
   }
 
@@ -170,10 +177,11 @@ export class CircuitModel {
   }
 
   snapshot(): EditorState {
-    return structuredClone({ numQubits: this.numQubits, columns: this.columns, cells: this.cells });
+    return structuredClone({ numQubits: this.numQubits, columns: this.columns, cells: this.cells, classicalMode: this.classicalMode });
   }
 
   restore(state: EditorState): void {
+    this.classicalMode = state.classicalMode ?? false;
     this.numQubits = state.numQubits;
     this.columns = state.columns;
     this.cells = structuredClone(state.cells);
@@ -184,6 +192,7 @@ export class CircuitModel {
     if (isUnsupportedCircuitSpec(spec)) throw new Error('The editor does not support this circuit format or classical operations.');
     if (!isCircuitSpec(spec)) throw new Error('Invalid CircuitSpec');
     const model = new CircuitModel(spec.numQubits, Math.max(DEFAULT_COLUMNS, spec.levels.length));
+    model.classicalMode = spec.version === 2;
     spec.levels.forEach((level, step) => level.gates.forEach((gate) => model.placeGate(step, gate)));
     return model;
   }
@@ -216,11 +225,11 @@ export class CircuitModel {
       return;
     }
     if (gate.kind === 'RX' || gate.kind === 'RY' || gate.kind === 'RZ' || gate.kind === 'PHASE') {
-      this.place(target, step, { kind: gate.kind, theta: gate.params.theta });
+      this.place(target, step, { kind: gate.kind, theta: gate.params.theta, ...(gate.condition ? { condition: gate.condition } : {}) });
       return;
     }
     if (gate.kind === 'U3') {
-      this.place(target, step, { kind: 'U3', theta: gate.params.theta, phi: gate.params.phi, lambda: gate.params.lambda });
+      this.place(target, step, { kind: 'U3', theta: gate.params.theta, phi: gate.params.phi, lambda: gate.params.lambda, ...(gate.condition ? { condition: gate.condition } : {}) });
       return;
     }
     if (gate.kind === 'ORACLE' || gate.kind === 'GENERIC') {
@@ -229,12 +238,14 @@ export class CircuitModel {
       return;
     }
     if (gate.targets.length !== 1) throw new Error(`${gate.kind} is not supported by the editor`);
-    this.place(target, step, { kind: gate.kind as SingleQubitFixedKind });
+    this.place(target, step, { kind: gate.kind as SingleQubitFixedKind, ...(gate.condition ? { condition: gate.condition } : {}) });
   }
 
   /** Walk columns → levels (dropping empty columns), emitting gates in qubit order. */
   toSpec(): CircuitSpec {
     const levels: { gates: Gate[] }[] = [];
+    this.serializedColumns = [];
+    const classical = this.classicalMode || this.cells.some((row) => row.some((cell) => cell && 'condition' in cell && cell.condition));
     for (let step = 0; step < this.columns; step++) {
       const gates: Gate[] = [];
       const controls: Record<string, number[]> = { CNOT: [], CZ: [], CY: [], TOFFOLI: [], MULTI_CONTROLLED: [], CSWAP: [] };
@@ -255,13 +266,15 @@ export class CircuitModel {
         } else if (cell.kind === 'SWAP') {
           swaps.push(q);
         } else if (cell.kind === 'RX' || cell.kind === 'RY' || cell.kind === 'RZ' || cell.kind === 'PHASE') {
-          gates.push({ kind: cell.kind, targets: [q], controls: [], params: { theta: cell.theta } });
+          gates.push({ kind: cell.kind, targets: [q], controls: [], params: { theta: cell.theta }, ...(cell.condition ? { condition: cell.condition } : {}) });
         } else if (cell.kind === 'U3') {
-          gates.push({ kind: 'U3', targets: [q], controls: [], params: { theta: cell.theta, phi: cell.phi, lambda: cell.lambda } });
+          gates.push({ kind: 'U3', targets: [q], controls: [], params: { theta: cell.theta, phi: cell.phi, lambda: cell.lambda }, ...(cell.condition ? { condition: cell.condition } : {}) });
         } else if (cell.kind === 'ORACLE' || cell.kind === 'GENERIC') {
           gates.push({ kind: cell.kind, targets: [q], controls: [], params: {}, matrix: cell.matrix });
         } else {
-          gates.push({ kind: cell.kind, targets: [q], controls: [], params: {} });
+          gates.push({ kind: cell.kind, targets: [q], controls: [], params: {},
+            ...('condition' in cell && cell.condition ? { condition: cell.condition } : {}),
+            ...(classical && cell.kind === 'MEASUREMENT' ? { classicalTarget: q } : {}) });
         }
       }
 
@@ -273,9 +286,9 @@ export class CircuitModel {
       if (controls.TOFFOLI.length >= 2 && targets.TOFFOLI.length) gates.push({ kind: 'TOFFOLI', targets: [targets.TOFFOLI[0]], controls: controls.TOFFOLI.slice(0, 2), params: {} });
       if (controls.MULTI_CONTROLLED.length && targets.MULTI_CONTROLLED.length) gates.push({ kind: 'MULTI_CONTROLLED', targets: [targets.MULTI_CONTROLLED[0]], controls: controls.MULTI_CONTROLLED, params: {}, matrix: PAULI_X_MATRIX });
       if (phaseControls.length && phaseTargets.length) gates.push({ kind: 'MULTI_CONTROLLED', targets: [phaseTargets[0].qubit], controls: [phaseControls[0].qubit], params: {}, matrix: phaseMatrix(phaseTargets[0].theta) });
-      if (gates.length) levels.push({ gates });
+      if (gates.length) { levels.push({ gates }); this.serializedColumns.push(step); }
     }
-    return { version: CURRENT_VERSION, numQubits: this.numQubits, levels };
+    return { version: classical ? 2 : 1, numQubits: this.numQubits, ...(classical ? { numClassicalBits: this.numQubits } : {}), levels };
   }
 }
 
@@ -361,17 +374,26 @@ function isGate(value: unknown, numQubits: number): boolean {
 /** Capability check before loading; unsupported metadata must never be discarded. */
 export function isUnsupportedCircuitSpec(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  if (typeof value.version === 'number' && value.version !== CURRENT_VERSION) return true;
-  if ('numClassicalBits' in value || 'measurementRecords' in value || 'conditions' in value) return true;
+  if (typeof value.version === 'number' && value.version !== 1 && value.version !== 2) return true;
+  if ('measurementRecords' in value || 'conditions' in value) return true;
+  if (value.version === 2 ? value.numClassicalBits !== value.numQubits : 'numClassicalBits' in value) return true;
   return Array.isArray(value.levels) && value.levels.some((level) =>
-    isRecord(level) && Array.isArray(level.gates) && level.gates.some((gate) =>
-      isRecord(gate) && ('condition' in gate || 'classicalTarget' in gate)));
+    isRecord(level) && Array.isArray(level.gates) && level.gates.some((gate) => {
+      if (!isRecord(gate)) return false;
+      if (value.version !== 2) return 'condition' in gate || 'classicalTarget' in gate;
+      if (gate.kind === 'MEASUREMENT') return 'condition' in gate || !Array.isArray(gate.targets) || gate.classicalTarget !== gate.targets[0];
+      if ('classicalTarget' in gate) return true;
+      if ('condition' in gate) {
+        return !['H', 'X', 'Y', 'Z', 'S', 'T', 'RX', 'RY', 'RZ', 'PHASE', 'U3'].includes(String(gate.kind));
+      }
+      return false;
+    }));
 }
 
 export function isCircuitSpec(value: unknown): value is CircuitSpec {
   if (!isRecord(value) || isUnsupportedCircuitSpec(value)) return false;
   const { version, numQubits, levels } = value;
-  if (version !== CURRENT_VERSION || !Number.isInteger(numQubits)) return false;
+  if ((version !== 1 && version !== 2) || !Number.isInteger(numQubits)) return false;
   const qubits = numQubits as number;
   if (qubits < 1 || qubits > MAX_QUBITS) return false;
   if (!Array.isArray(levels) || levels.length > MAX_LEVELS) return false;
@@ -381,6 +403,17 @@ export function isCircuitSpec(value: unknown): value is CircuitSpec {
     gateCount += level.gates.length;
     if (gateCount > MAX_GATES) return false;
     if (!level.gates.every((gate) => isGate(gate, qubits))) return false;
+    const gates = level.gates as Gate[];
+    const occupied = new Set<number>();
+    for (const gate of gates) {
+      for (const q of [...gate.targets, ...gate.controls]) {
+        if (occupied.has(q)) return false;
+        occupied.add(q);
+      }
+      if ('condition' in gate && (!isRecord(gate.condition) || !isIndex(gate.condition.bitIndex, qubits)
+        || (gate.condition.expected !== 0 && gate.condition.expected !== 1))) return false;
+      if (gate.condition && gates.some((other) => other.classicalTarget === gate.condition?.bitIndex)) return false;
+    }
   }
   return true;
 }

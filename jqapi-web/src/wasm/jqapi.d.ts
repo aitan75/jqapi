@@ -3,3 +3,4 @@ export function sample(json: string, shots: number): string;
 export function expectation(json: string, observableJson: string): string;
 export function sampleExpectation(json: string, observableJson: string, shots: number): string;
 export function main(args: string[]): void;
+export function trace(json: string, seed: number): string;

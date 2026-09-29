@@ -7,6 +7,10 @@ the published release notes and source archives.
 
 ### Added
 
+- Live web state views: reduced Bloch sphere for any qubit, probability/phase heatmap, and a seeded per-operation timeline with discrete measurement outcomes.
+- Guided teleportation with editable input angles, implicit classical bits and conditional X/Z corrections, plus fidelity against Bob's reduced state (#125).
+- `LocalSimulator.execute(OperationListener)` and a bounded TeaVM `trace` export; editor save/load supports the implicit CircuitSpec v2 classical subset.
+
 - OpenQASM 2 import and export for a documented subset, including measurement,
   reset, and one-bit `if` conditions (`OpenQasmParser`, `OpenQasmSerializer`).
 - Pauli observables: `PauliString`, `PauliSum`, Hermitian overlap, fidelity and

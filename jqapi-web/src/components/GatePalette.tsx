@@ -22,6 +22,9 @@ const angleTools: Tool[] = ['RX', 'RY', 'RZ', 'PHASE', 'U3'];
 const matrixTools: Tool[] = ['ORACLE', 'GENERIC'];
 
 export interface GatePaletteProps {
+  condition: string;
+  numQubits: number;
+  onChangeCondition: (value: string) => void;
   tool: Tool | null;
   messages: Messages;
   onSelect: (tool: Tool) => void;
@@ -55,6 +58,10 @@ export function GatePalette(props: GatePaletteProps) {
         </details>)}
       </div>
     </details>
+    {tool && ['H', 'X', 'Y', 'Z', 'S', 'T', ...angleTools].includes(tool) && <label className="gate-config-field">{messages.live.condition}<select value={props.condition} onChange={(event) => props.onChangeCondition(event.target.value)}>
+      <option value="">{messages.live.unconditional}</option>
+      {Array.from({ length: props.numQubits }, (_, q) => [0, 1].map((bit) => <option key={`${q}:${bit}`} value={`${q}:${bit}`}>{`if c[${q}] = ${bit}`}</option>))}
+    </select></label>}
     {tool && angleTools.includes(tool) && <div className="gate-config">{number('θ', theta, onChangeTheta)}{tool === 'U3' && <>{number('φ', phi, onChangePhi)}{number('λ', lambda, onChangeLambda)}</>}</div>}
     {tool === 'QFT' && <div className="gate-config">{number(messages.qubits, qftWidth, onChangeQftWidth)}</div>}
     {tool && matrixTools.includes(tool) && <label className="matrix-config">2×2 matrix JSON <textarea value={matrixText} onChange={(event) => onChangeMatrixText(event.target.value)} spellCheck={false} /></label>}

@@ -30,6 +30,7 @@ const GATE_THEMES: Record<string, GateTheme> = {
 
 export function CircuitCanvas({
   model,
+  activeColumn,
   onDropCell,
   onMoveCell,
   onRemoveGate,
@@ -40,6 +41,7 @@ export function CircuitCanvas({
   messages,
 }: {
   model: CircuitModel;
+  activeColumn?: number;
   onDropCell: (qubit: number, step: number, tool: Tool) => void;
   onMoveCell: (fromQubit: number, fromStep: number, toQubit: number, toStep: number) => void;
   onRemoveGate: (qubit: number, step: number) => void;
@@ -55,6 +57,7 @@ export function CircuitCanvas({
   const width = LABEL_W + model.columns * CELL + 20;
   const height = model.numQubits * CELL;
   const nodes: ReactNode[] = [];
+  if (activeColumn !== undefined && activeColumn >= 0) nodes.push(<Rect key="active-operation" x={LABEL_W + activeColumn * CELL} y={0} width={CELL} height={height} fill="rgba(0,240,255,0.14)" listening={false} />);
   const move = (fromQubit: number, fromStep: number, x: number, y: number) => {
     const toQubit = Math.floor((fromQubit * CELL + CELL / 2 + y) / CELL);
     const toStep = Math.floor((fromStep * CELL + CELL / 2 + x) / CELL);
@@ -196,6 +199,7 @@ export function CircuitCanvas({
               fontStyle="bold"
               fill={theme.textColor}
             />
+            {'condition' in cell && cell.condition && <Text x={x - 28} y={y + 20} width={56} text={`c${cell.condition.bitIndex}=${cell.condition.expected}`} align="center" fontSize={10} fill="#e0faff" />}
           </Group>,
         );
       }
@@ -401,7 +405,7 @@ export function CircuitCanvas({
   };
 
   return (
-    <div className={`canvas-wrapper${isRunning ? ' running' : ''}`} data-drop-target={dropTarget && `${dropTarget.qubit}:${dropTarget.step}`} onDragOver={dragOver} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropTarget(null); }} onDrop={drop}>
+    <div className={`canvas-wrapper${isRunning ? ' running' : ''}`} data-active-column={activeColumn} data-drop-target={dropTarget && `${dropTarget.qubit}:${dropTarget.step}`} onDragOver={dragOver} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropTarget(null); }} onDrop={drop}>
       <div className="canvas-hint">
         <span style={{ color: 'var(--accent-cyan)' }}>✦</span>
         <span>{messages.canvasHint}</span>

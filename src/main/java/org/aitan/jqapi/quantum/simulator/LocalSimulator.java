@@ -7,10 +7,12 @@ import java.util.function.DoubleSupplier;
 import org.aitan.jqapi.quantum.classical.ClassicalRecord;
 import org.aitan.jqapi.math.ComplexVector;
 import org.aitan.jqapi.quantum.Circuit;
+import org.aitan.jqapi.quantum.CircuitLevel;
 import org.aitan.jqapi.quantum.QuantumRegister;
 import org.aitan.jqapi.quantum.Qubit;
 import org.aitan.jqapi.quantum.QubitOne;
 import org.aitan.jqapi.quantum.gates.ConditionalGate;
+import org.aitan.jqapi.quantum.gates.Gate;
 import org.aitan.jqapi.quantum.gates.Measurement;
 import org.aitan.jqapi.utils.Constants;
 
@@ -96,36 +98,67 @@ public class LocalSimulator implements QuantumSimulator {
         this.quantumRegister = new QuantumRegister(circuit.getInputSize(), circuit.getConfig(), alphas);
     }
 
+    /**
+     * Observes execution one operation at a time, after the operation has been
+     * processed; identity padding is not reported.
+     */
+    @FunctionalInterface
+    public interface OperationListener {
+        /**
+         * @param level zero-based circuit level
+         * @param gateIndex zero-based gate index within the level
+         * @param gate the processed gate
+         * @param applied false when a conditional gate was skipped
+         */
+        void onOperation(int level, int gateIndex, Gate gate, boolean applied);
+    }
+
     /** {@inheritDoc} */
     @Override
     public void execute() {
+        execute((level, gateIndex, gate, applied) -> { });
+    }
+
+    /**
+     * Executes the circuit, notifying {@code listener} after every non-identity
+     * operation. Random draws are identical to {@link #execute()}.
+     * @param listener callback receiving each processed operation
+     */
+    public void execute(OperationListener listener) {
         circuit.validateClassicalOperations();
-        circuit.getLevels().forEach(level ->
-                level.getGates().forEach(gate -> {
-                    if (gate instanceof ConditionalGate conditional
-                            && classicalBits[conditional.condition().bitIndex()] != conditional.condition().expected()) return;
-                    if (gate.getType().equals(Constants.MEASUREMENT)) {
-                        quantumRegister.measureQubitAtIndexes(gate.getIndexes());
-                    if (gate instanceof Measurement measurement && measurement.classicalTarget() != null) {
-                        classicalBits[measurement.classicalTarget()] = quantumRegister.getResult()[gate.getIndexes().getFirst()] instanceof QubitOne ? 1 : 0;
-                    }
-                        return; //the measurement gate matrix is the identity: nothing else to apply
-                    }
-                    if (gate.getType().equals(Constants.RESET)) {
-                        quantumRegister.resetQubitAtIndexes(gate.getIndexes());
-                        return; //non-unitary: handled at register level, nothing else to apply
-                    }
-                    if (gate.getType().equals(Constants.IDENTITY)) {
-                        return; //no-op
-                    }
-                    if (gate.getNumberQubits() == 1) {
-                        //single-qubit gate, possibly replicated on several qubits
-                        gate.getIndexes().forEach(index -> quantumRegister.applyOperator(gate.getMatrix(), Collections.singletonList(index)));
-                    } else {
-                        quantumRegister.applyOperator(gate.getMatrix(), gate.getIndexes());
-                    }
-                })
-        );
+        List<CircuitLevel> levels = circuit.getLevels();
+        for (int l = 0; l < levels.size(); l++) {
+            List<Gate> gates = levels.get(l).getGates();
+            for (int g = 0; g < gates.size(); g++) {
+                Gate gate = gates.get(g);
+                if (gate.getType().equals(Constants.IDENTITY)) continue;
+                listener.onOperation(l, g, gate, step(gate));
+            }
+        }
+    }
+
+    /** Applies one gate; returns false when a conditional gate is skipped. */
+    private boolean step(Gate gate) {
+        if (gate instanceof ConditionalGate conditional
+                && classicalBits[conditional.condition().bitIndex()] != conditional.condition().expected()) return false;
+        if (gate.getType().equals(Constants.MEASUREMENT)) {
+            quantumRegister.measureQubitAtIndexes(gate.getIndexes());
+            if (gate instanceof Measurement measurement && measurement.classicalTarget() != null) {
+                classicalBits[measurement.classicalTarget()] = quantumRegister.getResult()[gate.getIndexes().getFirst()] instanceof QubitOne ? 1 : 0;
+            }
+            return true; //the measurement gate matrix is the identity: nothing else to apply
+        }
+        if (gate.getType().equals(Constants.RESET)) {
+            quantumRegister.resetQubitAtIndexes(gate.getIndexes());
+            return true; //non-unitary: handled at register level, nothing else to apply
+        }
+        if (gate.getNumberQubits() == 1) {
+            //single-qubit gate, possibly replicated on several qubits
+            gate.getIndexes().forEach(index -> quantumRegister.applyOperator(gate.getMatrix(), Collections.singletonList(index)));
+        } else {
+            quantumRegister.applyOperator(gate.getMatrix(), gate.getIndexes());
+        }
+        return true;
     }
 
     /** Immutable snapshot of execution-owned classical bits, in address order. */

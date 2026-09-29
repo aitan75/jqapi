@@ -12,6 +12,7 @@ Runs a [`Circuit`](quantum.md#circuit) and exposes the resulting
 - [LocalSimulator](#localsimulator)
 - [CircuitSampler](#circuitsampler)
 - [ExpectationSampler](#expectationsampler)
+- [Browser bridge trace export](#browser-bridge-trace-export)
 - [Browser bridge expectation exports](#browser-bridge-expectation-exports)
 
 ---
@@ -199,7 +200,20 @@ Local **state-vector** simulator. During execution, it delegates the gate applic
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `execute()` | `void` | Applies every gate of every level, in order. |
+| `execute(OperationListener listener)` | `void` | Reports every non-identity operation after execution, including skipped conditions. |
 | `getQuantumRegister()` | `QuantumRegister` | The register after (or before) execution. |
+
+### Per-operation listener
+
+`LocalSimulator.execute(OperationListener listener)` calls
+`listener.onOperation(level, gateIndex, gate, applied)` immediately after each
+non-identity operation, including skipped conditional gates (`applied == false`).
+The initial state is available before `execute`; read the register and classical
+records inside the callback to capture subsequent states. Copy any quantum state
+you retain, because the register continues to evolve. Callbacks must not mutate
+the circuit or register. Measurement/reset draws and final results are identical
+to `execute()` with the same initial state and random source. Listener exceptions
+propagate and stop execution.
 
 ### Execution semantics
 
@@ -345,3 +359,32 @@ tolerances, not a universal accuracy guarantee for arbitrary circuit depths.
 [Standalone resource benchmarks](../benchmarks/README.md) measure concrete workloads
 separately from correctness CI. Configuration guards and sampling work budgets do not
 guarantee that every permitted workload fits a particular JVM or browser.
+
+## Browser bridge trace export
+
+`trace(specJson, seed)` executes one trajectory with a signed 32-bit integer seed
+and a fresh `java.util.Random` source. Success returns
+`{ "ok": true, "frames": [...] }`; failure returns the same stable error envelope
+as `run`. Repeating a supported input and seed reproduces the trajectory.
+
+Each frame contains `level`, `gateIndex`, `gate`, `applied`, `amplitudes` and
+`classicalRecords`. The initial frame has `level: -1`, `gateIndex: -1` and
+`gate: null`. Subsequent frames are captured after each non-identity operation.
+`gate` contains the canonical `kind`, `targets`, `controls`, and (when present)
+`classicalTarget`. Indices are zero-based; q0 is the state-vector MSB.
+`gateIndex` refers to the runtime level, including any identity padding.
+`applied: false` means a classical condition skipped the operation.
+
+The frame immediately before a measurement is its pre-measurement state; the
+measurement frame contains the collapsed, normalized post-state and updated
+classical record. For measurements without a classical destination, infer the
+outcome from the post-state. Compute the outcome's probability from the preceding
+frame. Adjacent measurements share a post/pre boundary; navigation never resamples.
+
+Before allocating the state vector, the bridge checks
+`(1 + nonIdentityOperations) * 2^numQubits <= MAX_TRACE_AMPLITUDES` (1,048,576).
+Exceeding this snapshot budget returns `INPUT_LIMIT_EXCEEDED`. This is a count
+of complex amplitudes, not a byte or execution-time limit. Existing circuit and
+qubit limits still apply. The web editor additionally caps registers at 8 qubits.
+Simulation remains synchronous on the main thread; Web Worker execution and
+cancellation remain outside this change (#113 phase C).

@@ -88,3 +88,13 @@ export interface SampledExpectationSuccess {
 }
 
 export type SampledExpectationResult = SampledExpectationSuccess | RunFailure;
+
+export interface TraceFrame {
+  level: number;
+  gateIndex: number;
+  gate: Pick<Gate, 'kind' | 'targets' | 'controls' | 'classicalTarget'> | null;
+  applied: boolean;
+  amplitudes: Amplitude[];
+  classicalRecords: number[];
+}
+export type TraceResult = { ok: true; frames: TraceFrame[] } | RunFailure;

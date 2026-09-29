@@ -191,6 +191,46 @@ public class BridgeCrossCheckTest {
         assertEquals(JqapiBridge.sampleExpectation(bell, "{}", 1), runCompiledJs("sampleExpectation", jsonString(bell), jsonString("{}"), "1"));
     }
 
+    @Test
+    void seededTracesMatchCompiledBackend() throws IOException, InterruptedException {
+        String teleportation = """
+            {"version":2,"numQubits":3,"numClassicalBits":3,"levels":[
+              {"gates":[{"kind":"U3","targets":[0],"controls":[],"params":{"theta":1.1,"phi":0.7,"lambda":0}}]},
+              {"gates":[{"kind":"H","targets":[1],"controls":[]}]},
+              {"gates":[{"kind":"CNOT","targets":[2],"controls":[1]}]},
+              {"gates":[{"kind":"CNOT","targets":[1],"controls":[0]}]},
+              {"gates":[{"kind":"H","targets":[0],"controls":[]}]},
+              {"gates":[{"kind":"MEASUREMENT","targets":[0],"controls":[],"classicalTarget":0}]},
+              {"gates":[{"kind":"MEASUREMENT","targets":[1],"controls":[],"classicalTarget":1}]},
+              {"gates":[{"kind":"X","targets":[2],"controls":[],"condition":{"bitIndex":1,"expected":1}}]},
+              {"gates":[{"kind":"Z","targets":[2],"controls":[],"condition":{"bitIndex":0,"expected":1}}]}
+            ]}
+            """;
+        for (String spec : List.of(BELL, teleportation)) {
+            for (int seed : new int[] {0, 1, 4096, -1}) {
+                String jvm = JqapiBridge.trace(spec, seed);
+                String node = runCompiledJs("trace", jsonString(spec.replace("\n", " ")), Integer.toString(seed));
+                var expected = parseAmplitudes(jvm);
+                var actual = parseAmplitudes(node);
+                assertEquals(spec.equals(BELL) ? 12 : 80, expected.size());
+                assertEquals(expected.size(), actual.size());
+                for (int i = 0; i < expected.size(); i++) {
+                    assertEquals(expected.get(i)[0], actual.get(i)[0], 1e-12);
+                    assertEquals(expected.get(i)[1], actual.get(i)[1], 1e-12);
+                }
+                assertEquals(CELL.matcher(jvm).replaceAll("amplitude"), CELL.matcher(node).replaceAll("amplitude"));
+            }
+        }
+    }
+
+    @Test
+    void traceChecksBudgetBeforeAllocatingStateAndPreservesErrors() {
+        assertTrue(JqapiBridge.trace("{\"version\":1,\"numQubits\":21,\"levels\":[]}", 0).contains("INPUT_LIMIT_EXCEEDED"));
+        assertTrue(JqapiBridge.trace("{}", 0).contains("INVALID_CIRCUIT_SPEC"));
+        assertTrue(JqapiBridge.trace(BELL.replace("\"version\":1", "\"version\":99"), 0).contains("UNSUPPORTED_SPEC_VERSION"));
+        assertEquals(JqapiBridge.trace(BELL, 4), JqapiBridge.trace(BELL, 4));
+    }
+
     /** Minimal JSON string literal for embedding a value in the node script. */
     private static String jsonString(String s) {
         return '"' + s.replace("\\", "\\\\").replace("\"", "\\\"") + '"';
