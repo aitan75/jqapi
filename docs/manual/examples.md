@@ -157,41 +157,65 @@ assert qreg.getInput()[1].equals(factorized[0]);
 
 ## 5. Quantum teleportation
 
-Teleportation transfers the state of one qubit (`q`) onto another (`b`) using an
-entangled pair and a mid-circuit `Measurement`. The circuit uses three qubits:
-`q = 0` (state to teleport), `a = 1` and `b = 2` (the entangled pair).
+Teleportation transfers an arbitrary input on q0 to Bob's q2 using an
+entangled pair, two measurements, and two classical bits. Alice's original state
+is destroyed by measurement; Bob needs her classical outcomes before applying
+the corrections. This does not clone a qubit or communicate faster than light.
 
 ```java
-final int q = 0, a = 1, b = 2;
-Circuit circuit = new Circuit(3);
-CircuitLevel l1 = new CircuitLevel();
-CircuitLevel l2 = new CircuitLevel();
-CircuitLevel l3 = new CircuitLevel();
-CircuitLevel l4 = new CircuitLevel();
-CircuitLevel l5 = new CircuitLevel();
-CircuitLevel l6 = new CircuitLevel();
-CircuitLevel l7 = new CircuitLevel();
-l1.addGate(new Hadamard(a));
-l2.addGate(new ControlledNot(a, b));   // entangle the a,b pair
-l3.addGate(new ControlledNot(q, a));
-l4.addGate(new Hadamard(q));
-l5.addGate(new Measurement(q, a));     // measure q and a mid-circuit
-l6.addGate(new ControlledNot(a, b));   // classically-controlled corrections
-l7.addGate(new ControlledZ(q, b));
-circuit.addLevel(l1, l2, l3, l4, l5, l6, l7);
+import org.aitan.jqapi.quantum.classical.Condition;
 
-// Initialize qubit q to a superposition (|0>-amplitude 0.8); a and b to |1>.
-QuantumSimulator simulator = new LocalSimulator(circuit, 0.8, 1, 1);
+Circuit circuit = new Circuit(3, 2);
+Gate[] operations = {
+    new U3(Math.PI / 3, Math.PI / 4, 0, 0),
+    new Hadamard(1),
+    new ControlledNot(1, 2),
+    new ControlledNot(0, 1),
+    new Hadamard(0),
+    Measurement.into(0, 0),
+    Measurement.into(1, 1),
+    new ConditionalGate(new PauliX(2), new Condition(1, 1)),
+    new ConditionalGate(new PauliZ(2), new Condition(0, 1))
+};
+for (Gate gate : operations) {
+    CircuitLevel level = new CircuitLevel();
+    level.addGate(gate);
+    circuit.addLevel(level);
+}
+LocalSimulator simulator = new LocalSimulator(circuit);
 simulator.execute();
-QuantumRegister qreg = simulator.getQuantumRegister();
-
-Qubit[] input  = qreg.getInput();
-Qubit[] output = qreg.getQubitRegisterState();
-// The original state of q now lives on b:
-assert input[q].equals(output[b]);
+System.out.println(simulator.extractClassicalRecords());
+// Bob's reduced state equals the input prepared by U3, for all four outcomes.
 ```
 
-*(Adapted from `JavaQuantumAPITest.testQuantumTeleportation`.)*
+`BellTeleportationClassicalTest` checks all four branches, including complex
+input states. The browser regression tests require fidelity greater than
+`1 - 1e-9` for every branch; fidelity compares states independently of global phase. These corrections use the classical feed-forward support from
+[#110](https://github.com/aitan75/jqapi/issues/110).
+
+### Step-by-step in the web editor
+
+1. Open **Algorithms → Guided teleportation**. The live state updates automatically.
+2. Change **θ** and **φ** to prepare a different input on q0. The guide compares
+   its Bloch vector with Bob's reduced state and reports fidelity.
+3. Use **Initial state**, **Previous**, **Next**, the slider, or **Play** to inspect
+   the trajectory. The highlighted circuit column follows the current operation.
+4. Stop before each measurement to inspect the superposition, then advance once
+   to see its discrete collapse, recorded outcome and conditional probability.
+5. Advance through Bob's conditional X and Z. A skipped correction is labelled;
+   final fidelity is 100% for all four classical outcomes.
+6. **Re-run trajectory** chooses a new seed. Edits retain the seed and navigation
+   only selects stored frames, so going back does not change measurement outcomes.
+
+The reduced Bloch sphere can show any qubit, including a mixed state from
+entanglement. The heatmap uses brightness for probability and hue for phase;
+probabilities alone cannot describe a quantum state. A zero amplitude has no
+phase. **Run simulation** separately samples shots and evaluates observables.
+
+The editor uses one implicit classical bit c[q] for each qubit, with measurements
+writing to that bit and optional conditions on supported single-qubit gates.
+Save/load preserves this CircuitSpec v2 subset; other classical layouts are
+rejected explicitly. Ordinary circuits continue to serialize as v1.
 
 ---
 
@@ -399,7 +423,9 @@ and Alice's CNOT/Hadamard, store measurements of q0 and q1 in c0 and c1. Apply
 superposition, and complex input states against the transferred amplitudes.
 
 Circuits with classical operations use CircuitSpec v2. Java and the TeaVM bridge
-execute them; the current grid editor and ASCII renderer reject them explicitly.
+execute them; the grid editor supports the implicit c[q] subset described in
+[the teleportation walkthrough](#5-quantum-teleportation). The ASCII renderer
+continues to reject classical operations explicitly.
 See [the format and execution contract](../api/classical-design.md).
 
 ## 11. Expectation values of a Hamiltonian
