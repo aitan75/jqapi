@@ -69,16 +69,8 @@ public final class JqapiBridge {
             LocalSimulator sim = new LocalSimulator(circuit);
             sim.execute();
             ComplexVector state = sim.getQuantumRegister().getRegisterState();
-            StringBuilder sb = new StringBuilder("{\"ok\":true,\"amplitudes\":[");
-            for (int i = 0; i < state.getDimension(); i++) {
-                if (i > 0) {
-                    sb.append(',');
-                }
-                Complex c = state.getEntry(i);
-                sb.append("{\"re\":").append(c.getReal())
-                        .append(",\"im\":").append(c.getImaginary()).append('}');
-            }
-            sb.append(']');
+            StringBuilder sb = new StringBuilder("{\"ok\":true,\"amplitudes\":");
+            appendAmplitudes(sb, state);
             if (circuit.getNumClassicalBits() > 0) {
                 sb.append(",\"classicalRecords\":[");
                 var records = sim.extractClassicalRecords();
@@ -98,6 +90,76 @@ public final class JqapiBridge {
         } catch (RuntimeException e) {
             return error("SIMULATION_FAILED");
         }
+    }
+
+    /** Maximum total complex amplitudes retained across all trace frames. */
+    public static final int MAX_TRACE_AMPLITUDES = 1 << 20;
+
+    /** Executes one seeded trajectory, including the initial and every post-operation state. */
+    @JSExport
+    public static String trace(String specJson, int seed) {
+        try {
+            JQAPIConfig config = JQAPIConfig.sequential(JQAPIConfig.DEFAULT_MAX_QUBITS);
+            CircuitSpec spec = CircuitSpecJson.fromJson(specJson, config);
+            long frames = 1;
+            for (var level : spec.levels()) {
+                for (var gate : level.gates()) {
+                    if (gate.kind() != org.aitan.jqapi.visualization.spec.GateKind.IDENTITY) frames++;
+                }
+            }
+            if (frames * (1L << spec.numQubits()) > MAX_TRACE_AMPLITUDES) {
+                return error("INPUT_LIMIT_EXCEEDED");
+            }
+            Circuit circuit = CircuitSpecs.toCircuit(spec, config);
+            LocalSimulator sim = new LocalSimulator(circuit, new java.util.Random(seed)::nextDouble);
+            StringBuilder sb = new StringBuilder("{\"ok\":true,\"frames\":[");
+            appendFrame(sb, sim, -1, -1, null, true);
+            int[] operation = {0};
+            int[] previousLevel = {-1};
+            sim.execute((level, gateIndex, gate, applied) -> {
+                if (previousLevel[0] != level) { operation[0] = 0; previousLevel[0] = level; }
+                var gates = spec.levels().get(level).gates();
+                while (gates.get(operation[0]).kind() == org.aitan.jqapi.visualization.spec.GateKind.IDENTITY) operation[0]++;
+                var source = gates.get(operation[0]++);
+                sb.append(',');
+                appendFrame(sb, sim, level, gateIndex, source, applied);
+            });
+            return sb.append("]}").toString();
+        } catch (RuntimeException e) {
+            return errorFor(e);
+        }
+    }
+
+    private static void appendFrame(StringBuilder sb, LocalSimulator sim, int level, int gateIndex,
+            org.aitan.jqapi.visualization.spec.GateSpec gate, boolean applied) {
+        sb.append("{\"level\":").append(level).append(",\"gateIndex\":").append(gateIndex)
+                .append(",\"applied\":").append(applied).append(",\"gate\":");
+        if (gate == null) sb.append("null");
+        else {
+            sb.append("{\"kind\":\"").append(gate.kind().name()).append("\",\"targets\":")
+                    .append(gate.targets()).append(",\"controls\":").append(gate.controls());
+            if (gate.classicalTarget() != null) sb.append(",\"classicalTarget\":").append(gate.classicalTarget());
+            sb.append('}');
+        }
+        sb.append(",\"amplitudes\":");
+        appendAmplitudes(sb, sim.getQuantumRegister().getRegisterState());
+        sb.append(",\"classicalRecords\":[");
+        var records = sim.extractClassicalRecords();
+        for (int i = 0; i < records.size(); i++) {
+            if (i > 0) sb.append(',');
+            sb.append(records.get(i).bit());
+        }
+        sb.append("]}");
+    }
+
+    private static void appendAmplitudes(StringBuilder sb, ComplexVector state) {
+        sb.append('[');
+        for (int i = 0; i < state.getDimension(); i++) {
+            if (i > 0) sb.append(',');
+            Complex c = state.getEntry(i);
+            sb.append("{\"re\":").append(c.getReal()).append(",\"im\":").append(c.getImaginary()).append('}');
+        }
+        sb.append(']');
     }
 
     /**
