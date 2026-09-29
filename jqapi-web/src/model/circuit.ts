@@ -2,8 +2,6 @@ import type { CircuitSpec, ComplexMatrix, Gate } from '../wasm/types';
 
 export const DEFAULT_COLUMNS = 8;
 export const MAX_QUBITS = 8;
-/** CircuitSpec format version supported by the editor (mirrors `CircuitSpec.CURRENT_VERSION`). */
-export const CURRENT_VERSION = 2;
 /** Mirrors `CircuitSpecJson.MAX_GATES`: total gate placements accepted from untrusted input. */
 export const MAX_GATES = 100_000;
 /** Upper bound on levels accepted from untrusted input; bounds the editor grid before it is built. */
