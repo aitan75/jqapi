@@ -352,7 +352,9 @@
 }
 
 .editor-actions button,
-.canvas-zoom button {
+.canvas-zoom button,
+.live-toolbar button,
+.timeline-controls button {
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 0.3rem 0.5rem;
@@ -361,7 +363,9 @@
   cursor: pointer;
 }
 
-.editor-actions button:disabled {
+.editor-actions button:disabled,
+.live-toolbar button:disabled,
+.timeline-controls button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
@@ -972,3 +976,33 @@
   .sidebar { position: static; }
   .circuit-settings { flex-wrap: wrap; }
 }
+
+/* Live state and discrete trajectory navigation. */
+.live-state { margin-top: 1rem; }
+.live-toolbar, .timeline-controls, .guide-angles { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+.live-toolbar h2 { margin-right: auto; }
+.live-toolbar span, .state-heatmap p, .bloch-sphere p { color: var(--text-muted); font-size: .8rem; }
+.live-state fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.timeline, .teleportation-guide { padding: 1rem; border: 1px solid var(--border-color, #274058); border-radius: 12px; margin-bottom: 1rem; }
+.timeline-controls input { flex: 1; min-width: 100px; }
+.frame-description { min-height: 4rem; }
+.live-visualizations { display: grid; grid-template-columns: minmax(210px, 1fr) minmax(0, 2fr); gap: 1.5rem; padding: 1rem 0; }
+.bloch-sphere svg { display: block; width: 100%; max-width: 280px; margin: auto; }
+.bloch-sphere output { display: block; text-align: center; font-size: .8rem; }
+.heatmap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 5px; max-height: 420px; overflow: auto; }
+.heatmap-cell { display: flex; flex-direction: column; align-items: center; padding: .6rem .2rem; border-radius: 6px; font-size: .7rem; color: white; text-shadow: 0 1px 3px black; }
+.phase-legend::before { content: ''; display: block; height: 8px; background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red); border-radius: 4px; margin-bottom: .5rem; }
+.teleportation-guide li { margin: .3rem 0; color: var(--text-muted); }
+.teleportation-guide li[aria-current] { color: var(--accent-cyan); font-weight: bold; }
+.guide-angles input { width: 100px; margin-left: .5rem; }
+.gate-config-field select { max-width: 100%; }
+@media (max-width: 700px) { .live-visualizations { grid-template-columns: 1fr; } }
+
+.live-state input[type="number"], .live-state select, .gate-config-field select {
+  border: 1px solid var(--border-subtle); border-radius: 6px; padding: .4rem .5rem;
+  background: var(--bg-card); color: var(--text-main); font: inherit;
+}
+.live-state button:hover:not(:disabled) { border-color: var(--accent-cyan); }
+.live-state input[type="range"] { accent-color: var(--accent-cyan); }
+/* A measurement changes the state discretely; never tween its probabilities. */
+.live-state .bar-fill { transition: none; }
