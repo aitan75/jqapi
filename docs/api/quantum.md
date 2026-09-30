@@ -16,6 +16,7 @@ structure that gates are organized into.
 - [Circuit](#circuit)
 - [CircuitLevel](#circuitlevel)
 - [Qft](#qft)
+- [UnitaryOperation](#unitaryoperation)
 
 > **Conventions.** Qubit `0` is the most significant bit of a state index; a
 > register of `n` qubits holds a `2^n` amplitude vector. See the
@@ -344,3 +345,67 @@ the circuit and its `JQAPIConfig` limit. `appendForward` and `appendInverse`
 throw `NullPointerException` for a null circuit or target array, and
 `IllegalArgumentException` when the target list is empty, has duplicate indexes,
 or contains an index outside `[0, circuit.getInputSize())`.
+
+---
+
+## `UnitaryOperation`
+
+Immutable, reusable unitary over `getQubitCount()` local qubits, stored as an
+ordered list of small gate steps rather than a full-system matrix. Local qubit
+`0` is the most significant bit. Each step is dense only over its own support
+(controls + targets), capped at `MAX_DENSE_QUBITS` (8). Appending to a circuit
+produces `GenericGate` and `MultiControlled` gates, so the simulator keeps
+evolving the state vector locally.
+
+### Factories
+
+| Method | Description |
+|--------|-------------|
+| `of(int qubitCount, Gate... gates)` | Sequence of unitary gates with local indexes. Identity gates are dropped; a single-qubit gate with several indexes is applied to each one. |
+| `fromCircuit(Circuit circuit)` | Every gate of a circuit, level by level. |
+| `permutation(int... mapping)` | Reversible classical permutation `\|x> -> \|mapping[x]>` over `log2(mapping.length)` qubits. |
+
+### Operations
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `then(UnitaryOperation next)` | `UnitaryOperation` | `next · this`; widths must match. |
+| `adjoint()` | `UnitaryOperation` | Steps reversed, each conjugate-transposed. |
+| `power(int exponent)` / `power(int exponent, long maxSteps)` | `UnitaryOperation` | `this` repeated `exponent >= 0` times. |
+| `controlled()` | `UnitaryOperation` | Adds a control as the new local qubit `0`; other qubits shift by one. |
+| `controlledPower(int exponent)` | `UnitaryOperation` | `power(exponent).controlled()`, e.g. the `C-U^(2^j)` blocks of phase estimation. |
+| `on(int width, int... qubits)` | `UnitaryOperation` | Embeds into `width` qubits: local qubit `i` becomes `qubits[i]` (any order, non-adjacent allowed). |
+| `appendTo(Circuit circuit, int... qubits)` | `void` | Remaps onto circuit qubits and appends one level per step. `appendTo(circuit)` uses qubits `0..n-1`. |
+| `getStepCount()` | `int` | Number of gate steps (the work a circuit run performs). |
+
+Every step is controlled exactly, not up to a phase: a global phase of `U`
+becomes the relative phase of the control's `|1>` branch in `controlled()`,
+and the `|0>` branch is left unchanged.
+
+```java
+UnitaryOperation t = UnitaryOperation.of(1, new PauliT(0));
+UnitaryOperation inc = UnitaryOperation.permutation(1, 2, 3, 0);  // +1 mod 4
+
+Circuit circuit = new Circuit(5);
+t.controlledPower(4).appendTo(circuit, 0, 3);      // control q0, target q3
+inc.adjoint().controlled().appendTo(circuit, 1, 4, 2); // decrement (q4,q2) if q1
+UnitaryOperation qftDagger = UnitaryOperation.fromCircuit(Qft.forward(2)).adjoint();
+```
+
+### Validation and budgets
+
+- `IllegalArgumentException`: measurement, reset or conditional gates; a gate
+  matrix that is not unitary (tolerance `1e-9`); indexes outside the width or
+  repeated; mismatched widths in `then`; a permutation that is not a bijection
+  of a power-of-two range; a negative exponent or budget.
+- `JQApiLimitException`: width outside `[1, 30]`; a step wider than
+  `MAX_DENSE_QUBITS`; a `power` result above `maxSteps`
+  (`DEFAULT_MAX_STEPS = 2^20`). Budgets are checked in `long` arithmetic before
+  any step is built. Storage is matrix-free, but repetition is not free: the
+  step count grows with the exponent, so exponential powers need an explicit
+  budget.
+- The circuit passed to `appendTo` still enforces its `JQAPIConfig.maxQubits()`.
+
+For phase estimation, start the simulator from a normalized complex or
+entangled target state with `new LocalSimulator(circuit, initialState, random)`;
+it rejects vectors whose dimension is not `2^n` or whose norm is not 1.

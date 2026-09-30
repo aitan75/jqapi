@@ -19,6 +19,7 @@ current source.
 9. [Reproducible shot sampling](#9-reproducible-shot-sampling)
 10. [Classical feed-forward](#10-classical-feed-forward)
 11. [Expectation values of a Hamiltonian](#11-expectation-values-of-a-hamiltonian)
+12. [Phase estimation with composable unitaries](#12-phase-estimation-with-composable-unitaries)
 
 Common imports for the snippets below:
 
@@ -488,3 +489,39 @@ sampled mean and shots of every term. Invalid lines are reported with their
 line number while you type. Circuits with measurement or reset show only the
 sampled estimate, and a single shot shows only the exact value. The observable
 is not saved in circuit files or shared links.
+
+## 12. Phase estimation with composable unitaries
+
+`UnitaryOperation` turns gates into a reusable block that can be inverted,
+repeated, controlled and placed on any qubits, without building a
+full-register matrix. Here two counting qubits estimate the eigenphase `1/4`
+of `U = P(pi/2) (x) P(pi/2) · CZ` on the entangled target
+`(|01> + i|10>)/sqrt(2)`:
+
+```java
+UnitaryOperation u = UnitaryOperation.of(2,
+        new Phase(Math.PI / 2, 0), new Phase(Math.PI / 2, 1), new ControlledZ(0, 1));
+
+Circuit circuit = new Circuit(4);                 // q0,q1 counting; q2,q3 target
+CircuitLevel h = new CircuitLevel();
+h.addGate(new Hadamard(0, 1));
+circuit.addLevel(h);
+u.controlledPower(2).appendTo(circuit, 0, 2, 3);  // counting MSB controls U^2
+u.controlledPower(1).appendTo(circuit, 1, 2, 3);
+Qft.appendInverse(circuit, 0, 1);
+
+double r = 1 / Math.sqrt(2);
+Complex[] amplitudes = new Complex[16];
+Arrays.fill(amplitudes, Complex.ZERO);
+amplitudes[0b0001] = new Complex(r, 0);           // |00>|01>
+amplitudes[0b0010] = new Complex(0, r);           // |00>|10>
+LocalSimulator simulator = new LocalSimulator(circuit, new ComplexVector(amplitudes), () -> 0.5);
+simulator.execute();
+// the counting register is |01> with probability 1: phase = 1/4
+```
+
+`controlledPower(k)` repeats `U` `k` times, so the step count grows with the
+power; `power(k, maxSteps)` makes that budget explicit and throws
+`JQApiLimitException` before building anything too large. Measurement, reset
+and conditional gates are rejected. See the
+[API reference](../api/quantum.md#unitaryoperation).
