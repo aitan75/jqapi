@@ -31,7 +31,7 @@ export interface Amplitude {
   im: number;
 }
 
-export type EngineErrorCode = 'INPUT_LIMIT_EXCEEDED' | 'INVALID_CIRCUIT_SPEC' | 'INVALID_OBSERVABLE' | 'INVALID_SHOT_COUNT' | 'NON_UNITARY_CIRCUIT' | 'SIMULATION_FAILED' | 'UNSUPPORTED_SPEC_VERSION';
+export type EngineErrorCode = 'INPUT_LIMIT_EXCEEDED' | 'INVALID_CIRCUIT_SPEC' | 'INVALID_OBSERVABLE' | 'INVALID_SHOT_COUNT' | 'NON_UNITARY_CIRCUIT' | 'SIMULATION_FAILED' | 'UNSUPPORTED_SPEC_VERSION' | 'INVALID_QASM' | 'CANCELLED' | 'TIMEOUT';
 
 export interface RunSuccess {
   ok: true;
@@ -42,7 +42,7 @@ export interface RunSuccess {
 
 export interface RunFailure {
   ok: false;
-  error: { code: EngineErrorCode };
+  error: { code: EngineErrorCode; detail?: string };
 }
 
 export type RunResult = RunSuccess | RunFailure;
@@ -98,3 +98,5 @@ export interface TraceFrame {
   classicalRecords: number[];
 }
 export type TraceResult = { ok: true; frames: TraceFrame[] } | RunFailure;
+export type QasmImportResult = { ok: true; spec: CircuitSpec } | RunFailure;
+export type QasmExportResult = { ok: true; source: string } | RunFailure;

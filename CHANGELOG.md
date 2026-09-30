@@ -22,6 +22,12 @@ the published release notes and source archives.
 - Scientific reference tests against committed analytic and pinned Qiskit
   fixtures, and reproducible JVM/browser benchmarks with a documented baseline.
 
+- Studio OpenQASM 2 import/export: failed or unsupported imports keep the
+  current circuit, and unsupported exports fail explicitly (#113).
+- Studio simulations run in cancellable Web Workers with a deadline, under a
+  measured browser budget (qubits, shots, depth, dense-matrix cells, work, trace
+  and result size) exposed by the bridge `capabilities` export (#113).
+
 ### Fixed
 
 - `U3` no longer produces NaN amplitudes when `phi + lambda` overflows for
@@ -31,6 +37,10 @@ the published release notes and source archives.
 
 ### Changed
 
+- The browser bridge is limited to 8 quantum and classical bits and the
+  trace snapshot budget is 65,536 amplitudes; JVM defaults are unchanged. JSON
+  `MULTI_CONTROLLED` imports into Studio accept only X or single-control phase
+  matrices (#113).
 - Corrected the documented TeaVM requirement to JDK 25 exactly and refreshed the
   README with a studio overview and shots demo.
 

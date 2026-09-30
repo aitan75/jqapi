@@ -382,9 +382,9 @@ outcome from the post-state. Compute the outcome's probability from the precedin
 frame. Adjacent measurements share a post/pre boundary; navigation never resamples.
 
 Before allocating the state vector, the bridge checks
-`(1 + nonIdentityOperations) * 2^numQubits <= MAX_TRACE_AMPLITUDES` (1,048,576).
-Exceeding this snapshot budget returns `INPUT_LIMIT_EXCEEDED`. This is a count
-of complex amplitudes, not a byte or execution-time limit. Existing circuit and
-qubit limits still apply. The web editor additionally caps registers at 8 qubits.
-Simulation remains synchronous on the main thread; Web Worker execution and
-cancellation remain outside this change (#113 phase C).
+`(1 + nonIdentityOperations) * 2^numQubits <= MAX_TRACE_AMPLITUDES` (65,536,
+`BrowserBudget.MAX_TRACE_AMPLITUDES`). Exceeding this snapshot budget returns
+`INPUT_LIMIT_EXCEEDED`. This is a count of complex amplitudes, not a byte or
+execution-time limit; the other browser budgets (8 qubits, work, result size)
+still apply. Studio runs `trace` in a cancellable Web Worker with a deadline; see
+the [browser bridge policy](browser-bridge.md).

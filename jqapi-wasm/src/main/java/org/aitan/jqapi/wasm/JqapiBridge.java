@@ -23,6 +23,8 @@ import org.aitan.jqapi.visualization.CircuitSpecs;
 import org.aitan.jqapi.visualization.spec.CircuitSpec;
 import org.aitan.jqapi.visualization.spec.CircuitSpecJson;
 import org.teavm.jso.JSExport;
+import org.aitan.jqapi.visualization.openqasm.OpenQasmParser;
+import org.aitan.jqapi.visualization.openqasm.OpenQasmSerializer;
 
 /**
  * Browser-facing bridge for the jqapi simulator, compiled to JavaScript by
@@ -45,6 +47,77 @@ public final class JqapiBridge {
     private JqapiBridge() {
     }
 
+    /** Public, machine-readable browser limits; the web policy is cross-checked against these. */
+    @JSExport
+    public static String capabilities() {
+        return "{\"maxQubits\":" + BrowserBudget.MAX_QUBITS
+                + ",\"maxLevels\":" + BrowserBudget.MAX_LEVELS
+                + ",\"maxGates\":" + BrowserBudget.MAX_GATES
+                + ",\"maxMatrixCells\":" + BrowserBudget.MAX_MATRIX_CELLS
+                + ",\"maxInputChars\":" + BrowserBudget.MAX_INPUT_CHARS
+                + ",\"maxResultBytes\":" + BrowserBudget.MAX_RESULT_BYTES
+                + ",\"maxTraceAmplitudes\":" + BrowserBudget.MAX_TRACE_AMPLITUDES
+                + ",\"maxObservableTerms\":" + BrowserBudget.MAX_OBSERVABLE_TERMS
+                + ",\"maxWork\":" + BrowserBudget.MAX_WORK
+                + ",\"maxElapsedMs\":" + BrowserBudget.MAX_ELAPSED_MS
+                + ",\"maxShots\":" + MAX_SHOTS + "}";
+    }
+
+    /** Parses the core OpenQASM 2 subset without running a simulation. */
+    @JSExport
+    public static String importQasm(String source) {
+        try {
+            BrowserBudget.input(source);
+            CircuitSpec spec = OpenQasmParser.parse(source, BrowserBudget.config());
+            BrowserBudget.check(spec);
+            return boundedResult("{\"ok\":true,\"spec\":" + CircuitSpecJson.toJson(spec) + "}");
+        } catch (JQApiLimitException e) {
+            return error("INPUT_LIMIT_EXCEEDED");
+        } catch (IllegalArgumentException e) {
+            return qasmError(e);
+        } catch (RuntimeException e) {
+            return errorFor(e);
+        }
+    }
+
+    /** Unsupported export gates are rejected explicitly, never omitted. */
+    @JSExport
+    public static String exportQasm(String specJson) {
+        try {
+            String source = OpenQasmSerializer.serialize(parseSpec(specJson), BrowserBudget.config());
+            return boundedResult("{\"ok\":true,\"source\":" + quote(source) + "}");
+        } catch (JQApiLimitException e) {
+            return error("INPUT_LIMIT_EXCEEDED");
+        } catch (IllegalArgumentException e) {
+            return qasmError(e);
+        } catch (RuntimeException e) {
+            return errorFor(e);
+        }
+    }
+
+    private static String qasmError(IllegalArgumentException e) {
+        if (e instanceof UnsupportedSpecVersionException) return errorFor(e);
+        return "{\"ok\":false,\"error\":{\"code\":\"INVALID_QASM\",\"detail\":" + quote(e.getMessage()) + "}}";
+    }
+
+    private static String quote(String value) {
+        StringBuilder result = new StringBuilder("\"");
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '"' || c == '\\') result.append('\\').append(c);
+            else if (c < 32) {
+                String hex = Integer.toHexString(c);
+                result.append("\\u").append("0000", 0, 4 - hex.length()).append(hex);
+            } else result.append(c);
+        }
+        return result.append('"').toString();
+    }
+
+    private static String boundedResult(String result) {
+        BrowserBudget.require(result.getBytes(java.nio.charset.StandardCharsets.UTF_8).length <= BrowserBudget.MAX_RESULT_BYTES);
+        return result;
+    }
+
     /** Present so the TeaVM entry point resolves; the real API is {@link #run(String)}. */
     public static void main(String[] args) {
         // no-op: methods are exposed to JS via @JSExport
@@ -63,8 +136,8 @@ public final class JqapiBridge {
     @JSExport
     public static String run(String specJson) {
         try {
-            JQAPIConfig config = JQAPIConfig.sequential(JQAPIConfig.DEFAULT_MAX_QUBITS);
-            CircuitSpec spec = CircuitSpecJson.fromJson(specJson, config);
+            JQAPIConfig config = BrowserBudget.config();
+            CircuitSpec spec = parseSpec(specJson);
             Circuit circuit = CircuitSpecs.toCircuit(spec, config);
             LocalSimulator sim = new LocalSimulator(circuit);
             sim.execute();
@@ -80,7 +153,7 @@ public final class JqapiBridge {
                 }
                 sb.append(']');
             }
-            return sb.append('}').toString();
+            return boundedResult(sb.append('}').toString());
         } catch (UnsupportedSpecVersionException e) {
             return error("UNSUPPORTED_SPEC_VERSION");
         } catch (JQApiLimitException e) {
@@ -93,14 +166,14 @@ public final class JqapiBridge {
     }
 
     /** Maximum total complex amplitudes retained across all trace frames. */
-    public static final int MAX_TRACE_AMPLITUDES = 1 << 20;
+    public static final int MAX_TRACE_AMPLITUDES = BrowserBudget.MAX_TRACE_AMPLITUDES;
 
     /** Executes one seeded trajectory, including the initial and every post-operation state. */
     @JSExport
     public static String trace(String specJson, int seed) {
         try {
-            JQAPIConfig config = JQAPIConfig.sequential(JQAPIConfig.DEFAULT_MAX_QUBITS);
-            CircuitSpec spec = CircuitSpecJson.fromJson(specJson, config);
+            JQAPIConfig config = BrowserBudget.config();
+            CircuitSpec spec = parseSpec(specJson);
             long frames = 1;
             for (var level : spec.levels()) {
                 for (var gate : level.gates()) {
@@ -124,7 +197,7 @@ public final class JqapiBridge {
                 sb.append(',');
                 appendFrame(sb, sim, level, gateIndex, source, applied);
             });
-            return sb.append("]}").toString();
+            return boundedResult(sb.append("]}").toString());
         } catch (RuntimeException e) {
             return errorFor(e);
         }
@@ -178,8 +251,9 @@ public final class JqapiBridge {
             return error("INVALID_SHOT_COUNT");
         }
         try {
-            JQAPIConfig config = JQAPIConfig.sequential(JQAPIConfig.DEFAULT_MAX_QUBITS);
-            CircuitSpec spec = CircuitSpecJson.fromJson(specJson, config);
+            JQAPIConfig config = BrowserBudget.config();
+            CircuitSpec spec = parseSpec(specJson);
+            BrowserBudget.work(spec, shots, 0);
             Circuit circuit = CircuitSpecs.toCircuit(spec, config);
             SamplingOptions options = new SamplingOptions(shots);
             if (circuit.getNumClassicalBits() > 0) {
@@ -206,7 +280,7 @@ public final class JqapiBridge {
                 }
                 sb.append(']');
             }
-            return sb.append('}').toString();
+            return boundedResult(sb.append('}').toString());
         } catch (UnsupportedSpecVersionException e) {
             return error("UNSUPPORTED_SPEC_VERSION");
         } catch (JQApiLimitException e) {
@@ -231,11 +305,13 @@ public final class JqapiBridge {
     @JSExport
     public static String expectation(String specJson, String observableJson) {
         try {
-            Circuit circuit = parseCircuit(specJson);
+            CircuitSpec spec = parseSpec(specJson);
+            Circuit circuit = CircuitSpecs.toCircuit(spec, BrowserBudget.config());
             if (!isUnitary(circuit)) return error("NON_UNITARY_CIRCUIT");
             PauliSum observable = parseObservable(observableJson, circuit);
             // Reject from the inputs alone, before allocating the 2^n state.
             Expectation.requireWithinBudget(observable, Expectation.DEFAULT_MAX_WORK);
+            BrowserBudget.work(spec, 1, 2L * observable.terms().size());
             LocalSimulator sim = new LocalSimulator(circuit);
             sim.execute();
             ComplexVector state = sim.getQuantumRegister().getRegisterState();
@@ -248,7 +324,7 @@ public final class JqapiBridge {
                 sb.append("{\"coeff\":").append(term.coeff()).append(",\"pauli\":\"").append(term.pauli())
                         .append("\",\"value\":").append(Expectation.of(state, term.pauli())).append('}');
             }
-            return sb.append("]}").toString();
+            return boundedResult(sb.append("]}").toString());
         } catch (RuntimeException e) {
             return errorFor(e);
         }
@@ -270,8 +346,11 @@ public final class JqapiBridge {
             return error("INVALID_SHOT_COUNT");
         }
         try {
-            Circuit circuit = parseCircuit(specJson);
+            CircuitSpec spec = parseSpec(specJson);
+            Circuit circuit = CircuitSpecs.toCircuit(spec, BrowserBudget.config());
             PauliSum observable = parseObservable(observableJson, circuit);
+            long terms = observable.terms().stream().filter(term -> (term.pauli().xMask() | term.pauli().zMask()) != 0).count();
+            BrowserBudget.work(spec, shots * terms, 2L * spec.numQubits());
             SampledExpectation result = ExpectationSampler.estimate(circuit, observable, new SamplingOptions(shots));
             StringBuilder sb = new StringBuilder("{\"ok\":true,\"value\":").append(result.value())
                     .append(",\"standardError\":").append(result.standardError())
@@ -283,22 +362,25 @@ public final class JqapiBridge {
                         .append("\",\"shots\":").append(term.shots()).append(",\"mean\":").append(term.mean())
                         .append(",\"variance\":").append(term.variance()).append('}');
             }
-            return sb.append("]}").toString();
+            return boundedResult(sb.append("]}").toString());
         } catch (RuntimeException e) {
             return errorFor(e);
         }
     }
 
-    private static Circuit parseCircuit(String specJson) {
-        JQAPIConfig config = JQAPIConfig.sequential(JQAPIConfig.DEFAULT_MAX_QUBITS);
-        return CircuitSpecs.toCircuit(CircuitSpecJson.fromJson(specJson, config), config);
+    private static CircuitSpec parseSpec(String specJson) {
+        BrowserBudget.input(specJson);
+        CircuitSpec spec = CircuitSpecJson.fromJson(specJson, BrowserBudget.config());
+        BrowserBudget.check(spec);
+        return spec;
     }
 
-    /** @throws InvalidObservableException for any invalid observable other than a resource limit */
     private static PauliSum parseObservable(String observableJson, Circuit circuit) {
         PauliSum observable;
         try {
+            BrowserBudget.input(observableJson);
             observable = PauliSumJson.fromJson(observableJson, circuit.getConfig());
+            BrowserBudget.require(observable.terms().size() <= BrowserBudget.MAX_OBSERVABLE_TERMS);
         } catch (JQApiLimitException e) {
             throw e;
         } catch (IllegalArgumentException | NullPointerException e) {

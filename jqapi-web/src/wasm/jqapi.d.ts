@@ -4,3 +4,6 @@ export function expectation(json: string, observableJson: string): string;
 export function sampleExpectation(json: string, observableJson: string, shots: number): string;
 export function main(args: string[]): void;
 export function trace(json: string, seed: number): string;
+export function capabilities(): string;
+export function importQasm(source: string): string;
+export function exportQasm(json: string): string;

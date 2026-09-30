@@ -1,11 +1,12 @@
+import { BROWSER_BUDGET } from '../wasm/policy';
 import type { CircuitSpec, ComplexMatrix, Gate } from '../wasm/types';
 
 export const DEFAULT_COLUMNS = 8;
-export const MAX_QUBITS = 8;
-/** Mirrors `CircuitSpecJson.MAX_GATES`: total gate placements accepted from untrusted input. */
-export const MAX_GATES = 100_000;
+export const MAX_QUBITS = BROWSER_BUDGET.maxQubits;
+/** Browser gate budget, checked before allocating the editor grid. */
+export const MAX_GATES = BROWSER_BUDGET.maxGates;
 /** Upper bound on levels accepted from untrusted input; bounds the editor grid before it is built. */
-export const MAX_LEVELS = 100_000;
+export const MAX_LEVELS = BROWSER_BUDGET.maxLevels;
 
 export const PAULI_X_MATRIX: ComplexMatrix = [
   [{ re: 0, im: 0 }, { re: 1, im: 0 }],
@@ -61,6 +62,7 @@ export class CircuitModel {
   }
 
   private static emptyGrid(qubits: number, columns: number): (Placement | null)[][] {
+    if (!Number.isInteger(qubits) || qubits < 1 || qubits > MAX_QUBITS || !Number.isInteger(columns) || columns < 1 || columns > MAX_LEVELS) throw new Error('INPUT_LIMIT_EXCEEDED');
     return Array.from({ length: qubits }, () => Array<Placement | null>(columns).fill(null));
   }
 
@@ -117,6 +119,7 @@ export class CircuitModel {
       levels.push(swaps);
     }
 
+    if (this.columns + levels.length > MAX_LEVELS) throw new Error('INPUT_LIMIT_EXCEEDED');
     this.cells.forEach((row) => row.splice(step, 0, ...Array<Placement | null>(levels.length).fill(null)));
     this.columns += levels.length;
     levels.forEach((level, offset) => level.forEach(({ qubit, placement }) => this.place(qubit, step + offset, placement)));
@@ -350,7 +353,8 @@ function isGate(value: unknown, numQubits: number): boolean {
   if (kind === 'CSWAP') return targets.length === 2 && controls.length === 1;
   if (kind === 'TOFFOLI') return targets.length === 1 && controls.length === 2;
   if (kind === 'MULTI_CONTROLLED') {
-    return targets.length === 1 && controls.length >= 1 && isComplexMatrix(matrix, 2 ** targets.length);
+    return targets.length === 1 && controls.length >= 1 && isComplexMatrix(matrix, 2)
+      && ((matrix as ComplexMatrix).every((row, i) => row.every((cell, j) => cell.re === PAULI_X_MATRIX[i][j].re && cell.im === 0)) || (controls.length === 1 && controlledPhaseAngle(matrix as ComplexMatrix) !== null));
   }
   if (ROTATION_KINDS.has(kind)) return targets.length === 1 && controls.length === 0 && isFiniteNumber(params.theta);
   if (kind === 'U3') {

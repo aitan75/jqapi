@@ -1,0 +1,9 @@
+ab95eb64ef91a373ce156decc4c50214c04f2f58c4c568ab19a762bd6274050e  jqapi-web/benchmarks/browser.mjs
+a08da584f2cb8583388c90b6325fff08101aeab496fcbea9537f97b469881ffa  jqapi-web/benchmarks/studio.mjs
+a7fc5309dbcef9b2fa8122a464340576988db079cdf33045849b8b267627cc7c  jqapi-web/src/wasm/client.ts
+89c61e4b881fe42c7cd59f9772fbc2dce1e7e73bfd4b6a3dac3d364688b7ce30  jqapi-web/src/wasm/engine.worker.ts
+349843da550fb2442b6e2244996cd6f7392afeab292e3224f62c0362768a1a13  jqapi-web/src/wasm/protocol.ts
+86a171367650ade00ba39b43f8ab0ba16fec28658eff7c8c5df4dfac38643cab  jqapi-web/src/wasm/policy.ts
+468af02711a612e415dbca921f0657bc6662e4b62f29e878d3c2f6577a059d27  jqapi-web/src/wasm/bridge.ts
+d1b3008687eb74fd75170fa1b827e3b78621452906654208b1fc37d05b9e5ed1  jqapi-wasm/src/main/java/org/aitan/jqapi/wasm/BrowserBudget.java
+320016ba0b1d47a912e495a6e2e92d2732344dd7f5ce7abdc8d28796fca429b4  jqapi-wasm/src/main/java/org/aitan/jqapi/wasm/JqapiBridge.java

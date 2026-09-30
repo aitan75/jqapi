@@ -81,11 +81,12 @@ network/download and browser launch are excluded. No timing assertions are added
 to Playwright or Vitest. The raw module gzip size is a compression estimate, not
 the full Vite app's network transfer size.
 
-Defaults are 3 warmups and 7 timed repetitions for 8- and 16-qubit H-all/CNOT
+Defaults are 3 warmups and 7 timed repetitions for 8-qubit H-all/CNOT
 execution, plus 1000-shot sampling at 8 qubits. Optional environment variables:
-`BENCHMARK_WARMUP` and `BENCHMARK_REPETITIONS` (1–100), `BENCHMARK_QUBITS` (2–16),
-`BENCHMARK_SHOTS` (1–10000). The benchmark caps execution at 16 qubits to bound
-output serialization; that is **not** the bridge's configured 24-qubit limit.
+`BENCHMARK_WARMUP` and `BENCHMARK_REPETITIONS` (1–100), `BENCHMARK_QUBITS` (2–8),
+`BENCHMARK_SHOTS` (1–10000). The current bridge policy caps execution at eight
+qubits, matching Studio. The September 28 report retains the historical
+16-qubit observation under the previous bridge policy.
 The bridge has no seeded sampling API; distributions/count totals, not identical
 draws, are the browser contract.
 
@@ -97,6 +98,16 @@ measured capacity ceiling. The numeric state-vector lower bound is also recorded
 For a true device ceiling, collect a browser/OS memory trace in a separate run.
 
 ## Recorded baseline
+
+The Studio worker protocol is available with `npm run benchmark:studio` (or
+`node benchmarks/studio.mjs` for clean JSON stdout). It runs the actual worker
+client in Chromium, with three warmups and seven repetitions: an eight-qubit
+trace, a trace at the 65,536-amplitude boundary, counts, combined exact/sampled
+observables, and counts near the work budget. Worker startup, module loading,
+JSON conversion and structured cloning are included; React rendering is excluded.
+A 10 ms main-thread heartbeat records scheduling opportunities, without latency
+assertions. No worker heap measurement is claimed. Run separately from tests or
+other benchmarks; [September 30](2026-09-30/README.md) records this policy baseline.
 
 The [2026-09-28 observation](2026-09-28/README.md) includes raw JVM and Chromium
 results. The historical pre-#15 dense-oracle search figures are superseded for

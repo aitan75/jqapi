@@ -17,7 +17,7 @@ function integer(name, fallback, min, max) {
 
 const warmup = integer('BENCHMARK_WARMUP', 3, 1, 100);
 const repetitions = integer('BENCHMARK_REPETITIONS', 7, 1, 100);
-const qubits = integer('BENCHMARK_QUBITS', 16, 2, 16);
+const qubits = integer('BENCHMARK_QUBITS', 8, 2, 8);
 const shots = integer('BENCHMARK_SHOTS', 1000, 1, 10000);
 const root = new URL('../../', import.meta.url);
 const payload = await readFile(new URL('../src/wasm/jqapi.js', import.meta.url));
@@ -53,7 +53,6 @@ try {
       ] };
     }
     const cases = [
-      { name: 'run-H-all-CNOT-including-JSON', qubits: 8, shots: 0 },
       { name: 'run-H-all-CNOT-including-JSON', qubits, shots: 0 },
       { name: 'sample-H-all-CNOT-including-JSON', qubits: 8, shots },
     ];
@@ -90,7 +89,7 @@ try {
         maxMs: sorted.at(-1), observedHeapHighWaterBytes, outputJsonBytes,
         stateVectorLowerBoundBytes: 16 * 2 ** entry.qubits });
     }
-    return { userAgent: navigator.userAgent, jsHeapSizeLimit: performance.memory?.jsHeapSizeLimit ?? null, workloads };
+    return { configuredLimits: JSON.parse(engine.capabilities()), userAgent: navigator.userAgent, jsHeapSizeLimit: performance.memory?.jsHeapSizeLimit ?? null, workloads };
   }, { warmup, repetitions, qubits, shots });
   console.log(JSON.stringify({
     timestamp: new Date().toISOString(), commit: git('rev-parse', 'HEAD'),
@@ -101,7 +100,6 @@ try {
     browserArgs: ['--enable-precise-memory-info'], warmup, repetitions,
     execution: 'sequential TeaVM ES2015 JavaScript; module import excluded; JSON round trip included',
     random: 'production browser random source; bridge does not expose a seed',
-    configuredLimits: { maxQubits: 24, maxShots: 10000, maxSamplingWork: 1000000000 },
     memoryMetric: 'Boundary JS heap high-water estimate, including prior workloads/garbage; lower bound on true peak, not RSS. Array buffers and transient in-call peaks may be missing. No capacity ceiling inferred.',
     payload: { rawBytes: payload.length, gzipBytes: gzipSync(payload).length,
       sha256: createHash('sha256').update(payload).digest('hex') },

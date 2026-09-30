@@ -10,7 +10,7 @@ async function loadBellPreset(page: Page) {
 }
 
 async function loadSpec(page: Page, spec: object) {
-  await page.locator('input[type="file"]').setInputFiles({
+  await page.locator('input[accept="application/json"]').setInputFiles({
     name: 'circuit.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(spec)),
   });
 }
@@ -65,9 +65,9 @@ test('keeps the exact value when only the sampled estimate exceeds the work budg
   await page.goto('/');
   await page.getByLabel('Qubits:').fill('8');
   await page.getByLabel('Shots').fill('10000');
-  await observable(page).fill('ZIIIIIII\n'.repeat(512));
+  await observable(page).fill('ZIIIIIII');
   await run(page);
-  await expect(panel(page).getByTestId('exact-expectation')).toHaveText('512.0000');
+  await expect(panel(page).getByTestId('exact-expectation')).toHaveText('1.0000');
   await expect(panel(page)).toContainText('The circuit exceeds the supported simulation limits.');
   await expect(panel(page).getByTestId('sampled-expectation')).toHaveCount(0);
   await expect(page.getByRole('alert')).toHaveCount(0);

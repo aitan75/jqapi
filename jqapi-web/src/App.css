@@ -978,6 +978,15 @@
 }
 
 /* Live state and discrete trajectory navigation. */
+.shot-budget { margin-top: 0.5rem; color: var(--text-muted); font-size: 0.8rem; }
+.shot-budget p { margin: 0.25rem 0; }
+.budget-warning { color: #fda4af; }
+.error details { margin-top: 0.5rem; cursor: auto; }
+.error summary { cursor: pointer; }
+.error button { color: inherit; background: none; border: 0; cursor: pointer; }
+.resource-policy { margin-top: 1rem; padding: 0.75rem; border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-muted); font-size: 0.8rem; line-height: 1.5; }
+.resource-policy summary { cursor: pointer; color: var(--text-main); font-weight: 600; }
+.resource-policy p { margin: 0.75rem 0 0; }
 .live-state { margin-top: 1rem; }
 .live-toolbar, .timeline-controls, .guide-angles { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
 .live-toolbar h2 { margin-right: auto; }

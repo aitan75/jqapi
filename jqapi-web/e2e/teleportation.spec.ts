@@ -57,7 +57,7 @@ test('imports and saves the implicit v2 format losslessly', async ({ page }) => 
   const path = await download.path();
   if (!path) throw new Error('Missing circuit download');
   await page.getByRole('button', { name: 'Clear circuit' }).click();
-  await page.locator('input[type="file"]').setInputFiles(path);
+  await page.locator('input[accept="application/json"]').setInputFiles(path);
   await expect(slider(page)).toHaveAttribute('max', '9');
   await expect(page.getByRole('alert')).toHaveCount(0);
   const saved = page.waitForEvent('download');

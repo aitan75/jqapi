@@ -231,6 +231,19 @@ public class BridgeCrossCheckTest {
         assertEquals(JqapiBridge.trace(BELL, 4), JqapiBridge.trace(BELL, 4));
     }
 
+    @Test
+    void qasmAndBrowserPolicyMatchCompiledBackend() throws IOException, InterruptedException {
+        String source = "OPENQASM 2.0; include \"qelib1.inc\"; qreg q[3]; creg a[1]; creg b[1]; creg c[1]; "
+                + "rx(pi/3) q[0]; cx q[0],q[2]; measure q[0] -> a[0]; if(a==1) z q[2];";
+        assertEquals(JqapiBridge.capabilities(), runCompiledJs("capabilities", new String[0]));
+        assertEquals(JqapiBridge.importQasm(source), runCompiledJs("importQasm", jsonString(source)));
+        assertEquals(JqapiBridge.exportQasm(BELL), runCompiledJs("exportQasm", jsonString(BELL)));
+        String unsupported = "OPENQASM 2.0; qreg q[1]; custom q[0];";
+        assertEquals(JqapiBridge.importQasm(unsupported), runCompiledJs("importQasm", jsonString(unsupported)));
+        String wide = "{\"version\":1,\"numQubits\":9,\"levels\":[]}";
+        assertEquals(JqapiBridge.run(wide), runCompiledJs(wide));
+    }
+
     /** Minimal JSON string literal for embedding a value in the node script. */
     private static String jsonString(String s) {
         return '"' + s.replace("\\", "\\\\").replace("\"", "\\\"") + '"';

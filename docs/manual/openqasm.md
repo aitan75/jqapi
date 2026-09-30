@@ -1,5 +1,8 @@
 # Import and export OpenQASM circuits
 
+For web file import/export, see [Studio](studio.md). The Java API below supports
+a broader classical layout than the editable canvas.
+
 Use OpenQASM 2 to run circuits exported by other tools, or to share a jqapi circuit.
 The supported gates, classical control subset, limits, and ordering conventions
 are listed in the [OpenQASM API reference](../api/openqasm.md).
