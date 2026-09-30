@@ -44,6 +44,7 @@ signatures below:
 | Observables (Pauli sums, overlap, expectation) | `org.aitan.jqapi.observable` | [observables.md](observables.md) |
 | Visualization (spec + ASCII renderer) | `org.aitan.jqapi.visualization` | [visualization.md](visualization.md) |
 | OpenQASM 2 import/export | `org.aitan.jqapi.visualization.openqasm` | [openqasm.md](openqasm.md) |
+| Browser bridge and budgets | `org.aitan.jqapi.wasm` | [browser-bridge.md](browser-bridge.md) |
 | Algorithms & utilities | `org.aitan.jqapi`, `org.aitan.jqapi.utils`, `org.aitan.jqapi.exceptions` | (below) |
 
 ---
