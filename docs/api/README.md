@@ -65,6 +65,7 @@ The core domain model.
 | `Circuit` | An ordered sequence of `CircuitLevel`s over a fixed number of qubits. |
 | `CircuitLevel` | A single time-step: gates applied in parallel to distinct qubits. |
 | `Qft` | Static builder for exact forward and inverse quantum Fourier transforms. |
+| `UnitaryOperation` | Composable unitary: adjoint, powers, controlled powers and qubit remapping without full-system matrices. |
 
 ### `org.aitan.jqapi.quantum.gates` — [full reference](gates.md)
 
