@@ -1,0 +1,86 @@
+{
+  "timestamp": "2026-09-30T09:57:49.543Z",
+  "commit": "219cb6e58f645b8df00a89ab802f3758af38df8c",
+  "workingTree": "dirty",
+  "machine": {
+    "cpu": "Apple M2",
+    "logicalCpus": 8,
+    "ramBytes": 25769803776,
+    "os": "Darwin",
+    "release": "25.6.0",
+    "arch": "arm64"
+  },
+  "node": "v24.15.0",
+  "browser": "153.0.8010.12",
+  "headless": true,
+  "browserArgs": [
+    "--enable-precise-memory-info"
+  ],
+  "warmup": 3,
+  "repetitions": 7,
+  "execution": "sequential TeaVM ES2015 JavaScript; module import excluded; JSON round trip included",
+  "random": "production browser random source; bridge does not expose a seed",
+  "memoryMetric": "Boundary JS heap high-water estimate, including prior workloads/garbage; lower bound on true peak, not RSS. Array buffers and transient in-call peaks may be missing. No capacity ceiling inferred.",
+  "payload": {
+    "rawBytes": 1254147,
+    "gzipBytes": 215663,
+    "sha256": "b98cf454de4fc91cee194106569fc658da1498d088389cc3b26d724bae531fae"
+  },
+  "configuredLimits": {
+    "maxQubits": 8,
+    "maxLevels": 256,
+    "maxGates": 1024,
+    "maxMatrixCells": 4096,
+    "maxInputChars": 1000000,
+    "maxResultBytes": 8388608,
+    "maxTraceAmplitudes": 65536,
+    "maxObservableTerms": 64,
+    "maxWork": 20000000,
+    "maxElapsedMs": 5000,
+    "maxShots": 10000
+  },
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+  "jsHeapSizeLimit": 4395630592,
+  "workloads": [
+    {
+      "name": "run-H-all-CNOT-including-JSON",
+      "qubits": 8,
+      "shots": 0,
+      "samplesMs": [
+        3,
+        3.199999988079071,
+        2.900000035762787,
+        2.699999988079071,
+        2.699999988079071,
+        2.599999964237213,
+        2.800000011920929
+      ],
+      "minMs": 2.599999964237213,
+      "medianMs": 2.800000011920929,
+      "maxMs": 3.199999988079071,
+      "observedHeapHighWaterBytes": 6617880,
+      "outputJsonBytes": 9242,
+      "stateVectorLowerBoundBytes": 4096
+    },
+    {
+      "name": "sample-H-all-CNOT-including-JSON",
+      "qubits": 8,
+      "shots": 1000,
+      "samplesMs": [
+        139.10000002384186,
+        132.80000001192093,
+        134.30000001192093,
+        132.69999998807907,
+        131.5,
+        135.69999998807907,
+        133.30000001192093
+      ],
+      "minMs": 131.5,
+      "medianMs": 133.30000001192093,
+      "maxMs": 139.10000002384186,
+      "observedHeapHighWaterBytes": 11426095,
+      "outputJsonBytes": 548,
+      "stateVectorLowerBoundBytes": 4096
+    }
+  ]
+}

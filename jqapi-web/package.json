@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "benchmark:browser": "node benchmarks/browser.mjs"
+    "benchmark:browser": "node benchmarks/browser.mjs",
+    "benchmark:studio": "node benchmarks/studio.mjs"
   },
   "dependencies": {
     "konva": "^10.3.0",
