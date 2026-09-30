@@ -144,7 +144,7 @@ test('rejects classical file and shared-link imports without dropping their meta
   };
   const json = JSON.stringify(spec);
   await page.goto('/');
-  await page.locator('input[type="file"]').setInputFiles({ name: 'classical.json', mimeType: 'application/json', buffer: Buffer.from(json) });
+  await page.locator('input[accept="application/json"]').setInputFiles({ name: 'classical.json', mimeType: 'application/json', buffer: Buffer.from(json) });
   await expect(page.getByText('This editor cannot load this circuit format or its classical operations.')).toBeVisible();
   await page.goto('/#circuit=' + encodeURIComponent(Buffer.from(json).toString('base64')));
   await page.reload();

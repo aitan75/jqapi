@@ -1,9 +1,21 @@
 import type { CircuitSpec, TraceResult, ExpectationResult, Observable, RunResult, SampledExpectationResult, SampleResult } from './types';
+import type { QasmImportResult, QasmExportResult } from './types';
+import { importQasm as wasmImportQasm, exportQasm as wasmExportQasm } from './jqapi.js';
 // Vendored TeaVM (Phase 2b) ES module exposing run(specJson) -> resultJson.
 import { trace as wasmTrace, expectation as wasmExpectation, run as wasmRun, sample as wasmSample, sampleExpectation as wasmSampleExpectation } from './jqapi.js';
 
 /** Runs a circuit spec through the WASM simulator and returns its state-vector amplitudes. */
 const SUPPORTED_SPEC_VERSION = 2;
+
+export function importQasm(source: string): QasmImportResult {
+  try { return JSON.parse(wasmImportQasm(source)) as QasmImportResult; }
+  catch { return { ok: false, error: { code: 'SIMULATION_FAILED' } }; }
+}
+
+export function exportQasm(spec: CircuitSpec): QasmExportResult {
+  try { return JSON.parse(wasmExportQasm(JSON.stringify(spec))) as QasmExportResult; }
+  catch { return { ok: false, error: { code: 'SIMULATION_FAILED' } }; }
+}
 
 export function run(spec: CircuitSpec): RunResult {
   if (spec.version !== 1 && spec.version !== SUPPORTED_SPEC_VERSION) {

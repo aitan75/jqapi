@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { CircuitModel, isCircuitSpec, isUnsupportedCircuitSpec, PAULI_X_MATRIX, type EditorState, type Placement } from './model/circuit';
 import { probabilities } from './model/results';
 import { parseObservable } from './model/observable';
-import { expectation, trace, sample, sampleExpectation } from './wasm/bridge';
+import { shotBudgets } from './model/budget';
+import { startJob } from './wasm/client';
+import { BROWSER_BUDGET } from './wasm/policy';
+import { editableQasmSpec } from './model/qasm';
 import type { CircuitSpec, ComplexMatrix, TraceFrame, EngineErrorCode } from './wasm/types';
 import type { Preset } from './model/presets';
 import { GatePalette, type Tool } from './components/GatePalette';
@@ -45,7 +48,7 @@ function placementFor(tool: Tool, theta: number, phi: number, lambda: number, ma
 
 function specFromHash(): CircuitSpec | 'unsupported' | null {
   const value = new URLSearchParams(location.hash.slice(1)).get('circuit');
-  if (!value) return null;
+  if (!value || value.length > BROWSER_BUDGET.maxInputChars) return null;
   try {
     const parsed: unknown = JSON.parse(atob(value));
     if (isUnsupportedCircuitSpec(parsed)) return 'unsupported';
@@ -59,6 +62,12 @@ function specFromHash(): CircuitSpec | 'unsupported' | null {
 export default function App() {
   const modelRef = useRef(new CircuitModel(2));
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const qasmInputRef = useRef<HTMLInputElement>(null);
+  const traceJob = useRef<{ cancel: () => void } | null>(null);
+  const countsJob = useRef<{ cancel: () => void } | null>(null);
+  const transferJob = useRef<{ cancel: () => void } | null>(null);
+  const transferRevision = useRef(0);
+  const [isTransferring, setIsTransferring] = useState(false);
   const [tool, setTool] = useState<Tool | null>(null);
   const [theta, setTheta] = useState(Math.PI / 2);
   const [phi, setPhi] = useState(0);
@@ -67,6 +76,7 @@ export default function App() {
   const [matrixText, setMatrixText] = useState(DEFAULT_MATRIX);
   const [version, setVersion] = useState(0);
   const [numQubits, setNumQubits] = useState(2);
+  const [executionSpec, setExecutionSpec] = useState<CircuitSpec>({ version: 1, numQubits: 2, levels: [] });
   const [columns, setColumns] = useState(modelRef.current.columns);
   const [zoom, setZoom] = useState(1);
   const [undoStack, setUndoStack] = useState<EditorState[]>([]);
@@ -87,7 +97,8 @@ export default function App() {
   const [shots, setShots] = useState(1000);
   const [observableText, setObservableText] = useState('');
   const [observableOutcome, setObservableOutcome] = useState<ObservableOutcome | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setErrorState] = useState<{ message: string; detail?: string } | null>(null);
+  const setError = (message: string | null, detail?: string) => setErrorState(message === null ? null : { message, detail });
   const [isRunning, setIsRunning] = useState(false);
   const [language, setLanguage] = useState<Language>(initialLanguage);
   const [now, setNow] = useState(() => new Date());
@@ -97,9 +108,27 @@ export default function App() {
   const parsedObservable = observableText.trim() ? parseObservable(observableText, numQubits) : null;
   const observableError = parsedObservable && 'code' in parsedObservable ? parsedObservable : null;
   const validObservable = parsedObservable && !('code' in parsedObservable) ? parsedObservable : null;
+  const shotBudget = shotBudgets(executionSpec, validObservable);
 
+  const stopWork = () => {
+    traceJob.current?.cancel();
+    countsJob.current?.cancel();
+    transferJob.current?.cancel();
+    transferRevision.current++;
+    setIsRunning(false);
+    setIsTransferring(false);
+  };
+  const cancelWork = () => {
+    revision.current++;
+    stopWork();
+    setPending(false);
+    setError(text.errors.CANCELLED);
+  };
   const syncModel = () => {
+    stopWork();
+    setLive(null);
     setNumQubits(modelRef.current.numQubits);
+    setExecutionSpec(modelRef.current.toSpec());
     setColumns(modelRef.current.columns);
     setCondition((value) => value && Number(value.split(':')[0]) >= modelRef.current.numQubits ? '' : value);
     revision.current++;
@@ -115,7 +144,7 @@ export default function App() {
     try {
       if (change(modelRef.current) === false) return false;
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(cause instanceof Error && cause.message === 'INPUT_LIMIT_EXCEEDED' ? text.errors.INPUT_LIMIT_EXCEEDED : cause instanceof Error ? cause.message : String(cause));
       return false;
     }
     setUndoStack((history) => [...history.slice(-49), previous]);
@@ -146,10 +175,13 @@ export default function App() {
 
   useEffect(() => {
     const requestId = revision.current;
-    const timer = window.setTimeout(() => {
+    const timer = window.setTimeout(async () => {
+      if (requestId !== revision.current) return;
       const spec = modelRef.current.toSpec();
       const columns = [...modelRef.current.serializedColumns];
-      const result = trace(spec, seed);
+      const job = startJob({ kind: 'trace', spec, seed });
+      traceJob.current = job;
+      const result = await job.result;
       if (requestId !== revision.current) return;
       setPending(false);
       if (!result.ok) {
@@ -161,10 +193,16 @@ export default function App() {
       setLive({ frames: result.frames, columns, qubits: spec.numQubits, revision: requestId });
       setFrameIndex(result.frames.length - 1);
     }, 150);
-    return () => window.clearTimeout(timer);
+    return () => { window.clearTimeout(timer); traceJob.current?.cancel(); };
   }, [version, seed]);
 
+  useEffect(() => () => {
+    countsJob.current?.cancel();
+    transferJob.current?.cancel();
+  }, []);
+
   const rerun = () => {
+    stopWork();
     revision.current++;
     setPending(true);
     setSeed((previous) => (previous + 0x6d2b79f5) | 0);
@@ -184,7 +222,7 @@ export default function App() {
       }
       mutate((model) => placement ? model.place(qubit, step, placement) : model.removeGate(qubit, step));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(cause instanceof Error && cause.message === 'INPUT_LIMIT_EXCEEDED' ? text.errors.INPUT_LIMIT_EXCEEDED : cause instanceof Error ? cause.message : String(cause));
     }
   };
   const move = (fromQubit: number, fromStep: number, toQubit: number, toStep: number) => {
@@ -221,61 +259,79 @@ export default function App() {
   };
   const onRun = async () => {
     if (isRunning) return;
-    const shotCount = shots;
     const requestId = revision.current;
     setError(null);
+    setSampled(null);
     setObservableOutcome(null);
     setIsRunning(true);
-    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-    try {
-      if (requestId !== revision.current) return;
-      const sampleResult = sample(modelRef.current.toSpec(), shotCount);
-      if (!sampleResult.ok) {
-        setError(text.errors[sampleResult.error.code]);
-        return;
-      }
-      setSampled(sampleResult);
-      if (validObservable) {
-        const spec = modelRef.current.toSpec();
-        // Exact and sampled values fail independently; both report inside the panel, never the banner.
-        const exact = expectation(spec, validObservable);
-        // The sampler needs two shots per term to estimate a variance.
-        const estimate = shotCount >= 2 ? sampleExpectation(spec, validObservable, shotCount) : null;
-        setObservableOutcome({
-          exact: exact.ok ? exact : exact.error.code,
-          sampled: estimate === null ? 'NEEDS_TWO_SHOTS' : estimate.ok ? estimate : estimate.error.code,
-        });
-      }
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setIsRunning(false);
+    const job = startJob({ kind: 'counts', spec: modelRef.current.toSpec(), shots, observable: validObservable });
+    countsJob.current = job;
+    const result = await job.result;
+    if (requestId !== revision.current || countsJob.current !== job) return;
+    setIsRunning(false);
+    if (!result.ok) { setError(text.errors[result.error.code]); return; }
+    setSampled(result.sample);
+    if (result.exact) {
+      setObservableOutcome({
+        exact: result.exact.ok ? result.exact : result.exact.error.code,
+        sampled: result.estimate === null ? 'NEEDS_TWO_SHOTS' : result.estimate.ok ? result.estimate : result.estimate.error.code,
+      });
     }
   };
-  const save = () => {
-    const spec = modelRef.current.toSpec();
-    const blob = new Blob([JSON.stringify(spec, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+  const download = (content: string, filename: string, type: string) => {
+    const url = URL.createObjectURL(new Blob([content], { type }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'jqapi-circuit.json';
+    link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
   };
-  const loadFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed: unknown = JSON.parse(String(reader.result));
-        if (isUnsupportedCircuitSpec(parsed)) throw new Error(text.errors.UNSUPPORTED_SPEC_VERSION);
-        if (!isCircuitSpec(parsed)) throw new Error('Unable to load circuit JSON.');
-        loadSpec(parsed);
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Unable to load circuit JSON.');
-      }
-    };
-    reader.readAsText(file);
+  const saveQasm = async () => {
+    transferJob.current?.cancel();
+    const id = ++transferRevision.current;
+    setIsTransferring(true);
+    setError(null);
+    const job = startJob({ kind: 'exportQasm', spec: modelRef.current.toSpec() });
+    transferJob.current = job;
+    const result = await job.result;
+    if (id !== transferRevision.current) return;
+    setIsTransferring(false);
+    if (!result.ok) { setError(text.errors[result.error.code], result.error.detail); return; }
+    download(result.source, 'jqapi-circuit.qasm', 'text/plain');
   };
+  const save = () => download(JSON.stringify(modelRef.current.toSpec(), null, 2), 'jqapi-circuit.json', 'application/json');
+  const loadFile = async (file: File, qasm = false) => {
+    transferJob.current?.cancel();
+    const id = ++transferRevision.current;
+    setIsTransferring(true);
+    setError(null);
+    try {
+      if (file.size > BROWSER_BUDGET.maxInputChars) throw new Error(text.errors.INPUT_LIMIT_EXCEEDED);
+      const source = await file.text();
+      if (id !== transferRevision.current) return;
+      let spec: CircuitSpec;
+      if (qasm) {
+        const job = startJob({ kind: 'importQasm', source });
+        transferJob.current = job;
+        const result = await job.result;
+        if (id !== transferRevision.current) return;
+        if (!result.ok) { setError(text.errors[result.error.code], result.error.detail); return; }
+        try { spec = editableQasmSpec(result.spec); }
+        catch { throw new Error(text.qasmUnsupported); }
+      } else {
+        const parsed: unknown = JSON.parse(source);
+        if (isUnsupportedCircuitSpec(parsed)) throw new Error(text.errors.UNSUPPORTED_SPEC_VERSION);
+        if (!isCircuitSpec(parsed)) throw new Error(text.errors.INVALID_CIRCUIT_SPEC);
+        spec = parsed;
+      }
+      loadSpec(spec);
+    } catch (cause) {
+      if (id === transferRevision.current) setError(cause instanceof Error ? cause.message : text.errors.INVALID_CIRCUIT_SPEC);
+    } finally {
+      if (id === transferRevision.current) setIsTransferring(false);
+    }
+  };
+
   return (
     <div className="app">
       <header className="header"><div className="brand"><img src="/bloch-sphere.svg" alt={text.logo} className="brand-logo" /><div className="brand-text"><h1>{text.appName}</h1><p>{text.appSubtitle}</p></div></div><div className="header-badges"><span className="badge active">{text.wasmEngine}</span><span className="badge">{text.qubitCount(numQubits)}</span><label className="language-selector">{text.language}<select value={language} onChange={(event) => setLanguage(event.target.value as Language)}>{Object.entries(text.languages).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label></div></header>
@@ -286,18 +342,29 @@ export default function App() {
           <PresetSelector messages={text} onSelectPreset={onSelectPreset} />
         </aside>
         <main className="workspace">
-          {error && <div className="error" role="alert" onClick={() => setError(null)}><span>⚠️ {error}</span><span>✕ Dismiss</span></div>}
+          {error && <div className="error" role="alert"><div><span>⚠️ {error.message}</span>{error.detail && <details><summary>{text.technicalDetails}</summary><p lang="en">{error.detail}</p></details>}</div><button type="button" onClick={() => setError(null)}>{text.dismiss}</button></div>}
           <CircuitCanvas activeColumn={!pending && frame && live ? live.columns[frame.level] : undefined} messages={text} model={modelRef.current} onDropCell={place} onMoveCell={move} onRemoveGate={(qubit, step) => mutate((model) => model.removeGate(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} isRunning={isRunning} />
           <div className="circuit-actions" role="toolbar" aria-label={text.circuitActions}>
-            <label className="shots-input">{text.shots}<input type="number" min="1" max="10000" step="1" value={shots} onChange={(event) => setShots(Math.max(1, Math.min(10_000, Math.trunc(Number(event.target.value) || 1))))} disabled={isRunning} /></label>
+            <label className="shots-input">{text.shots}<input type="number" aria-describedby="shot-budget" aria-invalid={shots > shotBudget.counts} min="1" max={BROWSER_BUDGET.maxShots} step="1" value={shots} onChange={(event) => setShots(Math.max(1, Math.min(BROWSER_BUDGET.maxShots, Math.trunc(Number(event.target.value) || 1))))} disabled={isRunning} /></label>
             <button className={`run${isRunning ? ' running' : ''}`} type="button" onClick={onRun} disabled={isRunning}>▶ {text.runSimulation}</button>
+            {(isRunning || pending || isTransferring) && <button type="button" onClick={cancelWork}>{text.cancel}</button>}
             <button type="button" onClick={undo} disabled={!undoStack.length}>{text.undo}</button>
             <button type="button" onClick={redo} disabled={!redoStack.length}>{text.redo}</button>
             <button type="button" onClick={save}>{text.saveJson}</button>
             <button type="button" onClick={() => fileInputRef.current?.click()}>{text.loadJson}</button>
+            <button type="button" onClick={saveQasm} disabled={isTransferring}>{text.saveQasm}</button>
+            <button type="button" onClick={() => qasmInputRef.current?.click()} disabled={isTransferring}>{text.loadQasm}</button>
+            <input ref={qasmInputRef} type="file" accept=".qasm,text/plain" aria-label={text.loadQasm} hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void loadFile(file, true); event.currentTarget.value = ''; }} />
             <button type="button" className="clear-circuit" onClick={() => mutate((model) => model.reset())}>{text.clearCircuit}</button>
-            <input ref={fileInputRef} type="file" accept="application/json" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) loadFile(file); event.currentTarget.value = ''; }} />
+            <input ref={fileInputRef} type="file" aria-label={text.loadJson} accept="application/json" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) loadFile(file); event.currentTarget.value = ''; }} />
           </div>
+          <div id="shot-budget" className="shot-budget" role="status">
+            <p>{text.shotBudgetHint(shotBudget.counts)}</p>
+            {shotBudget.observable !== null && <p>{text.observableShotBudgetHint(shotBudget.observable)}</p>}
+            {shots > shotBudget.counts ? <p className="budget-warning">{text.countsBudgetExceeded}</p>
+              : shotBudget.observable !== null && shots >= 2 && shots > shotBudget.observable && <p className="budget-warning">{text.observableBudgetExceeded}</p>}
+          </div>
+          <details className="resource-policy"><summary>{text.resourceLimits}</summary><p>{text.resourcePolicy(BROWSER_BUDGET)}</p><p>{text.qasmCapabilities}</p></details>
           <section className="live-state" aria-label={text.live.title} aria-busy={pending}>
             <div className="live-toolbar"><h2>{text.live.title}</h2><button type="button" onClick={rerun} disabled={pending}>{text.live.rerun}</button><span>{text.live.seed}: {seed}</span></div>
             {pending && <p role="status">{text.live.pending}</p>}

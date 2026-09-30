@@ -1,7 +1,8 @@
+import { BROWSER_BUDGET } from '../wasm/policy';
 import type { Observable } from '../wasm/types';
 
-/** Same bound as the engine's PauliSumJson.MAX_TERMS. */
-export const MAX_TERMS = 1024;
+/** Browser observable budget, matching the bridge policy. */
+export const MAX_TERMS = BROWSER_BUDGET.maxObservableTerms;
 
 export type ObservableParseErrorCode = 'EMPTY' | 'BAD_LINE' | 'BAD_LABEL' | 'WRONG_LENGTH' | 'BAD_COEFF' | 'TOO_MANY_TERMS';
 
