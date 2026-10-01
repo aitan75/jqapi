@@ -17,7 +17,7 @@ runnable examples taken from the library's own test suite.
 4. [Your first program: a quantum coin flip](#your-first-program-a-quantum-coin-flip)
 5. [Core concepts](concepts.md) — qubits, gates, circuits, levels, registers, the simulator, measurement
 6. [Worked examples](examples.md) — Bell state, two-coin flip, quantum teleportation, Deutsch–Jozsa, Grover search, QFT
-7. [OpenQASM 2 import/export](openqasm.md) — load and save circuits as OpenQASM 2, classical conditions
+7. [OpenQASM 2 import/export](openqasm.md) — load and save circuits as OpenQASM 2, classical conditions, educational circuit hints
    - [Studio](studio.md) — editable QASM, observables, cancellation and browser limits
 8. [Reusable parameterized circuits](109-parametric.md) — named bindings, concrete JSON and reuse measurements
 9. [Reference](#reference)
