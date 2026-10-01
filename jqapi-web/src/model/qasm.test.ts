@@ -3,7 +3,7 @@ import { importQasm, exportQasm, run, sample, trace, sampleExpectation } from '.
 import { capabilities } from '../wasm/jqapi.js';
 import { BROWSER_BUDGET } from '../wasm/policy';
 import { CircuitModel } from './circuit';
-import { editableQasmSpec } from './qasm';
+import { editableQasmSpec, lineSelection } from './qasm';
 
 const header = 'OPENQASM 2.0; include "qelib1.inc"; qreg q[3];';
 function imported(source: string) {
@@ -53,5 +53,14 @@ describe('QASM through the rebuilt TeaVM engine and editable canvas model', () =
     expect(trace(spec, 1)).toEqual({ ok: false, error: { code: 'INPUT_LIMIT_EXCEEDED' } });
     const empty = { ...spec, levels: [] };
     expect(sampleExpectation(empty, { numQubits: 8, terms: [{ coeff: 1, pauli: 'ZIIIIIII' }] }, 10_000)).toEqual({ ok: false, error: { code: 'INPUT_LIMIT_EXCEEDED' } });
+  });
+});
+
+describe('lineSelection', () => {
+  it('selects from the diagnostic column to the end of its line, with CRLF and out-of-range lines', () => {
+    const source = 'OPENQASM 2.0;\r\nqreg q[1];\r\n  h q[0];';
+    expect(source.slice(...lineSelection(source, 3, 3))).toBe('h q[0];');
+    expect(source.slice(...lineSelection(source, 2, 1))).toBe('qreg q[1];');
+    expect(source.slice(...lineSelection(source, 9, 1))).toBe('  h q[0];');
   });
 });

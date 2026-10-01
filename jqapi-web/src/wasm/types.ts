@@ -100,3 +100,9 @@ export interface TraceFrame {
 export type TraceResult = { ok: true; frames: TraceFrame[] } | RunFailure;
 export type QasmImportResult = { ok: true; spec: CircuitSpec } | RunFailure;
 export type QasmExportResult = { ok: true; source: string } | RunFailure;
+
+export type LintRule = 'QED001' | 'QED002' | 'QED003';
+/** Educational warning; levels index spec levels (empty for whole-circuit findings); locations are 1-based and QASM-only. */
+export interface LintDiagnostic { rule: LintRule; severity: 'INFO' | 'WARNING'; levels: number[]; qubits: number[]; locations: { line: number; column: number }[] }
+export type LintResult = { ok: true; diagnostics: LintDiagnostic[] } | RunFailure;
+export type QasmLintResult = { ok: true; diagnostics: LintDiagnostic[]; qubitNames: string[]; spec: CircuitSpec } | RunFailure;

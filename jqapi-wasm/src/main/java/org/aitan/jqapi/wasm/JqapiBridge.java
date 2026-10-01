@@ -20,6 +20,7 @@ import org.aitan.jqapi.quantum.simulator.SampledExpectation;
 import org.aitan.jqapi.quantum.simulator.SamplingOptions;
 import org.aitan.jqapi.quantum.simulator.LocalSimulator;
 import org.aitan.jqapi.visualization.CircuitSpecs;
+import org.aitan.jqapi.visualization.lint.CircuitLinter;
 import org.aitan.jqapi.visualization.spec.CircuitSpec;
 import org.aitan.jqapi.visualization.spec.CircuitSpecJson;
 import org.teavm.jso.JSExport;
@@ -93,6 +94,65 @@ public final class JqapiBridge {
         } catch (RuntimeException e) {
             return errorFor(e);
         }
+    }
+
+    /**
+     * Educational diagnostics (#127) without simulation; the browser localizes them by rule ID.
+     * {@code disabledRules} is a comma-separated rule ID list, applied before the diagnostic cap.
+     */
+    @JSExport
+    public static String lint(String specJson, String disabledRules) {
+        try {
+            return boundedResult("{\"ok\":true,\"diagnostics\":"
+                    + diagnostics(CircuitLinter.lint(parseSpec(specJson), rules(disabledRules))) + "}");
+        } catch (JQApiLimitException e) {
+            return error("INPUT_LIMIT_EXCEEDED");
+        } catch (RuntimeException e) {
+            return errorFor(e);
+        }
+    }
+
+    /** Lints OpenQASM source with 1-based line/column locations, {@code reg[i]} qubit names and the parsed spec. */
+    @JSExport
+    public static String lintQasm(String source, String disabledRules) {
+        try {
+            BrowserBudget.input(source);
+            var program = OpenQasmParser.parseProgram(source, BrowserBudget.config());
+            BrowserBudget.check(program.spec());
+            StringBuilder names = new StringBuilder("[");
+            for (String name : program.qubitNames()) names.append(names.length() > 1 ? "," : "").append(quote(name));
+            return boundedResult("{\"ok\":true,\"diagnostics\":" + diagnostics(CircuitLinter.lint(program, rules(disabledRules)))
+                    + ",\"qubitNames\":" + names.append(']') + ",\"spec\":" + CircuitSpecJson.toJson(program.spec()) + "}");
+        } catch (JQApiLimitException e) {
+            return error("INPUT_LIMIT_EXCEEDED");
+        } catch (IllegalArgumentException e) {
+            return qasmError(e);
+        } catch (RuntimeException e) {
+            return errorFor(e);
+        }
+    }
+
+    private static java.util.Set<String> rules(String list) {
+        var rules = new java.util.HashSet<String>();
+        for (String rule : list.split(",")) if (!rule.isBlank()) rules.add(rule.trim());
+        return rules;
+    }
+
+    private static String diagnostics(java.util.List<CircuitLinter.Diagnostic> diagnostics) {
+        StringBuilder result = new StringBuilder("[");
+        for (CircuitLinter.Diagnostic d : diagnostics) {
+            if (result.length() > 1) result.append(',');
+            result.append("{\"rule\":\"").append(d.rule()).append("\",\"severity\":\"").append(d.severity())
+                    .append("\",\"levels\":").append(d.levels().toString().replace(" ", ""))
+                    .append(",\"qubits\":").append(d.qubits().toString().replace(" ", "")).append(",\"locations\":[");
+            for (int i = 0; i < d.locations().size(); i++) {
+                var location = d.locations().get(i);
+                result.append(i > 0 ? "," : "").append("{\"line\":").append(location.line())
+                        .append(",\"column\":").append(location.column()).append('}');
+            }
+            result.append("]}");
+        }
+        return result.append(']').toString();
     }
 
     private static String qasmError(IllegalArgumentException e) {

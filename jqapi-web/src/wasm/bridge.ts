@@ -1,6 +1,6 @@
 import type { CircuitSpec, TraceResult, ExpectationResult, Observable, RunResult, SampledExpectationResult, SampleResult } from './types';
-import type { QasmImportResult, QasmExportResult } from './types';
-import { importQasm as wasmImportQasm, exportQasm as wasmExportQasm } from './jqapi.js';
+import type { QasmImportResult, QasmExportResult, LintResult, LintRule, QasmLintResult } from './types';
+import { importQasm as wasmImportQasm, exportQasm as wasmExportQasm, lint as wasmLint, lintQasm as wasmLintQasm } from './jqapi.js';
 // Vendored TeaVM (Phase 2b) ES module exposing run(specJson) -> resultJson.
 import { trace as wasmTrace, expectation as wasmExpectation, run as wasmRun, sample as wasmSample, sampleExpectation as wasmSampleExpectation } from './jqapi.js';
 
@@ -14,6 +14,18 @@ export function importQasm(source: string): QasmImportResult {
 
 export function exportQasm(spec: CircuitSpec): QasmExportResult {
   try { return JSON.parse(wasmExportQasm(JSON.stringify(spec))) as QasmExportResult; }
+  catch { return { ok: false, error: { code: 'SIMULATION_FAILED' } }; }
+}
+
+/** Educational diagnostics only: never simulates and never changes the circuit. Disabled rules are skipped before the cap. */
+export function lint(spec: CircuitSpec, disabledRules: LintRule[] = []): LintResult {
+  try { return JSON.parse(wasmLint(JSON.stringify(spec), disabledRules.join(','))) as LintResult; }
+  catch { return { ok: false, error: { code: 'SIMULATION_FAILED' } }; }
+}
+
+/** Parses and lints QASM source; syntax errors come back as INVALID_QASM, never as diagnostics. */
+export function lintQasm(source: string, disabledRules: LintRule[] = []): QasmLintResult {
+  try { return JSON.parse(wasmLintQasm(source, disabledRules.join(','))) as QasmLintResult; }
   catch { return { ok: false, error: { code: 'SIMULATION_FAILED' } }; }
 }
 

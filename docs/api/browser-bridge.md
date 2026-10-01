@@ -10,6 +10,8 @@ has no additional runtime dependency.
 | `capabilities()` | Numeric policy limits, without an `ok` envelope |
 | `importQasm(source)` | `{ok:true,spec:CircuitSpec}` |
 | `exportQasm(specJson)` | `{ok:true,source:string}` |
+| `lint(specJson, disabledRules)` | `{ok:true,diagnostics:[{rule,severity,levels,qubits,locations:[]}]}`; no simulation, texts localized by rule ID in the web layer |
+| `lintQasm(source, disabledRules)` | `{ok:true,diagnostics:[…,locations:[{line,column}]],qubitNames:["reg[i]",…],spec:CircuitSpec}`; syntax errors return `INVALID_QASM`. `disabledRules` is a comma-separated rule ID list (e.g. `"QED001"`, or `""`), skipped before the 100-diagnostic cap |
 | `run(specJson)` | Amplitudes and optional classical records |
 | `trace(specJson,seed)` | Initial and post-operation frames, including skipped conditions |
 | `sample(specJson,shots)` | Shots, quantum counts and optional classical counts |

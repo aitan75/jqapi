@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.aitan.jqapi.visualization.spec.CircuitSpecJson;
+import org.aitan.jqapi.visualization.openqasm.OpenQasmParser;
 import org.aitan.jqapi.wasm.JqapiBridge;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -242,6 +244,33 @@ public class BridgeCrossCheckTest {
         assertEquals(JqapiBridge.importQasm(unsupported), runCompiledJs("importQasm", jsonString(unsupported)));
         String wide = "{\"version\":1,\"numQubits\":9,\"levels\":[]}";
         assertEquals(JqapiBridge.run(wide), runCompiledJs(wide));
+    }
+
+    @Test
+    void lintMatchesCompiledBackend() throws IOException, InterruptedException {
+        String redundant = "{\"version\":1,\"numQubits\":3,\"levels\":[{\"gates\":[{\"kind\":\"H\",\"targets\":[0],\"controls\":[],\"params\":{}}]},"
+                + "{\"gates\":[{\"kind\":\"H\",\"targets\":[0],\"controls\":[],\"params\":{}}]}]}";
+        assertEquals("{\"ok\":true,\"diagnostics\":[{\"rule\":\"QED001\",\"severity\":\"WARNING\",\"levels\":[0,1],\"qubits\":[0],\"locations\":[]},"
+                + "{\"rule\":\"QED003\",\"severity\":\"WARNING\",\"levels\":[],\"qubits\":[1,2],\"locations\":[]}]}", JqapiBridge.lint(redundant, ""));
+        assertEquals(JqapiBridge.lint(redundant, ""), runCompiledJs("lint", jsonString(redundant), "\"\""));
+        assertEquals("{\"ok\":true,\"diagnostics\":[]}", JqapiBridge.lint(BELL, ""));
+        String wide = "{\"version\":1,\"numQubits\":9,\"levels\":[]}";
+        assertEquals(JqapiBridge.lint(wide, ""), runCompiledJs("lint", jsonString(wide), "\"\""));
+        String withoutH = JqapiBridge.lint(redundant, "QED001, QED002");
+        assertTrue(!withoutH.contains("QED001"), withoutH);
+        assertEquals(withoutH, runCompiledJs("lint", jsonString(redundant), "\"QED001, QED002\""));
+    }
+
+    @Test
+    void qasmLintReportsSourceLinesAndRegisterNames() throws IOException, InterruptedException {
+        String source = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg a[1]; qreg b[1];\nh a[0];\n  h a[0];";
+        assertEquals("{\"ok\":true,\"diagnostics\":[{\"rule\":\"QED001\",\"severity\":\"WARNING\",\"levels\":[0,1],\"qubits\":[0],"
+                + "\"locations\":[{\"line\":4,\"column\":1},{\"line\":5,\"column\":3}]},"
+                + "{\"rule\":\"QED003\",\"severity\":\"WARNING\",\"levels\":[],\"qubits\":[1],\"locations\":[]}],"
+                + "\"qubitNames\":[\"a[0]\",\"b[0]\"],\"spec\":" + CircuitSpecJson.toJson(OpenQasmParser.parse(source)) + "}",
+                JqapiBridge.lintQasm(source, ""));
+        assertEquals(JqapiBridge.lintQasm(source, ""), runCompiledJs("lintQasm", jsonString(source).replace("\n", "\\n"), "\"\""));
+        assertTrue(JqapiBridge.lintQasm("OPENQASM 2.0; qreg q[1]; custom q[0];", "").contains("\"code\":\"INVALID_QASM\""));
     }
 
     /** Minimal JSON string literal for embedding a value in the node script. */
