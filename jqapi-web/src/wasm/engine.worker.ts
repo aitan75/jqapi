@@ -1,4 +1,4 @@
-import { expectation, exportQasm, importQasm, sample, sampleExpectation, trace } from './bridge';
+import { expectation, exportQasm, importQasm, lint, lintQasm, sample, sampleExpectation, trace } from './bridge';
 import type { WorkerRequest, Responses } from './protocol';
 
 function execute(request: WorkerRequest): Responses[keyof Responses] {
@@ -6,6 +6,8 @@ function execute(request: WorkerRequest): Responses[keyof Responses] {
     case 'trace': return trace(request.spec, request.seed);
     case 'importQasm': return importQasm(request.source);
     case 'exportQasm': return exportQasm(request.spec);
+    case 'lint': return lint(request.spec, request.disabledRules);
+    case 'lintQasm': return lintQasm(request.source, request.disabledRules);
     case 'counts': {
       const counts = sample(request.spec, request.shots);
       if (!counts.ok) return counts;

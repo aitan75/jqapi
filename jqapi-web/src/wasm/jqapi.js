@@ -188,6 +188,7 @@ Long_mul = (a, b) => BigInt.asIntN(64, a * b),
 Long_div = (a, b) => BigInt.asIntN(64, a / b),
 Long_udiv = (a, b) => BigInt.asIntN(64, BigInt.asUintN(64, a) / BigInt.asUintN(64, b)),
 Long_rem = (a, b) => BigInt.asIntN(64, a % b),
+Long_urem = (a, b) => BigInt.asIntN(64, BigInt.asUintN(64, a) % BigInt.asUintN(64, b)),
 Long_and = (a, b) => BigInt.asIntN(64, a & b),
 Long_or = (a, b) => BigInt.asIntN(64, a | b),
 Long_xor = (a, b) => BigInt.asIntN(64, a ^ b),
@@ -340,6 +341,7 @@ $rt_charArrayToString = (array, offset, count) => {
     }
     return result;
 },
+$rt_fullArrayToString = array => $rt_charArrayToString(array, 0, array.length),
 $rt_fastStringToCharArray = string => {
     let array = new Uint16Array(string.length);
     for (let i = 0;i < array.length;++i) {
@@ -1460,6 +1462,26 @@ oajqg_Rx__init_0 = (var_0, var_1) => {
     oajqg_Rx__init_(var_2, var_0, var_1);
     return var_2;
 },
+juf_Function = $rt_classWithoutFields(0);
+function oajvl_CircuitLinter$unused$lambda$_8_0() {
+    jl_Object.call(this);
+    this.$_025 = null;
+}
+let oajvl_CircuitLinter$unused$lambda$_8_0__init_ = (var$0, var$1) => {
+    jl_Object__init_(var$0);
+    var$0.$_025 = var$1;
+},
+oajvl_CircuitLinter$unused$lambda$_8_0__init_0 = var_0 => {
+    let var_1 = new oajvl_CircuitLinter$unused$lambda$_8_0();
+    oajvl_CircuitLinter$unused$lambda$_8_0__init_(var_1, var_0);
+    return var_1;
+},
+oajvl_CircuitLinter$unused$lambda$_8_0_apply0 = (var$0, var$1) => {
+    return oajvl_CircuitLinter$unused$lambda$_8_0_apply(var$0, var$1);
+},
+oajvl_CircuitLinter$unused$lambda$_8_0_apply = (var$0, var$1) => {
+    return var$0.$_025.$get0(var$1.$intValue());
+},
 jl_AbstractStringBuilder$Constants = $rt_classWithoutFields(),
 jl_AbstractStringBuilder$Constants_longLogPowersOfTen = null,
 jl_AbstractStringBuilder$Constants_doubleAnalysisResult = null,
@@ -1501,6 +1523,18 @@ jur_AbstractSet__init_0 = ($this, $n) => {
     jur_AbstractSet_counter = var$2 + 1 | 0;
     $this.$index6 = jl_Integer_toString(var$2);
     $this.$next6 = $n;
+},
+jur_AbstractSet_find = ($this, $stringIndex, $testString, $matchResult) => {
+    let $length;
+    $length = $matchResult.$getRightBound();
+    while (true) {
+        if ($stringIndex > $length)
+            return (-1);
+        if ($this.$matches($stringIndex, $testString, $matchResult) >= 0)
+            break;
+        $stringIndex = $stringIndex + 1 | 0;
+    }
+    return $stringIndex;
 },
 jur_AbstractSet_findBack = ($this, $stringIndex, $startSearch, $testString, $matchResult) => {
     while (true) {
@@ -1697,6 +1731,13 @@ jur_SingleSet_matches = ($this, $stringIndex, $testString, $matchResult) => {
         return $shift;
     $matchResult.$setStart($this.$groupIndex, $start);
     return (-1);
+},
+jur_SingleSet_find = ($this, $stringIndex, $testString, $matchResult) => {
+    let $res;
+    $res = $this.$kid.$find($stringIndex, $testString, $matchResult);
+    if ($res >= 0)
+        $matchResult.$setStart($this.$groupIndex, $res);
+    return $res;
 },
 jur_SingleSet_findBack = ($this, $stringIndex, $lastIndex, $testString, $matchResult) => {
     let $res;
@@ -2056,7 +2097,7 @@ jusi_SimpleIntStreamImpl_estimateSize = $this => {
 };
 function jl_Throwable() {
     let a = this; jl_Object.call(a);
-    a.$message = null;
+    a.$message0 = null;
     a.$cause = null;
     a.$suppressionEnabled = 0;
     a.$writableStackTrace = 0;
@@ -2077,7 +2118,7 @@ jl_Throwable__init_2 = ($this, $message) => {
     $this.$suppressionEnabled = 1;
     $this.$writableStackTrace = 1;
     $this.$fillInStackTrace();
-    $this.$message = $message;
+    $this.$message0 = $message;
 },
 jl_Throwable__init_3 = var_0 => {
     let var_1 = new jl_Throwable();
@@ -2089,7 +2130,7 @@ jl_Throwable__init_ = ($this, $message, $cause) => {
     $this.$suppressionEnabled = 1;
     $this.$writableStackTrace = 1;
     $this.$fillInStackTrace();
-    $this.$message = $message;
+    $this.$message0 = $message;
     $this.$cause = $cause;
 },
 jl_Throwable__init_5 = (var_0, var_1) => {
@@ -2116,7 +2157,7 @@ jl_Throwable_initNativeException = $this => {
     $rt_fillNativeException($this);
 },
 jl_Throwable_getMessage = $this => {
-    return $this.$message;
+    return $this.$message0;
 },
 jl_Throwable_getCause = $this => {
     return $this.$cause === $this ? null : $this.$cause;
@@ -2188,6 +2229,27 @@ jur_BackReferencedSingleSet__init_0 = var_0 => {
     let var_1 = new jur_BackReferencedSingleSet();
     jur_BackReferencedSingleSet__init_(var_1, var_0);
     return var_1;
+},
+jur_BackReferencedSingleSet_find = ($this, $startSearch, $testString, $matchResult) => {
+    let $res, $lastIndex, $saveStart;
+    $res = 0;
+    $lastIndex = $matchResult.$getRightBound();
+    a: {
+        while (true) {
+            if ($startSearch > $lastIndex) {
+                $startSearch = $res;
+                break a;
+            }
+            $saveStart = $matchResult.$getStart($this.$groupIndex);
+            $matchResult.$setStart($this.$groupIndex, $startSearch);
+            $res = $this.$kid.$matches($startSearch, $testString, $matchResult);
+            if ($res >= 0)
+                break;
+            $matchResult.$setStart($this.$groupIndex, $saveStart);
+            $startSearch = $startSearch + 1 | 0;
+        }
+    }
+    return $startSearch;
 },
 jur_BackReferencedSingleSet_findBack = ($this, $stringIndex, $startSearch, $testString, $matchResult) => {
     let $res, $saveStart;
@@ -2322,11 +2384,11 @@ jur_LeafSet_hasConsumed = ($this, $mr) => {
 };
 function jur_CISequenceSet() {
     jur_LeafSet.call(this);
-    this.$string0 = null;
+    this.$string1 = null;
 }
 let jur_CISequenceSet__init_ = ($this, $substring) => {
     jur_LeafSet__init_($this);
-    $this.$string0 = $substring.$toString();
+    $this.$string1 = $substring.$toString();
     $this.$charCount0 = $substring.$length();
 },
 jur_CISequenceSet__init_0 = var_0 => {
@@ -2338,12 +2400,12 @@ jur_CISequenceSet_accepts = ($this, $strIndex, $testString) => {
     let $i, var$4, var$5, var$6;
     $i = 0;
     while (true) {
-        if ($i >= jl_String_length($this.$string0))
-            return jl_String_length($this.$string0);
-        var$4 = jl_String_charAt($this.$string0, $i);
+        if ($i >= jl_String_length($this.$string1))
+            return jl_String_length($this.$string1);
+        var$4 = jl_String_charAt($this.$string1, $i);
         var$5 = $strIndex + $i | 0;
         if (var$4 != $testString.$charAt(var$5)) {
-            var$6 = $this.$string0;
+            var$6 = $this.$string1;
             if (jur_Pattern_getSupplement(jl_String_charAt(var$6, $i)) != $testString.$charAt(var$5))
                 break;
         }
@@ -2353,7 +2415,7 @@ jur_CISequenceSet_accepts = ($this, $strIndex, $testString) => {
 },
 jur_CISequenceSet_getName = $this => {
     let var$1, var$2;
-    var$1 = $this.$string0;
+    var$1 = $this.$string1;
     var$2 = jl_StringBuilder__init_();
     jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(40)), var$1);
     return jl_StringBuilder_toString(var$2);
@@ -2642,6 +2704,13 @@ jur_DotAllQuantifierSet_matches = ($this, $stringIndex, $testString, $matchResul
         return $this.$next6.$findBack($stringIndex, $strLength, $testString, $matchResult);
     return $this.$next6.$matches($stringIndex, $testString, $matchResult);
 },
+jur_DotAllQuantifierSet_find = ($this, $stringIndex, $testString, $matchResult) => {
+    let $strLength;
+    $strLength = $matchResult.$getRightBound();
+    if ($this.$next6.$findBack($stringIndex, $strLength, $testString, $matchResult) >= 0)
+        return $stringIndex;
+    return (-1);
+},
 jur_DotAllQuantifierSet_getName = $this => {
     return $rt_s(45);
 },
@@ -2746,6 +2815,44 @@ jur_RandomGenerator_nextBytes = ($this, $bytes) => {
         $i = $i + 1 | 0;
     }
 };
+function oajvo_OpenQasmParser$Location() {
+    let a = this; jl_Record.call(a);
+    a.$line0 = 0;
+    a.$column0 = 0;
+}
+let oajvo_OpenQasmParser$Location__init_ = ($this, $line, $column) => {
+    jl_Record__init_($this);
+    $this.$line0 = $line;
+    $this.$column0 = $column;
+},
+oajvo_OpenQasmParser$Location__init_0 = (var_0, var_1) => {
+    let var_2 = new oajvo_OpenQasmParser$Location();
+    oajvo_OpenQasmParser$Location__init_(var_2, var_0, var_1);
+    return var_2;
+},
+oajvo_OpenQasmParser$Location_toString = $this => {
+    return ((((((jl_StringBuilder__init_0($rt_s(49))).$append1($rt_s(50))).$append2($this.$line0)).$append1($rt_s(51))).$append2($this.$column0)).$append1($rt_s(52))).$toString();
+},
+oajvo_OpenQasmParser$Location_hashCode = $this => {
+    return ((31 + jl_Integer_hashCode($this.$line0) | 0) * 31 | 0) + jl_Integer_hashCode($this.$column0) | 0;
+},
+oajvo_OpenQasmParser$Location_equals = ($this, $o) => {
+    let var$2, var$3;
+    if ($this === $o)
+        var$2 = 1;
+    else if ($o !== null && jl_Object_getClass($o) === $rt_cls(oajvo_OpenQasmParser$Location)) {
+        var$3 = $o;
+        var$2 = $this.$line0 != var$3.$line0 ? 0 : $this.$column0 == var$3.$column0 ? 1 : 0;
+    } else
+        var$2 = 0;
+    return var$2;
+},
+oajvo_OpenQasmParser$Location_line = $this => {
+    return $this.$line0;
+},
+oajvo_OpenQasmParser$Location_column = $this => {
+    return $this.$column0;
+};
 function otrfm_AbstractInMemoryVirtualFile() {
     let a = this; jl_Object.call(a);
     a.$name3 = null;
@@ -2802,10 +2909,10 @@ jur_LowHighSurrogateRangeSet_matches = ($this, $stringIndex, $testString, $match
 },
 jur_LowHighSurrogateRangeSet_getName = $this => {
     let var$1, var$2, var$3;
-    var$1 = !$this.$alt1 ? $rt_s(49) : $rt_s(50);
+    var$1 = !$this.$alt1 ? $rt_s(53) : $rt_s(54);
     var$2 = $this.$surrChars.$toString();
     var$3 = jl_StringBuilder__init_();
-    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(51)), var$1), var$2);
+    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(55)), var$1), var$2);
     return jl_StringBuilder_toString(var$3);
 },
 oajqs_LocalSimulator$OperationListener = $rt_classWithoutFields(0),
@@ -2828,7 +2935,7 @@ jur_GroupQuantifierSet_matches = ($this, $stringIndex, $testString, $matchResult
     return $this.$next6.$matches($stringIndex, $testString, $matchResult);
 },
 jur_GroupQuantifierSet_getName = $this => {
-    return $rt_s(52);
+    return $rt_s(56);
 },
 jur_ReluctantGroupQuantifierSet = $rt_classWithoutFields(jur_GroupQuantifierSet),
 jur_ReluctantGroupQuantifierSet__init_ = ($this, $innerSet, $next, $type) => {
@@ -2856,7 +2963,7 @@ function oajo_PauliSum$Term() {
 let oajo_PauliSum$Term__init_0 = ($this, $coeff, $pauli) => {
     jl_Record__init_($this);
     if (!(isFinite($coeff) ? 1 : 0))
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(53)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(57)));
     ju_Objects_requireNonNull($pauli, $rt_s(15));
     $this.$coeff1 = $coeff;
     $this.$pauli1 = $pauli;
@@ -2867,7 +2974,7 @@ oajo_PauliSum$Term__init_ = (var_0, var_1) => {
     return var_2;
 },
 oajo_PauliSum$Term_toString = $this => {
-    return ((((((jl_StringBuilder__init_0($rt_s(54))).$append1($rt_s(55))).$append4($this.$coeff1)).$append1($rt_s(56))).$append($this.$pauli1)).$append1($rt_s(57))).$toString();
+    return ((((((jl_StringBuilder__init_0($rt_s(58))).$append1($rt_s(59))).$append4($this.$coeff1)).$append1($rt_s(60))).$append($this.$pauli1)).$append1($rt_s(52))).$toString();
 },
 oajo_PauliSum$Term_hashCode = $this => {
     return ((31 + jl_Double_hashCode($this.$coeff1) | 0) * 31 | 0) + ju_Objects_hashCode($this.$pauli1) | 0;
@@ -3057,16 +3164,16 @@ ju_AbstractMap_toString = $this => {
     $iter = ($this.$entrySet()).$iterator();
     if ($iter.$hasNext()) {
         $e = $iter.$next();
-        $sb.$append($e.$getKey() !== $this ? $e.$getKey() : $rt_s(58));
+        $sb.$append($e.$getKey() !== $this ? $e.$getKey() : $rt_s(61));
         $sb.$append0(61);
-        $sb.$append($e.$getValue() !== $this ? $e.$getValue() : $rt_s(58));
+        $sb.$append($e.$getValue() !== $this ? $e.$getValue() : $rt_s(61));
     }
     while ($iter.$hasNext()) {
-        $sb.$append1($rt_s(59));
+        $sb.$append1($rt_s(62));
         $e = $iter.$next();
-        $sb.$append($e.$getKey() !== $this ? $e.$getKey() : $rt_s(58));
+        $sb.$append($e.$getKey() !== $this ? $e.$getKey() : $rt_s(61));
         $sb.$append0(61);
-        $sb.$append($e.$getValue() !== $this ? $e.$getValue() : $rt_s(58));
+        $sb.$append($e.$getValue() !== $this ? $e.$getValue() : $rt_s(61));
     }
     $sb.$append0(125);
     return $sb.$toString();
@@ -3427,11 +3534,11 @@ ju_LinkedHashMap_removeEldestEntry = ($this, $eldest) => {
 juf_Predicate = $rt_classWithoutFields(0);
 function jusi_FlatMappingStreamImpl$next$lambda$_1_0() {
     jl_Object.call(this);
-    this.$_026 = null;
+    this.$_029 = null;
 }
 let jusi_FlatMappingStreamImpl$next$lambda$_1_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_026 = var$1;
+    var$0.$_029 = var$1;
 },
 jusi_FlatMappingStreamImpl$next$lambda$_1_0__init_0 = var_0 => {
     let var_1 = new jusi_FlatMappingStreamImpl$next$lambda$_1_0();
@@ -3439,7 +3546,7 @@ jusi_FlatMappingStreamImpl$next$lambda$_1_0__init_0 = var_0 => {
     return var_1;
 },
 jusi_FlatMappingStreamImpl$next$lambda$_1_0_test = (var$0, var$1) => {
-    return jusi_FlatMappingStreamImpl_lambda$next$0(var$0.$_026, var$1);
+    return jusi_FlatMappingStreamImpl_lambda$next$0(var$0.$_029, var$1);
 },
 jur_PosPlusGroupQuantifierSet = $rt_classWithoutFields(jur_GroupQuantifierSet),
 jur_PosPlusGroupQuantifierSet__init_ = ($this, $innerSet, $next, $type) => {
@@ -3520,11 +3627,11 @@ jl_AbstractStringBuilder_append5 = ($this, $obj) => {
 jl_AbstractStringBuilder_append6 = ($this, $string) => {
     return $this.$insert0($this.$length0, $string);
 },
-jl_AbstractStringBuilder_insert6 = ($this, $index, $string) => {
+jl_AbstractStringBuilder_insert7 = ($this, $index, $string) => {
     let $i, var$4, var$5;
     if ($index >= 0 && $index <= $this.$length0) {
         if ($string === null)
-            $string = $rt_s(60);
+            $string = $rt_s(63);
         else if (jl_String_isEmpty($string))
             return $this;
         $this.$ensureCapacity($this.$length0 + jl_String_length($string) | 0);
@@ -3549,10 +3656,10 @@ jl_AbstractStringBuilder_insert6 = ($this, $index, $string) => {
 jl_AbstractStringBuilder_append2 = ($this, $value) => {
     return $this.$append3($value, 10);
 },
-jl_AbstractStringBuilder_append9 = ($this, $value, $radix) => {
+jl_AbstractStringBuilder_append10 = ($this, $value, $radix) => {
     return $this.$insert1($this.$length0, $value, $radix);
 },
-jl_AbstractStringBuilder_insert7 = ($this, $target, $value, $radix) => {
+jl_AbstractStringBuilder_insert8 = ($this, $target, $value, $radix) => {
     let $positive, var$5, var$6, $pos, $sz, $posLimit, var$10, var$11;
     $positive = 1;
     if ($value < 0) {
@@ -3612,8 +3719,75 @@ jl_AbstractStringBuilder_insert7 = ($this, $target, $value, $radix) => {
     }
     return $this;
 },
-jl_AbstractStringBuilder_append4 = ($this, $value) => {
+jl_AbstractStringBuilder_append8 = ($this, $value) => {
     return $this.$insert2($this.$length0, $value);
+},
+jl_AbstractStringBuilder_insert4 = ($this, $target, $value) => {
+    return $this.$insert3($target, $value, 10);
+},
+jl_AbstractStringBuilder_insert9 = ($this, $target, $value, $radix) => {
+    let $positive, var$5, var$6, var$7, $sz, $pos, $posLimit, var$11, var$12;
+    $positive = 1;
+    if (Long_lt($value, Long_ZERO)) {
+        $positive = 0;
+        $value = Long_neg($value);
+    }
+    a: {
+        var$5 = Long_fromInt($radix);
+        if (jl_Long_compareUnsigned($value, var$5) < 0) {
+            if ($positive)
+                jl_AbstractStringBuilder_insertSpace($this, $target, $target + 1 | 0);
+            else {
+                jl_AbstractStringBuilder_insertSpace($this, $target, $target + 2 | 0);
+                var$6 = $this.$buffer.data;
+                var$7 = $target + 1 | 0;
+                var$6[$target] = 45;
+                $target = var$7;
+            }
+            $this.$buffer.data[$target] = jl_Character_forDigit(Long_lo($value), $radix);
+        } else {
+            $sz = 1;
+            $pos = Long_fromInt(1);
+            $posLimit = jl_Long_divideUnsigned(Long_fromInt(-1), var$5);
+            b: {
+                while (true) {
+                    var$11 = Long_mul($pos, var$5);
+                    if (jl_Long_compareUnsigned(var$11, $value) > 0) {
+                        var$11 = $pos;
+                        break b;
+                    }
+                    $sz = $sz + 1 | 0;
+                    if (jl_Long_compareUnsigned(var$11, $posLimit) > 0)
+                        break;
+                    $pos = var$11;
+                }
+            }
+            if (!$positive)
+                $sz = $sz + 1 | 0;
+            jl_AbstractStringBuilder_insertSpace($this, $target, $target + $sz | 0);
+            if ($positive)
+                var$12 = $target;
+            else {
+                var$6 = $this.$buffer.data;
+                var$12 = $target + 1 | 0;
+                var$6[$target] = 45;
+            }
+            while (true) {
+                if (Long_eq(var$11, Long_ZERO))
+                    break a;
+                var$6 = $this.$buffer.data;
+                var$7 = var$12 + 1 | 0;
+                var$6[var$12] = jl_Character_forDigit(Long_lo((jl_Long_divideUnsigned($value, var$11))), $radix);
+                $value = jl_Long_remainderUnsigned($value, var$11);
+                var$11 = jl_Long_divideUnsigned(var$11, var$5);
+                var$12 = var$7;
+            }
+        }
+    }
+    return $this;
+},
+jl_AbstractStringBuilder_append4 = ($this, $value) => {
+    return $this.$insert4($this.$length0, $value);
 },
 jl_AbstractStringBuilder_insert2 = ($this, $target, $value) => {
     let var$3, var$4, var$5, $number, $mantissa, $exp, $negative, $intPart, $sz, $digits, $zeros, $leadingZeros, $leadingZero, var$16, $pos, $i, $intDigit, var$20;
@@ -3827,7 +4001,7 @@ jl_AbstractStringBuilder_trailingDecimalZeros = $n => {
     return $result;
 },
 jl_AbstractStringBuilder_append = ($this, $c) => {
-    return $this.$insert3($this.$length0, $c);
+    return $this.$insert5($this.$length0, $c);
 },
 jl_AbstractStringBuilder_insert0 = ($this, $index, $c) => {
     jl_AbstractStringBuilder_insertSpace($this, $index, $index + 1 | 0);
@@ -3835,13 +4009,13 @@ jl_AbstractStringBuilder_insert0 = ($this, $index, $c) => {
     return $this;
 },
 jl_AbstractStringBuilder_insert3 = ($this, $index, $obj) => {
-    return $this.$insert0($index, $obj === null ? $rt_s(60) : $obj.$toString());
+    return $this.$insert0($index, $obj === null ? $rt_s(63) : $obj.$toString());
 },
 jl_AbstractStringBuilder_append7 = ($this, $b) => {
-    return $this.$insert4($this.$length0, $b);
+    return $this.$insert6($this.$length0, $b);
 },
 jl_AbstractStringBuilder_insert1 = ($this, $index, $b) => {
-    return $this.$insert0($index, !$b ? $rt_s(61) : $rt_s(62));
+    return $this.$insert0($index, !$b ? $rt_s(64) : $rt_s(65));
 },
 jl_AbstractStringBuilder_ensureCapacity = ($this, $capacity) => {
     let $newLength;
@@ -3862,9 +4036,9 @@ jl_AbstractStringBuilder_charAt = ($this, $index) => {
     $rt_throw(jl_IndexOutOfBoundsException__init_());
 },
 jl_AbstractStringBuilder_append3 = ($this, $s, $start, $end) => {
-    return $this.$insert5($this.$length0, $s, $start, $end);
+    return $this.$insert7($this.$length0, $s, $start, $end);
 },
-jl_AbstractStringBuilder_insert4 = ($this, $index, $s, $i, $end) => {
+jl_AbstractStringBuilder_insert5 = ($this, $index, $s, $i, $end) => {
     let var$5, var$6;
     if ($i <= $end && $end <= $s.$length() && $i >= 0) {
         jl_AbstractStringBuilder_insertSpace($this, $index, ($index + $end | 0) - $i | 0);
@@ -3879,14 +4053,14 @@ jl_AbstractStringBuilder_insert4 = ($this, $index, $s, $i, $end) => {
     }
     $rt_throw(jl_IndexOutOfBoundsException__init_());
 },
-jl_AbstractStringBuilder_append8 = ($this, $s) => {
+jl_AbstractStringBuilder_append9 = ($this, $s) => {
     return $this.$append5($s, 0, $s.$length());
 },
-jl_AbstractStringBuilder_insert5 = ($this, $index, $s) => {
-    return $this.$insert5($index, $s, 0, $s.$length());
+jl_AbstractStringBuilder_insert6 = ($this, $index, $s) => {
+    return $this.$insert7($index, $s, 0, $s.$length());
 },
 jl_AbstractStringBuilder_append1 = ($this, $chars, $offset, $len) => {
-    return $this.$insert6($this.$length0, $chars, $offset, $len);
+    return $this.$insert8($this.$length0, $chars, $offset, $len);
 },
 jl_AbstractStringBuilder_insert = ($this, $index, $chars, $offset, $len) => {
     let var$5, var$6, var$7, var$8, var$9;
@@ -3990,12 +4164,12 @@ jl_StringBuffer_insert2 = ($this, $index, $c) => {
     return $this;
 },
 jl_StringBuffer_insert = ($this, var$1, var$2, var$3, var$4) => {
-    return $this.$insert7(var$1, var$2, var$3, var$4);
+    return $this.$insert9(var$1, var$2, var$3, var$4);
 },
 jl_StringBuffer_append = ($this, var$1, var$2, var$3) => {
     return $this.$append9(var$1, var$2, var$3);
-},
-jl_StringBuffer_charAt = ($this, var$1) => {
+};
+let jl_StringBuffer_charAt = ($this, var$1) => {
     return jl_AbstractStringBuilder_charAt($this, var$1);
 },
 jl_StringBuffer_length = $this => {
@@ -4003,12 +4177,12 @@ jl_StringBuffer_length = $this => {
 },
 jl_StringBuffer_toString = $this => {
     return jl_AbstractStringBuilder_toString($this);
-};
-let jl_StringBuffer_ensureCapacity = ($this, var$1) => {
+},
+jl_StringBuffer_ensureCapacity = ($this, var$1) => {
     jl_AbstractStringBuilder_ensureCapacity($this, var$1);
 },
 jl_StringBuffer_insert1 = ($this, var$1, var$2) => {
-    return $this.$insert8(var$1, var$2);
+    return $this.$insert10(var$1, var$2);
 };
 function jn_Buffer() {
     let a = this; jl_Object.call(a);
@@ -4037,7 +4211,7 @@ jn_Buffer_position0 = ($this, $newPosition) => {
     var$2 = new jl_IllegalArgumentException;
     var$3 = $this.$limit0;
     var$4 = jl_StringBuilder__init_();
-    jl_StringBuilder_append0(jl_StringBuilder_append1(jl_StringBuilder_append(jl_StringBuilder_append1(jl_StringBuilder_append(var$4, $rt_s(63)), $newPosition), $rt_s(64)), var$3), 93);
+    jl_StringBuilder_append0(jl_StringBuilder_append1(jl_StringBuilder_append(jl_StringBuilder_append1(jl_StringBuilder_append(var$4, $rt_s(66)), $newPosition), $rt_s(67)), var$3), 93);
     jl_IllegalArgumentException__init_1(var$2, jl_StringBuilder_toString(var$4));
     $rt_throw(var$2);
 },
@@ -4116,10 +4290,10 @@ oajm_ComplexMatrix_createMatrixWithData = $data => {
 oajm_ComplexMatrix_multiControlledMatrix = ($u, $numControls) => {
     let $uDim, $d, $data, $r, $c, var$8, var$9, $base;
     if ($numControls < 1)
-        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(65))).$append2($numControls)).$toString()));
+        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(68))).$append2($numControls)).$toString()));
     $uDim = $u.$getRowDimension();
     if ($u.$getColumnDimension() != $uDim)
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(66)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(69)));
     if ($uDim >= 2 && !($uDim & ($uDim - 1 | 0))) {
         $d = $rt_imul(1 << $numControls, $uDim);
         $data = $rt_createMultiArray(oajm_Complex, [$d, $d]);
@@ -4152,7 +4326,7 @@ oajm_ComplexMatrix_multiControlledMatrix = ($u, $numControls) => {
         }
         return oajm_ComplexMatrix__init_($data);
     }
-    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(67))).$append2($uDim)).$toString()));
+    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(70))).$append2($uDim)).$toString()));
 },
 oajm_ComplexMatrix_getEntry = ($this, $row, $column) => {
     let $flat, var$4, var$5;
@@ -4223,16 +4397,16 @@ oajm_ComplexMatrix_hashCode = $this => {
 },
 oajm_ComplexMatrix_toString = $this => {
     let $sb, $r, $c;
-    $sb = jl_StringBuilder__init_0($rt_s(68));
+    $sb = jl_StringBuilder__init_0($rt_s(71));
     $r = 0;
     while ($r < $this.$rows) {
         if ($r > 0)
-            $sb.$append1($rt_s(59));
+            $sb.$append1($rt_s(62));
         $sb.$append0(91);
         $c = 0;
         while ($c < $this.$cols) {
             if ($c > 0)
-                $sb.$append1($rt_s(59));
+                $sb.$append1($rt_s(62));
             $sb.$append($this.$getEntry0($r, $c));
             $c = $c + 1 | 0;
         }
@@ -4380,7 +4554,7 @@ jur_AbstractCharClass$PredefinedCharacterClasses_getObject = ($this, $name) => {
     while (true) {
         jur_AbstractCharClass$PredefinedCharacterClasses_$callClinit();
         if ($i >= jur_AbstractCharClass$PredefinedCharacterClasses_contents.data.length)
-            $rt_throw(ju_MissingResourceException__init_0($rt_s(69), $rt_s(69), $name));
+            $rt_throw(ju_MissingResourceException__init_0($rt_s(72), $rt_s(72), $name));
         $row = jur_AbstractCharClass$PredefinedCharacterClasses_contents.data[$i];
         var$4 = $row.data;
         if (jl_String_equals($name, var$4[0]))
@@ -4397,972 +4571,972 @@ jur_AbstractCharClass$PredefinedCharacterClasses__clinit_ = () => {
     var$2 = var$1.data;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(70);
+    var$4[0] = $rt_s(73);
     var$4[1] = jur_AbstractCharClass$LazyLower__init_0();
     var$2[0] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(71);
+    var$4[0] = $rt_s(74);
     var$4[1] = jur_AbstractCharClass$LazyUpper__init_0();
     var$2[1] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(72);
+    var$4[0] = $rt_s(75);
     var$4[1] = jur_AbstractCharClass$LazyASCII__init_0();
     var$2[2] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(73);
+    var$4[0] = $rt_s(76);
     var$4[1] = jur_AbstractCharClass$LazyAlpha__init_0();
     var$2[3] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(74);
+    var$4[0] = $rt_s(77);
     var$4[1] = jur_AbstractCharClass$PredefinedCharacterClasses_digit;
     var$2[4] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(75);
+    var$4[0] = $rt_s(78);
     var$4[1] = jur_AbstractCharClass$LazyAlnum__init_0();
     var$2[5] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(76);
+    var$4[0] = $rt_s(79);
     var$4[1] = jur_AbstractCharClass$LazyPunct__init_0();
     var$2[6] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(77);
+    var$4[0] = $rt_s(80);
     var$4[1] = jur_AbstractCharClass$LazyGraph__init_0();
     var$2[7] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(78);
+    var$4[0] = $rt_s(81);
     var$4[1] = jur_AbstractCharClass$LazyPrint__init_0();
     var$2[8] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(79);
+    var$4[0] = $rt_s(82);
     var$4[1] = jur_AbstractCharClass$LazyBlank__init_0();
     var$2[9] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(80);
+    var$4[0] = $rt_s(83);
     var$4[1] = jur_AbstractCharClass$LazyCntrl__init_0();
     var$2[10] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(81);
+    var$4[0] = $rt_s(84);
     var$4[1] = jur_AbstractCharClass$LazyXDigit__init_0();
     var$2[11] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(82);
+    var$4[0] = $rt_s(85);
     var$4[1] = jur_AbstractCharClass$LazyJavaLowerCase__init_0();
     var$2[12] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(83);
+    var$4[0] = $rt_s(86);
     var$4[1] = jur_AbstractCharClass$LazyJavaUpperCase__init_0();
     var$2[13] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(84);
+    var$4[0] = $rt_s(87);
     var$4[1] = jur_AbstractCharClass$LazyJavaWhitespace__init_0();
     var$2[14] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(85);
+    var$4[0] = $rt_s(88);
     var$4[1] = jur_AbstractCharClass$LazyJavaMirrored__init_0();
     var$2[15] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(86);
+    var$4[0] = $rt_s(89);
     var$4[1] = jur_AbstractCharClass$LazyJavaDefined__init_0();
     var$2[16] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(87);
+    var$4[0] = $rt_s(90);
     var$4[1] = jur_AbstractCharClass$LazyJavaDigit__init_0();
     var$2[17] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(88);
+    var$4[0] = $rt_s(91);
     var$4[1] = jur_AbstractCharClass$LazyJavaIdentifierIgnorable__init_0();
     var$2[18] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(89);
+    var$4[0] = $rt_s(92);
     var$4[1] = jur_AbstractCharClass$LazyJavaISOControl__init_0();
     var$2[19] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(90);
+    var$4[0] = $rt_s(93);
     var$4[1] = jur_AbstractCharClass$LazyJavaJavaIdentifierPart__init_0();
     var$2[20] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(91);
+    var$4[0] = $rt_s(94);
     var$4[1] = jur_AbstractCharClass$LazyJavaJavaIdentifierStart__init_0();
     var$2[21] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(92);
+    var$4[0] = $rt_s(95);
     var$4[1] = jur_AbstractCharClass$LazyJavaLetter__init_0();
     var$2[22] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(93);
+    var$4[0] = $rt_s(96);
     var$4[1] = jur_AbstractCharClass$LazyJavaLetterOrDigit__init_0();
     var$2[23] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(94);
+    var$4[0] = $rt_s(97);
     var$4[1] = jur_AbstractCharClass$LazyJavaSpaceChar__init_0();
     var$2[24] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(95);
+    var$4[0] = $rt_s(98);
     var$4[1] = jur_AbstractCharClass$LazyJavaTitleCase__init_0();
     var$2[25] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(96);
+    var$4[0] = $rt_s(99);
     var$4[1] = jur_AbstractCharClass$LazyJavaUnicodeIdentifierPart__init_0();
     var$2[26] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(97);
+    var$4[0] = $rt_s(100);
     var$4[1] = jur_AbstractCharClass$LazyJavaUnicodeIdentifierStart__init_0();
     var$2[27] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(98);
+    var$4[0] = $rt_s(101);
     var$4[1] = jur_AbstractCharClass$PredefinedCharacterClasses_space;
     var$2[28] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(99);
+    var$4[0] = $rt_s(102);
     var$4[1] = jur_AbstractCharClass$LazyWord__init_0();
     var$2[29] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(100);
+    var$4[0] = $rt_s(103);
     var$4[1] = jur_AbstractCharClass$LazyNonWord__init_0();
     var$2[30] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(101);
+    var$4[0] = $rt_s(104);
     var$4[1] = jur_AbstractCharClass$PredefinedCharacterClasses_space;
     var$2[31] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(102);
+    var$4[0] = $rt_s(105);
     var$4[1] = jur_AbstractCharClass$LazyNonSpace__init_0();
     var$2[32] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(103);
+    var$4[0] = $rt_s(106);
     var$4[1] = jur_AbstractCharClass$PredefinedCharacterClasses_digit;
     var$2[33] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(104);
+    var$4[0] = $rt_s(107);
     var$4[1] = jur_AbstractCharClass$LazyNonDigit__init_0();
     var$2[34] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(105);
+    var$4[0] = $rt_s(108);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(0, 127);
     var$2[35] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(106);
+    var$4[0] = $rt_s(109);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(128, 255);
     var$2[36] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(107);
+    var$4[0] = $rt_s(110);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(256, 383);
     var$2[37] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(108);
+    var$4[0] = $rt_s(111);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(384, 591);
     var$2[38] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(109);
+    var$4[0] = $rt_s(112);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(592, 687);
     var$2[39] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(110);
+    var$4[0] = $rt_s(113);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(688, 767);
     var$2[40] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(111);
+    var$4[0] = $rt_s(114);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(768, 879);
     var$2[41] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(112);
+    var$4[0] = $rt_s(115);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(880, 1023);
     var$2[42] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(113);
+    var$4[0] = $rt_s(116);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(1024, 1279);
     var$2[43] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(114);
+    var$4[0] = $rt_s(117);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(1280, 1327);
     var$2[44] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(115);
+    var$4[0] = $rt_s(118);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(1328, 1423);
     var$2[45] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(116);
+    var$4[0] = $rt_s(119);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(1424, 1535);
     var$2[46] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(117);
+    var$4[0] = $rt_s(120);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(1536, 1791);
     var$2[47] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(118);
+    var$4[0] = $rt_s(121);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(1792, 1871);
     var$2[48] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(119);
+    var$4[0] = $rt_s(122);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(1872, 1919);
     var$2[49] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(120);
+    var$4[0] = $rt_s(123);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(1920, 1983);
     var$2[50] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(121);
+    var$4[0] = $rt_s(124);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(2304, 2431);
     var$2[51] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(122);
+    var$4[0] = $rt_s(125);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(2432, 2559);
     var$2[52] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(123);
+    var$4[0] = $rt_s(126);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(2560, 2687);
     var$2[53] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(124);
+    var$4[0] = $rt_s(127);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(2688, 2815);
     var$2[54] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(125);
+    var$4[0] = $rt_s(128);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(2816, 2943);
     var$2[55] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(126);
+    var$4[0] = $rt_s(129);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(2944, 3071);
     var$2[56] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(127);
+    var$4[0] = $rt_s(130);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(3072, 3199);
     var$2[57] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(128);
+    var$4[0] = $rt_s(131);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(3200, 3327);
     var$2[58] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(129);
+    var$4[0] = $rt_s(132);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(3328, 3455);
     var$2[59] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(130);
+    var$4[0] = $rt_s(133);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(3456, 3583);
     var$2[60] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(131);
+    var$4[0] = $rt_s(134);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(3584, 3711);
     var$2[61] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(132);
+    var$4[0] = $rt_s(135);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(3712, 3839);
     var$2[62] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(133);
+    var$4[0] = $rt_s(136);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(3840, 4095);
     var$2[63] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(134);
+    var$4[0] = $rt_s(137);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(4096, 4255);
     var$2[64] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(135);
+    var$4[0] = $rt_s(138);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(4256, 4351);
     var$2[65] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(136);
+    var$4[0] = $rt_s(139);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(4352, 4607);
     var$2[66] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(137);
+    var$4[0] = $rt_s(140);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(4608, 4991);
     var$2[67] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(138);
+    var$4[0] = $rt_s(141);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(4992, 5023);
     var$2[68] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(139);
+    var$4[0] = $rt_s(142);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(5024, 5119);
     var$2[69] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(140);
+    var$4[0] = $rt_s(143);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(5120, 5759);
     var$2[70] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(141);
+    var$4[0] = $rt_s(144);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(5760, 5791);
     var$2[71] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(142);
+    var$4[0] = $rt_s(145);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(5792, 5887);
     var$2[72] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(143);
+    var$4[0] = $rt_s(146);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(5888, 5919);
     var$2[73] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(144);
+    var$4[0] = $rt_s(147);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(5920, 5951);
     var$2[74] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(145);
+    var$4[0] = $rt_s(148);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(5952, 5983);
     var$2[75] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(146);
+    var$4[0] = $rt_s(149);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(5984, 6015);
     var$2[76] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(147);
+    var$4[0] = $rt_s(150);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(6016, 6143);
     var$2[77] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(148);
+    var$4[0] = $rt_s(151);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(6144, 6319);
     var$2[78] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(149);
+    var$4[0] = $rt_s(152);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(6400, 6479);
     var$2[79] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(150);
+    var$4[0] = $rt_s(153);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(6480, 6527);
     var$2[80] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(151);
+    var$4[0] = $rt_s(154);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(6528, 6623);
     var$2[81] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(152);
+    var$4[0] = $rt_s(155);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(6624, 6655);
     var$2[82] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(153);
+    var$4[0] = $rt_s(156);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(6656, 6687);
     var$2[83] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(154);
+    var$4[0] = $rt_s(157);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(7424, 7551);
     var$2[84] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(155);
+    var$4[0] = $rt_s(158);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(7552, 7615);
     var$2[85] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(156);
+    var$4[0] = $rt_s(159);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(7616, 7679);
     var$2[86] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(157);
+    var$4[0] = $rt_s(160);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(7680, 7935);
     var$2[87] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(158);
+    var$4[0] = $rt_s(161);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(7936, 8191);
     var$2[88] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(159);
+    var$4[0] = $rt_s(162);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(8192, 8303);
     var$2[89] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(160);
+    var$4[0] = $rt_s(163);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(8304, 8351);
     var$2[90] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(161);
+    var$4[0] = $rt_s(164);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(8352, 8399);
     var$2[91] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(162);
+    var$4[0] = $rt_s(165);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(8400, 8447);
     var$2[92] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(163);
+    var$4[0] = $rt_s(166);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(8448, 8527);
     var$2[93] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(164);
+    var$4[0] = $rt_s(167);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(8528, 8591);
     var$2[94] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(165);
+    var$4[0] = $rt_s(168);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(8592, 8703);
     var$2[95] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(166);
+    var$4[0] = $rt_s(169);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(8704, 8959);
     var$2[96] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(167);
+    var$4[0] = $rt_s(170);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(8960, 9215);
     var$2[97] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(168);
+    var$4[0] = $rt_s(171);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(9216, 9279);
     var$2[98] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(169);
+    var$4[0] = $rt_s(172);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(9280, 9311);
     var$2[99] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(170);
+    var$4[0] = $rt_s(173);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(9312, 9471);
     var$2[100] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(171);
+    var$4[0] = $rt_s(174);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(9472, 9599);
     var$2[101] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(172);
+    var$4[0] = $rt_s(175);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(9600, 9631);
     var$2[102] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(173);
+    var$4[0] = $rt_s(176);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(9632, 9727);
     var$2[103] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(174);
+    var$4[0] = $rt_s(177);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(9728, 9983);
     var$2[104] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(175);
+    var$4[0] = $rt_s(178);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(9984, 10175);
     var$2[105] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(176);
+    var$4[0] = $rt_s(179);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(10176, 10223);
     var$2[106] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(177);
+    var$4[0] = $rt_s(180);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(10224, 10239);
     var$2[107] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(178);
+    var$4[0] = $rt_s(181);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(10240, 10495);
     var$2[108] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(179);
+    var$4[0] = $rt_s(182);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(10496, 10623);
     var$2[109] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(180);
+    var$4[0] = $rt_s(183);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(10624, 10751);
     var$2[110] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(181);
+    var$4[0] = $rt_s(184);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(10752, 11007);
     var$2[111] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(182);
+    var$4[0] = $rt_s(185);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(11008, 11263);
     var$2[112] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(183);
+    var$4[0] = $rt_s(186);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(11264, 11359);
     var$2[113] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(184);
+    var$4[0] = $rt_s(187);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(11392, 11519);
     var$2[114] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(185);
+    var$4[0] = $rt_s(188);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(11520, 11567);
     var$2[115] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(186);
+    var$4[0] = $rt_s(189);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(11568, 11647);
     var$2[116] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(187);
+    var$4[0] = $rt_s(190);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(11648, 11743);
     var$2[117] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(188);
+    var$4[0] = $rt_s(191);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(11776, 11903);
     var$2[118] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(189);
+    var$4[0] = $rt_s(192);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(11904, 12031);
     var$2[119] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(190);
+    var$4[0] = $rt_s(193);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(12032, 12255);
     var$2[120] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(191);
+    var$4[0] = $rt_s(194);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(12272, 12287);
     var$2[121] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(192);
+    var$4[0] = $rt_s(195);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(12288, 12351);
     var$2[122] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(193);
+    var$4[0] = $rt_s(196);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(12352, 12447);
     var$2[123] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(194);
+    var$4[0] = $rt_s(197);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(12448, 12543);
     var$2[124] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(195);
+    var$4[0] = $rt_s(198);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(12544, 12591);
     var$2[125] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(196);
+    var$4[0] = $rt_s(199);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(12592, 12687);
     var$2[126] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(197);
+    var$4[0] = $rt_s(200);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(12688, 12703);
     var$2[127] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(198);
+    var$4[0] = $rt_s(201);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(12704, 12735);
     var$2[128] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(199);
+    var$4[0] = $rt_s(202);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(12736, 12783);
     var$2[129] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(200);
+    var$4[0] = $rt_s(203);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(12784, 12799);
     var$2[130] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(201);
+    var$4[0] = $rt_s(204);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(12800, 13055);
     var$2[131] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(202);
+    var$4[0] = $rt_s(205);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(13056, 13311);
     var$2[132] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(203);
+    var$4[0] = $rt_s(206);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(13312, 19893);
     var$2[133] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(204);
+    var$4[0] = $rt_s(207);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(19904, 19967);
     var$2[134] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(205);
+    var$4[0] = $rt_s(208);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(19968, 40959);
     var$2[135] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(206);
+    var$4[0] = $rt_s(209);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(40960, 42127);
     var$2[136] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(207);
+    var$4[0] = $rt_s(210);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(42128, 42191);
     var$2[137] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(208);
+    var$4[0] = $rt_s(211);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(42752, 42783);
     var$2[138] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(209);
+    var$4[0] = $rt_s(212);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(43008, 43055);
     var$2[139] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(210);
+    var$4[0] = $rt_s(213);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(44032, 55203);
     var$2[140] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(211);
+    var$4[0] = $rt_s(214);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(55296, 56191);
     var$2[141] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(212);
+    var$4[0] = $rt_s(215);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(56192, 56319);
     var$2[142] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(213);
+    var$4[0] = $rt_s(216);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(56320, 57343);
     var$2[143] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(214);
+    var$4[0] = $rt_s(217);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(57344, 63743);
     var$2[144] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(215);
+    var$4[0] = $rt_s(218);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(63744, 64255);
     var$2[145] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(216);
+    var$4[0] = $rt_s(219);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(64256, 64335);
     var$2[146] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(217);
+    var$4[0] = $rt_s(220);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(64336, 65023);
     var$2[147] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(218);
+    var$4[0] = $rt_s(221);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(65024, 65039);
     var$2[148] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(219);
+    var$4[0] = $rt_s(222);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(65040, 65055);
     var$2[149] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(220);
+    var$4[0] = $rt_s(223);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(65056, 65071);
     var$2[150] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(221);
+    var$4[0] = $rt_s(224);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(65072, 65103);
     var$2[151] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(222);
+    var$4[0] = $rt_s(225);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(65104, 65135);
     var$2[152] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(223);
+    var$4[0] = $rt_s(226);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(65136, 65279);
     var$2[153] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(224);
+    var$4[0] = $rt_s(227);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(65280, 65519);
     var$2[154] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(225);
+    var$4[0] = $rt_s(228);
     var$4[1] = jur_AbstractCharClass$LazyRange__init_(0, 1114111);
     var$2[155] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(226);
+    var$4[0] = $rt_s(229);
     var$4[1] = jur_AbstractCharClass$LazySpecialsBlock__init_0();
     var$2[156] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(227);
+    var$4[0] = $rt_s(230);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(0, 1);
     var$2[157] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(228);
+    var$4[0] = $rt_s(231);
     var$4[1] = jur_AbstractCharClass$LazyCategoryScope__init_(62, 1);
     var$2[158] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(229);
+    var$4[0] = $rt_s(232);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(1, 1);
     var$2[159] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(230);
+    var$4[0] = $rt_s(233);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(2, 1);
     var$2[160] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(231);
+    var$4[0] = $rt_s(234);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(3, 0);
     var$2[161] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(232);
+    var$4[0] = $rt_s(235);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(4, 0);
     var$2[162] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(233);
+    var$4[0] = $rt_s(236);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(5, 1);
     var$2[163] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(234);
+    var$4[0] = $rt_s(237);
     var$4[1] = jur_AbstractCharClass$LazyCategoryScope__init_(448, 1);
     var$2[164] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(235);
+    var$4[0] = $rt_s(238);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(6, 1);
     var$2[165] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(236);
+    var$4[0] = $rt_s(239);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(7, 0);
     var$2[166] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(237);
+    var$4[0] = $rt_s(240);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(8, 1);
     var$2[167] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(238);
+    var$4[0] = $rt_s(241);
     var$4[1] = jur_AbstractCharClass$LazyCategoryScope__init_(3584, 1);
     var$2[168] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(239);
+    var$4[0] = $rt_s(242);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(9, 1);
     var$2[169] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(240);
+    var$4[0] = $rt_s(243);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(10, 1);
     var$2[170] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(241);
+    var$4[0] = $rt_s(244);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(11, 1);
     var$2[171] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(242);
+    var$4[0] = $rt_s(245);
     var$4[1] = jur_AbstractCharClass$LazyCategoryScope__init_(28672, 0);
     var$2[172] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(243);
+    var$4[0] = $rt_s(246);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(12, 0);
     var$2[173] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(244);
+    var$4[0] = $rt_s(247);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(13, 0);
     var$2[174] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(245);
+    var$4[0] = $rt_s(248);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(14, 0);
     var$2[175] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(246);
+    var$4[0] = $rt_s(249);
     var$4[1] = jur_AbstractCharClass$LazyCategoryScope__init_2(983040, 1, 1);
     var$2[176] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(247);
+    var$4[0] = $rt_s(250);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(15, 0);
     var$2[177] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(248);
+    var$4[0] = $rt_s(251);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(16, 1);
     var$2[178] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(249);
+    var$4[0] = $rt_s(252);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(18, 1);
     var$2[179] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(250);
+    var$4[0] = $rt_s(253);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_2(19, 0, 1);
     var$2[180] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(251);
+    var$4[0] = $rt_s(254);
     var$4[1] = jur_AbstractCharClass$LazyCategoryScope__init_(1643118592, 1);
     var$2[181] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(252);
+    var$4[0] = $rt_s(255);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(20, 0);
     var$2[182] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(253);
+    var$4[0] = $rt_s(256);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(21, 0);
     var$2[183] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(254);
+    var$4[0] = $rt_s(257);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(22, 0);
     var$2[184] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(255);
+    var$4[0] = $rt_s(258);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(23, 0);
     var$2[185] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(256);
+    var$4[0] = $rt_s(259);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(24, 1);
     var$2[186] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(257);
+    var$4[0] = $rt_s(260);
     var$4[1] = jur_AbstractCharClass$LazyCategoryScope__init_(2113929216, 1);
     var$2[187] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(258);
+    var$4[0] = $rt_s(261);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(25, 1);
     var$2[188] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(259);
+    var$4[0] = $rt_s(262);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(26, 0);
     var$2[189] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(260);
+    var$4[0] = $rt_s(263);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(27, 0);
     var$2[190] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(261);
+    var$4[0] = $rt_s(264);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(28, 1);
     var$2[191] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(262);
+    var$4[0] = $rt_s(265);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(29, 0);
     var$2[192] = var$3;
     var$3 = $rt_createArray(jl_Object, 2);
     var$4 = var$3.data;
-    var$4[0] = $rt_s(263);
+    var$4[0] = $rt_s(266);
     var$4[1] = jur_AbstractCharClass$LazyCategory__init_(30, 0);
     var$2[193] = var$3;
     jur_AbstractCharClass$PredefinedCharacterClasses_contents = var$1;
@@ -5371,9 +5545,9 @@ oajvs_CircuitSpecJson = $rt_classWithoutFields(),
 oajvs_CircuitSpecJson_toJson = $spec => {
     let $sb, var$3, $levels, $i;
     $sb = jl_StringBuilder__init_();
-    var$3 = ($sb.$append1($rt_s(264))).$append2(oajvs_CircuitSpec_version($spec));
-    var$3 = (var$3.$append1($rt_s(265))).$append2(oajvs_CircuitSpec_numQubits($spec));
-    var$3.$append1($rt_s(266));
+    var$3 = ($sb.$append1($rt_s(267))).$append2(oajvs_CircuitSpec_version($spec));
+    var$3 = (var$3.$append1($rt_s(268))).$append2(oajvs_CircuitSpec_numQubits($spec));
+    var$3.$append1($rt_s(269));
     $levels = oajvs_CircuitSpec_levels($spec);
     $i = 0;
     while ($i < $levels.$size()) {
@@ -5382,15 +5556,15 @@ oajvs_CircuitSpecJson_toJson = $spec => {
         oajvs_CircuitSpecJson_writeLevel($sb, $levels.$get0($i));
         $i = $i + 1 | 0;
     }
-    $sb.$append1($rt_s(57));
+    $sb.$append1($rt_s(52));
     if (oajvs_CircuitSpec_version($spec) == 2 && oajvs_CircuitSpec_numClassicalBits($spec))
-        ($sb.$append1($rt_s(267))).$append2(oajvs_CircuitSpec_numClassicalBits($spec));
+        ($sb.$append1($rt_s(270))).$append2(oajvs_CircuitSpec_numClassicalBits($spec));
     $sb.$append0(125);
     return $sb.$toString();
 },
 oajvs_CircuitSpecJson_writeLevel = ($sb, $level) => {
     let $gates, $i;
-    $sb.$append1($rt_s(268));
+    $sb.$append1($rt_s(271));
     $gates = oajvs_LevelSpec_gates($level);
     $i = 0;
     while ($i < $gates.$size()) {
@@ -5399,26 +5573,26 @@ oajvs_CircuitSpecJson_writeLevel = ($sb, $level) => {
         oajvs_CircuitSpecJson_writeGate($sb, $gates.$get0($i));
         $i = $i + 1 | 0;
     }
-    $sb.$append1($rt_s(269));
+    $sb.$append1($rt_s(272));
 },
 oajvs_CircuitSpecJson_writeGate = ($sb, $g) => {
     let var$3;
-    (($sb.$append1($rt_s(270))).$append1(jl_Enum_name(oajvs_GateSpec_kind($g)))).$append0(34);
-    $sb.$append1($rt_s(271));
+    (($sb.$append1($rt_s(273))).$append1(jl_Enum_name(oajvs_GateSpec_kind($g)))).$append0(34);
+    $sb.$append1($rt_s(274));
     oajvs_CircuitSpecJson_writeIntList($sb, oajvs_GateSpec_targets($g));
-    $sb.$append1($rt_s(272));
+    $sb.$append1($rt_s(275));
     oajvs_CircuitSpecJson_writeIntList($sb, oajvs_GateSpec_controls($g));
-    $sb.$append1($rt_s(273));
+    $sb.$append1($rt_s(276));
     oajvs_CircuitSpecJson_writeParams($sb, oajvs_GateSpec_params($g));
     if (oajvs_GateSpec_matrix($g) !== null) {
-        $sb.$append1($rt_s(274));
+        $sb.$append1($rt_s(277));
         oajvs_CircuitSpecJson_writeMatrix($sb, oajvs_GateSpec_matrix($g));
     }
     if (oajvs_GateSpec_classicalTarget($g) !== null)
-        ($sb.$append1($rt_s(275))).$append2((oajvs_GateSpec_classicalTarget($g)).$intValue());
+        ($sb.$append1($rt_s(278))).$append2((oajvs_GateSpec_classicalTarget($g)).$intValue());
     if (oajvs_GateSpec_condition($g) !== null) {
-        var$3 = ($sb.$append1($rt_s(276))).$append2(oajqc_Condition_bitIndex(oajvs_GateSpec_condition($g)));
-        ((var$3.$append1($rt_s(277))).$append2(oajqc_Condition_expected(oajvs_GateSpec_condition($g)))).$append0(125);
+        var$3 = ($sb.$append1($rt_s(279))).$append2(oajqc_Condition_bitIndex(oajvs_GateSpec_condition($g)));
+        ((var$3.$append1($rt_s(280))).$append2(oajqc_Condition_expected(oajvs_GateSpec_condition($g)))).$append0(125);
     }
     $sb.$append0(125);
 },
@@ -5462,33 +5636,33 @@ oajvs_CircuitSpecJson_writeString = ($sb, $value) => {
                     case 8:
                         break;
                     case 9:
-                        $sb.$append1($rt_s(278));
-                        break b;
-                    case 10:
-                        $sb.$append1($rt_s(279));
-                        break b;
-                    case 12:
-                        $sb.$append1($rt_s(280));
-                        break b;
-                    case 13:
                         $sb.$append1($rt_s(281));
                         break b;
-                    case 34:
+                    case 10:
                         $sb.$append1($rt_s(282));
                         break b;
-                    case 92:
+                    case 12:
                         $sb.$append1($rt_s(283));
+                        break b;
+                    case 13:
+                        $sb.$append1($rt_s(284));
+                        break b;
+                    case 34:
+                        $sb.$append1($rt_s(285));
+                        break b;
+                    case 92:
+                        $sb.$append1($rt_s(286));
                         break b;
                     default:
                         if ($c < 32) {
-                            $sb.$append1($rt_s(284));
-                            $sb.$append0(jl_String_charAt($rt_s(285), $c >> 4));
-                            $sb.$append0(jl_String_charAt($rt_s(285), $c & 15));
+                            $sb.$append1($rt_s(287));
+                            $sb.$append0(jl_String_charAt($rt_s(288), $c >> 4));
+                            $sb.$append0(jl_String_charAt($rt_s(288), $c & 15));
                             break b;
                         }
                         if (!jl_Character_isHighSurrogate($c)) {
                             if (jl_Character_isLowSurrogate($c))
-                                $rt_throw(jl_IllegalArgumentException__init_($rt_s(286)));
+                                $rt_throw(jl_IllegalArgumentException__init_($rt_s(289)));
                             $sb.$append0($c);
                             break b;
                         }
@@ -5500,14 +5674,14 @@ oajvs_CircuitSpecJson_writeString = ($sb, $value) => {
                         ($sb.$append0($c)).$append0(jl_String_charAt($value, $i));
                         break b;
                 }
-                $sb.$append1($rt_s(287));
+                $sb.$append1($rt_s(290));
             }
             $i = $i + 1 | 0;
         }
         $sb.$append0(34);
         return;
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(288)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(291)));
 },
 oajvs_CircuitSpecJson_writeMatrix = ($sb, $m) => {
     let $r, $row, $c, $cell, var$7;
@@ -5523,8 +5697,8 @@ oajvs_CircuitSpecJson_writeMatrix = ($sb, $m) => {
             if ($c > 0)
                 $sb.$append0(44);
             $cell = $row.$get0($c);
-            var$7 = ($sb.$append1($rt_s(289))).$append1(oajvs_CircuitSpecJson_num(oajvs_ComplexCell_re($cell)));
-            ((var$7.$append1($rt_s(290))).$append1(oajvs_CircuitSpecJson_num(oajvs_ComplexCell_im($cell)))).$append0(125);
+            var$7 = ($sb.$append1($rt_s(292))).$append1(oajvs_CircuitSpecJson_num(oajvs_ComplexCell_re($cell)));
+            ((var$7.$append1($rt_s(293))).$append1(oajvs_CircuitSpecJson_num(oajvs_ComplexCell_im($cell)))).$append0(125);
             $c = $c + 1 | 0;
         }
         $sb.$append0(93);
@@ -5538,39 +5712,39 @@ oajvs_CircuitSpecJson_fromJson = ($json, $config) => {
         $tree = oaju_JsonParser_parse($json, 200);
         return oajvs_CircuitSpecJson_mapCircuit($tree, oaj_JQAPIConfig_maxQubits($config));
     }
-    $rt_throw(jl_IllegalArgumentException__init_(((((jl_StringBuilder__init_()).$append1($rt_s(291))).$append2(jl_String_length($json))).$append1($rt_s(292))).$toString()));
+    $rt_throw(jl_IllegalArgumentException__init_(((((jl_StringBuilder__init_()).$append1($rt_s(294))).$append2(jl_String_length($json))).$append1($rt_s(295))).$toString()));
 },
 oajvs_CircuitSpecJson_mapCircuit = ($tree, $maxQubits) => {
     let $root, $version, var$5, $classicalBits, $numQubits, $levelsJson, $levels, $gateCount, var$11, $lo, $lm, $gatesJson, $gates, var$16, $go;
-    $root = oaju_JsonParser_asObject($tree, $rt_s(293));
-    $version = oaju_JsonParser_asInt($root.$get($rt_s(294)), $rt_s(294));
+    $root = oaju_JsonParser_asObject($tree, $rt_s(296));
+    $version = oaju_JsonParser_asInt($root.$get($rt_s(297)), $rt_s(297));
     var$5 = $rt_compare($version, 1);
     if (var$5 && $version != 2)
         $rt_throw(oaje_UnsupportedSpecVersionException__init_($version));
-    if (!$root.$containsKey($rt_s(295)) && !$root.$containsKey($rt_s(296))) {
-        $classicalBits = !$root.$containsKey($rt_s(297)) ? 0 : oaju_JsonParser_asInt($root.$get($rt_s(297)), $rt_s(297));
-        if (!var$5 && $root.$containsKey($rt_s(297)))
-            $rt_throw(jl_IllegalArgumentException__init_($rt_s(298)));
+    if (!$root.$containsKey($rt_s(298)) && !$root.$containsKey($rt_s(299))) {
+        $classicalBits = !$root.$containsKey($rt_s(300)) ? 0 : oaju_JsonParser_asInt($root.$get($rt_s(300)), $rt_s(300));
+        if (!var$5 && $root.$containsKey($rt_s(300)))
+            $rt_throw(jl_IllegalArgumentException__init_($rt_s(301)));
         if ($classicalBits >= 0 && $classicalBits <= $maxQubits) {
             $numQubits = oaju_JsonParser_asInt($root.$get($rt_s(11)), $rt_s(11));
             if ($numQubits > 0 && $numQubits <= $maxQubits) {
-                $levelsJson = oaju_JsonParser_asArray($root.$get($rt_s(299)), $rt_s(299));
+                $levelsJson = oaju_JsonParser_asArray($root.$get($rt_s(302)), $rt_s(302));
                 if ($levelsJson.$size() > 100000)
-                    $rt_throw(oaje_JQApiLimitException__init_($rt_s(300)));
+                    $rt_throw(oaje_JQApiLimitException__init_($rt_s(303)));
                 $levels = ju_ArrayList__init_0($levelsJson.$size());
                 $gateCount = 0;
                 var$11 = $levelsJson.$iterator();
                 while (var$11.$hasNext()) {
                     $lo = var$11.$next();
-                    $lm = oaju_JsonParser_asObject($lo, $rt_s(301));
-                    $gatesJson = oaju_JsonParser_asArray($lm.$get($rt_s(302)), $rt_s(302));
+                    $lm = oaju_JsonParser_asObject($lo, $rt_s(304));
+                    $gatesJson = oaju_JsonParser_asArray($lm.$get($rt_s(305)), $rt_s(305));
                     $gates = ju_ArrayList__init_0($gatesJson.$size());
                     var$16 = $gatesJson.$iterator();
                     while (var$16.$hasNext()) {
                         $go = var$16.$next();
                         $gateCount = $gateCount + 1 | 0;
                         if ($gateCount > 100000)
-                            $rt_throw(oaje_JQApiLimitException__init_($rt_s(303)));
+                            $rt_throw(oaje_JQApiLimitException__init_($rt_s(306)));
                         $gates.$add(oajvs_CircuitSpecJson_mapGate($go, $numQubits, $version));
                     }
                     $levels.$add(oajvs_LevelSpec__init_0($gates));
@@ -5579,16 +5753,16 @@ oajvs_CircuitSpecJson_mapCircuit = ($tree, $maxQubits) => {
             }
             $rt_throw(oaje_JQApiLimitException__init_((((((jl_StringBuilder__init_()).$append1($rt_s(18))).$append2($maxQubits)).$append1($rt_s(19))).$append2($numQubits)).$toString()));
         }
-        $rt_throw(oaje_JQApiLimitException__init_($rt_s(304)));
+        $rt_throw(oaje_JQApiLimitException__init_($rt_s(307)));
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(305)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(308)));
 },
 oajvs_CircuitSpecJson_mapGate = ($go, $numQubits, $version) => {
     let $gm, $kind, $targets, $controls, var$8, $params, $matrix, $destination, $condition, $predicate, $c, $$je;
-    $gm = oaju_JsonParser_asObject($go, $rt_s(306));
+    $gm = oaju_JsonParser_asObject($go, $rt_s(309));
     a: {
         try {
-            $kind = oajvs_GateKind_valueOf(oaju_JsonParser_asString($gm.$get($rt_s(307)), $rt_s(307)));
+            $kind = oajvs_GateKind_valueOf(oaju_JsonParser_asString($gm.$get($rt_s(310)), $rt_s(310)));
             break a;
         } catch ($$e) {
             $$je = $rt_wrapException($$e);
@@ -5597,22 +5771,22 @@ oajvs_CircuitSpecJson_mapGate = ($go, $numQubits, $version) => {
                 throw $$e;
             }
         }
-        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(308))).$append($gm.$get($rt_s(307)))).$toString()));
+        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(311))).$append($gm.$get($rt_s(310)))).$toString()));
     }
-    $targets = oajvs_CircuitSpecJson_mapIndexes($gm.$get($rt_s(309)), $numQubits, $rt_s(309));
-    $controls = oajvs_CircuitSpecJson_mapIndexes($gm.$get($rt_s(310)), $numQubits, $rt_s(310));
+    $targets = oajvs_CircuitSpecJson_mapIndexes($gm.$get($rt_s(312)), $numQubits, $rt_s(312));
+    $controls = oajvs_CircuitSpecJson_mapIndexes($gm.$get($rt_s(313)), $numQubits, $rt_s(313));
     var$8 = $controls.$iterator();
     while (true) {
         if (!var$8.$hasNext()) {
-            $params = oajvs_CircuitSpecJson_mapParams($gm.$get($rt_s(311)));
-            $matrix = oajvs_CircuitSpecJson_mapMatrix($gm.$get($rt_s(312)), $targets.$size());
-            if ($version == 1 && !(!$gm.$containsKey($rt_s(313)) && !$gm.$containsKey($rt_s(314))))
-                $rt_throw(jl_IllegalArgumentException__init_($rt_s(315)));
-            $destination = !$gm.$containsKey($rt_s(313)) ? null : jl_Integer_valueOf(oaju_JsonParser_asInt($gm.$get($rt_s(313)), $rt_s(313)));
+            $params = oajvs_CircuitSpecJson_mapParams($gm.$get($rt_s(314)));
+            $matrix = oajvs_CircuitSpecJson_mapMatrix($gm.$get($rt_s(315)), $targets.$size());
+            if ($version == 1 && !(!$gm.$containsKey($rt_s(316)) && !$gm.$containsKey($rt_s(317))))
+                $rt_throw(jl_IllegalArgumentException__init_($rt_s(318)));
+            $destination = !$gm.$containsKey($rt_s(316)) ? null : jl_Integer_valueOf(oaju_JsonParser_asInt($gm.$get($rt_s(316)), $rt_s(316)));
             $condition = null;
-            if ($gm.$containsKey($rt_s(314))) {
-                $predicate = oaju_JsonParser_asObject($gm.$get($rt_s(314)), $rt_s(314));
-                $condition = oajqc_Condition__init_(oaju_JsonParser_asInt($predicate.$get($rt_s(316)), $rt_s(316)), oaju_JsonParser_asInt($predicate.$get($rt_s(317)), $rt_s(317)));
+            if ($gm.$containsKey($rt_s(317))) {
+                $predicate = oaju_JsonParser_asObject($gm.$get($rt_s(317)), $rt_s(317));
+                $condition = oajqc_Condition__init_(oaju_JsonParser_asInt($predicate.$get($rt_s(319)), $rt_s(319)), oaju_JsonParser_asInt($predicate.$get($rt_s(320)), $rt_s(320)));
             }
             return oajvs_GateSpec__init_0($kind, $targets, $controls, $params, $matrix, $destination, $condition);
         }
@@ -5620,40 +5794,40 @@ oajvs_CircuitSpecJson_mapGate = ($go, $numQubits, $version) => {
         if ($targets.$contains0(jl_Integer_valueOf($c)))
             break;
     }
-    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(318))).$append2($c)).$toString()));
+    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(321))).$append2($c)).$toString()));
 },
 oajvs_CircuitSpecJson_mapIndexes = ($o, $numQubits, $field) => {
     let $arr, $out, $seen, var$7, $x, $idx;
     $arr = oaju_JsonParser_asArray($o, $field);
     $out = ju_ArrayList__init_0($arr.$size());
-    $seen = ju_HashSet__init_0();
+    $seen = ju_HashSet__init_();
     var$7 = $arr.$iterator();
     a: {
         while (var$7.$hasNext()) {
             $x = var$7.$next();
-            $idx = oaju_JsonParser_asInt($x, (((jl_StringBuilder__init_()).$append1($field)).$append1($rt_s(319))).$toString());
+            $idx = oaju_JsonParser_asInt($x, (((jl_StringBuilder__init_()).$append1($field)).$append1($rt_s(322))).$toString());
             if ($idx < 0)
                 break a;
             if ($idx >= $numQubits)
                 break a;
             if (!$seen.$add(jl_Integer_valueOf($idx)))
-                $rt_throw(jl_IllegalArgumentException__init_((((((jl_StringBuilder__init_()).$append1($rt_s(320))).$append1($field)).$append1($rt_s(321))).$append2($idx)).$toString()));
+                $rt_throw(jl_IllegalArgumentException__init_((((((jl_StringBuilder__init_()).$append1($rt_s(323))).$append1($field)).$append1($rt_s(324))).$append2($idx)).$toString()));
             $out.$add(jl_Integer_valueOf($idx));
         }
         return $out;
     }
-    $rt_throw(oaje_JQApiLimitException__init_(((((((jl_StringBuilder__init_()).$append1($field)).$append1($rt_s(322))).$append2($numQubits)).$append1($rt_s(19))).$append2($idx)).$toString()));
+    $rt_throw(oaje_JQApiLimitException__init_(((((((jl_StringBuilder__init_()).$append1($field)).$append1($rt_s(325))).$append2($numQubits)).$append1($rt_s(19))).$append2($idx)).$toString()));
 },
 oajvs_CircuitSpecJson_mapParams = $o => {
     let $pm, $out, var$4, $e;
     if ($o === null)
         return ju_Map_of();
-    $pm = oaju_JsonParser_asObject($o, $rt_s(311));
+    $pm = oaju_JsonParser_asObject($o, $rt_s(314));
     $out = ju_LinkedHashMap__init_();
     var$4 = ($pm.$entrySet()).$iterator();
     while (var$4.$hasNext()) {
         $e = var$4.$next();
-        $out.$put($e.$getKey(), jl_Double_valueOf(oaju_JsonParser_asDouble($e.$getValue(), (((jl_StringBuilder__init_()).$append1($rt_s(323))).$append1($e.$getKey())).$toString())));
+        $out.$put($e.$getKey(), jl_Double_valueOf(oaju_JsonParser_asDouble($e.$getValue(), (((jl_StringBuilder__init_()).$append1($rt_s(326))).$append1($e.$getKey())).$toString())));
     }
     return $out;
 },
@@ -5662,23 +5836,23 @@ oajvs_CircuitSpecJson_mapMatrix = ($o, $numTargets) => {
     if ($o === null)
         return null;
     if ($numTargets > 30)
-        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(324))).$append2($numTargets)).$toString()));
-    $rows = oaju_JsonParser_asArray($o, $rt_s(312));
+        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(327))).$append2($numTargets)).$toString()));
+    $rows = oaju_JsonParser_asArray($o, $rt_s(315));
     $expected = 1 << $numTargets;
     if ($rows.$size() != $expected) {
         var$5 = new jl_IllegalArgumentException;
-        var$6 = (((((jl_StringBuilder__init_()).$append1($rt_s(325))).$append2($expected)).$append1($rt_s(326))).$append2($expected)).$append1($rt_s(327));
-        jl_IllegalArgumentException__init_1(var$5, ((var$6.$append2($rows.$size())).$append1($rt_s(328))).$toString());
+        var$6 = (((((jl_StringBuilder__init_()).$append1($rt_s(328))).$append2($expected)).$append1($rt_s(329))).$append2($expected)).$append1($rt_s(330));
+        jl_IllegalArgumentException__init_1(var$5, ((var$6.$append2($rows.$size())).$append1($rt_s(331))).$toString());
         $rt_throw(var$5);
     }
     $out = ju_ArrayList__init_0($rows.$size());
     var$6 = $rows.$iterator();
     while (var$6.$hasNext()) {
         $ro = var$6.$next();
-        $cols = oaju_JsonParser_asArray($ro, $rt_s(329));
+        $cols = oaju_JsonParser_asArray($ro, $rt_s(332));
         if ($cols.$size() != $expected) {
             var$5 = new jl_IllegalArgumentException;
-            var$6 = (((jl_StringBuilder__init_()).$append1($rt_s(330))).$append2($expected)).$append1($rt_s(331));
+            var$6 = (((jl_StringBuilder__init_()).$append1($rt_s(333))).$append2($expected)).$append1($rt_s(334));
             jl_IllegalArgumentException__init_1(var$5, (var$6.$append2($cols.$size())).$toString());
             $rt_throw(var$5);
         }
@@ -5686,8 +5860,8 @@ oajvs_CircuitSpecJson_mapMatrix = ($o, $numTargets) => {
         var$11 = $cols.$iterator();
         while (var$11.$hasNext()) {
             $co = var$11.$next();
-            $cell = oaju_JsonParser_asObject($co, $rt_s(332));
-            $row.$add(oajvs_ComplexCell__init_0(oaju_JsonParser_asDouble($cell.$get($rt_s(333)), $rt_s(333)), oaju_JsonParser_asDouble($cell.$get($rt_s(334)), $rt_s(334))));
+            $cell = oaju_JsonParser_asObject($co, $rt_s(335));
+            $row.$add(oajvs_ComplexCell__init_0(oaju_JsonParser_asDouble($cell.$get($rt_s(336)), $rt_s(336)), oaju_JsonParser_asDouble($cell.$get($rt_s(337)), $rt_s(337))));
         }
         $out.$add($row);
     }
@@ -5696,7 +5870,7 @@ oajvs_CircuitSpecJson_mapMatrix = ($o, $numTargets) => {
 oajvs_CircuitSpecJson_num = $d => {
     if (isFinite($d) ? 1 : 0)
         return jl_Double_toString($d);
-    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(335))).$append4($d)).$toString()));
+    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(338))).$append4($d)).$toString()));
 };
 function oajqs_SamplingResult() {
     let a = this; jl_Object.call(a);
@@ -5856,7 +6030,7 @@ jur_DecomposedCharSet_getName = $this => {
     let var$1, var$2;
     var$1 = jur_DecomposedCharSet_getDecomposedChar($this);
     var$2 = jl_StringBuilder__init_();
-    jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(336)), var$1);
+    jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(339)), var$1);
     return jl_StringBuilder_toString(var$2);
 },
 jur_DecomposedCharSet_codePointAt = ($this, $strIndex, $testString, $rightBound) => {
@@ -5905,11 +6079,11 @@ jur_CIDecomposedCharSet__init_0 = (var_0, var_1) => {
 juf_IntPredicate = $rt_classWithoutFields(0);
 function jusi_SimpleIntStreamImpl$toArray$lambda$_16_0() {
     jl_Object.call(this);
-    this.$_019 = null;
+    this.$_020 = null;
 }
 let jusi_SimpleIntStreamImpl$toArray$lambda$_16_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_019 = var$1;
+    var$0.$_020 = var$1;
 },
 jusi_SimpleIntStreamImpl$toArray$lambda$_16_0__init_0 = var_0 => {
     let var_1 = new jusi_SimpleIntStreamImpl$toArray$lambda$_16_0();
@@ -5917,7 +6091,7 @@ jusi_SimpleIntStreamImpl$toArray$lambda$_16_0__init_0 = var_0 => {
     return var_1;
 },
 jusi_SimpleIntStreamImpl$toArray$lambda$_16_0_test = (var$0, var$1) => {
-    return var$0.$_019.$add(jl_Integer_valueOf(var$1));
+    return var$0.$_020.$add(jl_Integer_valueOf(var$1));
 },
 jur_AheadFSet = $rt_classWithoutFields(jur_FSet),
 jur_AheadFSet__init_ = $this => {
@@ -5932,7 +6106,7 @@ jur_AheadFSet_matches = ($this, $stringIndex, $testString, $matchResult) => {
     return $stringIndex;
 },
 jur_AheadFSet_getName = $this => {
-    return $rt_s(337);
+    return $rt_s(340);
 };
 function jl_Enum() {
     let a = this; jl_Object.call(a);
@@ -5974,7 +6148,7 @@ jl_Enum_compareTo = ($this, $o) => {
     var$3 = jl_String_valueOf(jl_Enum_getDeclaringClass($this));
     var$4 = jl_String_valueOf(jl_Enum_getDeclaringClass($o));
     var$5 = jl_StringBuilder__init_();
-    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$5, $rt_s(338)), var$3), $rt_s(339)), var$4);
+    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$5, $rt_s(341)), var$3), $rt_s(342)), var$4);
     jl_IllegalArgumentException__init_1(var$2, jl_StringBuilder_toString(var$5));
     $rt_throw(var$2);
 },
@@ -5982,7 +6156,7 @@ jl_Enum_valueOf = ($enumType, $name) => {
     let $constants, var$4, var$5, var$6, var$7, var$8, var$9, var$10, $constant;
     $constants = jl_Class_getEnumConstants($enumType);
     if ($constants === null)
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(340)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(343)));
     var$4 = $constants.data;
     var$5 = var$4.length;
     var$6 = 0;
@@ -5992,7 +6166,7 @@ jl_Enum_valueOf = ($enumType, $name) => {
             var$8 = jl_String_valueOf($enumType);
             var$9 = jl_String_valueOf($name);
             var$10 = jl_StringBuilder__init_();
-            jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$10, $rt_s(341)), var$8), $rt_s(342)), var$9), $rt_s(343));
+            jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$10, $rt_s(344)), var$8), $rt_s(345)), var$9), $rt_s(346));
             jl_IllegalArgumentException__init_1(var$7, jl_StringBuilder_toString(var$10));
             $rt_throw(var$7);
         }
@@ -6035,9 +6209,9 @@ jus_Collector$Characteristics_$values = () => {
     return var$1;
 },
 jus_Collector$Characteristics__clinit_ = () => {
-    jus_Collector$Characteristics_CONCURRENT = jus_Collector$Characteristics__init_($rt_s(344), 0);
-    jus_Collector$Characteristics_UNORDERED = jus_Collector$Characteristics__init_($rt_s(345), 1);
-    jus_Collector$Characteristics_IDENTITY_FINISH = jus_Collector$Characteristics__init_($rt_s(346), 2);
+    jus_Collector$Characteristics_CONCURRENT = jus_Collector$Characteristics__init_($rt_s(347), 0);
+    jus_Collector$Characteristics_UNORDERED = jus_Collector$Characteristics__init_($rt_s(348), 1);
+    jus_Collector$Characteristics_IDENTITY_FINISH = jus_Collector$Characteristics__init_($rt_s(349), 2);
     jus_Collector$Characteristics_$VALUES = jus_Collector$Characteristics_$values();
 },
 jur_NonCapJointSet = $rt_classWithoutFields(jur_JointSet),
@@ -6069,7 +6243,7 @@ jur_NonCapJointSet_matches = ($this, $stringIndex, $testString, $matchResult) =>
     return $shift;
 },
 jur_NonCapJointSet_getName = $this => {
-    return $rt_s(347);
+    return $rt_s(350);
 },
 jur_NonCapJointSet_hasConsumed = ($this, $matchResult) => {
     let $cons;
@@ -6105,7 +6279,7 @@ jur_AtomicJointSet_setNext = ($this, $next) => {
     $this.$next6 = $next;
 },
 jur_AtomicJointSet_getName = $this => {
-    return $rt_s(347);
+    return $rt_s(350);
 },
 jur_PositiveLookAhead = $rt_classWithoutFields(jur_AtomicJointSet),
 jur_PositiveLookAhead__init_ = ($this, $children, $fSet) => {
@@ -6133,7 +6307,7 @@ jur_PositiveLookAhead_hasConsumed = ($this, $matchResult) => {
     return 0;
 },
 jur_PositiveLookAhead_getName = $this => {
-    return $rt_s(348);
+    return $rt_s(351);
 },
 ju_SortedMap = $rt_classWithoutFields(0),
 ju_NavigableMap = $rt_classWithoutFields(0);
@@ -6293,7 +6467,7 @@ jur_NegativeLookAhead_hasConsumed = ($this, $matchResult) => {
     return 0;
 },
 jur_NegativeLookAhead_getName = $this => {
-    return $rt_s(349);
+    return $rt_s(352);
 },
 jl_Readable = $rt_classWithoutFields(0),
 jn_CharBuffer = $rt_classWithoutFields(jn_Buffer),
@@ -6438,11 +6612,11 @@ otcit_DoubleAnalyzer$Result__init_0 = () => {
 };
 function oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0() {
     jl_Object.call(this);
-    this.$_04 = null;
+    this.$_05 = null;
 }
 let oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_04 = var$1;
+    var$0.$_05 = var$1;
 },
 oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0__init_0 = var_0 => {
     let var_1 = new oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0();
@@ -6453,15 +6627,15 @@ oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0_accept0 = (var$0, var$1)
     oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0_accept(var$0, var$1);
 },
 oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0_accept = (var$0, var$1) => {
-    oajq_QuantumRegister_lambda$measureQubitAtIndexes$0(var$0.$_04, var$1);
+    oajq_QuantumRegister_lambda$measureQubitAtIndexes$0(var$0.$_05, var$1);
 };
 function oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1() {
     jl_Object.call(this);
-    this.$_016 = null;
+    this.$_017 = null;
 }
 let oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_016 = var$1;
+    var$0.$_017 = var$1;
 },
 oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1__init_0 = var_0 => {
     let var_1 = new oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1();
@@ -6472,17 +6646,17 @@ oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1_accept0 = (var$0, var$1)
     oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1_accept(var$0, var$1);
 },
 oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1_accept = (var$0, var$1) => {
-    oajq_QuantumRegister_lambda$measureQubitAtIndexes$1(var$0.$_016, var$1);
+    oajq_QuantumRegister_lambda$measureQubitAtIndexes$1(var$0.$_017, var$1);
 };
 function jusi_FilteringIntStreamImpl$wrap$lambda$_1_0() {
     let a = this; jl_Object.call(a);
-    a.$_028 = null;
-    a.$_15 = null;
+    a.$_031 = null;
+    a.$_16 = null;
 }
 let jusi_FilteringIntStreamImpl$wrap$lambda$_1_0__init_ = (var$0, var$1, var$2) => {
     jl_Object__init_(var$0);
-    var$0.$_028 = var$1;
-    var$0.$_15 = var$2;
+    var$0.$_031 = var$1;
+    var$0.$_16 = var$2;
 },
 jusi_FilteringIntStreamImpl$wrap$lambda$_1_0__init_0 = (var_0, var_1) => {
     let var_2 = new jusi_FilteringIntStreamImpl$wrap$lambda$_1_0();
@@ -6490,7 +6664,7 @@ jusi_FilteringIntStreamImpl$wrap$lambda$_1_0__init_0 = (var_0, var_1) => {
     return var_2;
 },
 jusi_FilteringIntStreamImpl$wrap$lambda$_1_0_test = (var$0, var$1) => {
-    return jusi_FilteringIntStreamImpl_lambda$wrap$0(var$0.$_028, var$0.$_15, var$1);
+    return jusi_FilteringIntStreamImpl_lambda$wrap$0(var$0.$_031, var$0.$_16, var$1);
 },
 oajo_Expectation = $rt_classWithoutFields(),
 oajo_Expectation_of1 = ($state, $pauli) => {
@@ -6505,10 +6679,10 @@ oajo_Expectation_of = ($state, $observable) => {
 },
 oajo_Expectation_of0 = ($state, $observable, $maxWork) => {
     let $value, var$5, $term;
-    ju_Objects_requireNonNull($state, $rt_s(350));
+    ju_Objects_requireNonNull($state, $rt_s(353));
     oajo_Expectation_requireWithinBudget($observable, $maxWork);
     if ($state.$getDimension() != 1 << oajo_PauliSum_numQubits($observable))
-        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(351))).$append2(oajo_PauliSum_numQubits($observable))).$toString()));
+        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(354))).$append2(oajo_PauliSum_numQubits($observable))).$toString()));
     oajo_Expectation_requireNormalized($state);
     $value = 0.0;
     var$5 = (oajo_PauliSum_terms($observable)).$iterator();
@@ -6518,15 +6692,15 @@ oajo_Expectation_of0 = ($state, $observable, $maxWork) => {
     }
     if (isFinite($value) ? 1 : 0)
         return $value;
-    $rt_throw(oaje_JQApiLimitException__init_($rt_s(352)));
+    $rt_throw(oaje_JQApiLimitException__init_($rt_s(355)));
 },
 oajo_Expectation_requireWithinBudget = ($observable, $maxWork) => {
     ju_Objects_requireNonNull($observable, $rt_s(10));
     if (Long_lt($maxWork, Long_fromInt(1)))
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(353)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(356)));
     if (Long_le(Long_shl(Long_fromInt((oajo_PauliSum_terms($observable)).$size()), oajo_PauliSum_numQubits($observable)), $maxWork))
         return;
-    $rt_throw(oaje_JQApiLimitException__init_($rt_s(354)));
+    $rt_throw(oaje_JQApiLimitException__init_($rt_s(357)));
 },
 oajo_Expectation_pauliExpectation = ($state, $pauli) => {
     let $x, $z, $re, $im, $b, $target, $source, $pr, $pi;
@@ -6571,7 +6745,7 @@ oajo_Expectation_requireNormalized = $state => {
     $norm = oajm_Complex_getReal($state.$innerProduct($state));
     if (jl_Math_abs1($norm - 1.0) <= 1.0E-9)
         return;
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(355)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(358)));
 },
 jur_AbstractCharClass$LazyJavaDigit = $rt_classWithoutFields(jur_AbstractCharClass$LazyCharClass),
 jur_AbstractCharClass$LazyJavaDigit__init_ = $this => {
@@ -6590,11 +6764,11 @@ jur_AbstractCharClass$LazyJavaDigit_computeValue = $this => {
 };
 function oajq_Circuit$lambda$initializeLevels$0$lambda$_18_0() {
     jl_Object.call(this);
-    this.$_07 = null;
+    this.$_09 = null;
 }
 let oajq_Circuit$lambda$initializeLevels$0$lambda$_18_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_07 = var$1;
+    var$0.$_09 = var$1;
 },
 oajq_Circuit$lambda$initializeLevels$0$lambda$_18_0__init_0 = var_0 => {
     let var_1 = new oajq_Circuit$lambda$initializeLevels$0$lambda$_18_0();
@@ -6605,15 +6779,15 @@ oajq_Circuit$lambda$initializeLevels$0$lambda$_18_0_test0 = (var$0, var$1) => {
     return oajq_Circuit$lambda$initializeLevels$0$lambda$_18_0_test(var$0, var$1);
 },
 oajq_Circuit$lambda$initializeLevels$0$lambda$_18_0_test = (var$0, var$1) => {
-    return oajq_Circuit_lambda$initializeLevels$1(var$0.$_07, var$1);
+    return oajq_Circuit_lambda$initializeLevels$1(var$0.$_09, var$1);
 };
 function oajq_Circuit$lambda$initializeLevels$2$lambda$_16_0() {
     jl_Object.call(this);
-    this.$_035 = 0;
+    this.$_037 = 0;
 }
 let oajq_Circuit$lambda$initializeLevels$2$lambda$_16_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_035 = var$1;
+    var$0.$_037 = var$1;
 },
 oajq_Circuit$lambda$initializeLevels$2$lambda$_16_0__init_0 = var_0 => {
     let var_1 = new oajq_Circuit$lambda$initializeLevels$2$lambda$_16_0();
@@ -6624,7 +6798,7 @@ oajq_Circuit$lambda$initializeLevels$2$lambda$_16_0_test0 = (var$0, var$1) => {
     return oajq_Circuit$lambda$initializeLevels$2$lambda$_16_0_test(var$0, var$1);
 },
 oajq_Circuit$lambda$initializeLevels$2$lambda$_16_0_test = (var$0, var$1) => {
-    return oajq_Circuit_lambda$initializeLevels$3(var$0.$_035, var$1);
+    return oajq_Circuit_lambda$initializeLevels$3(var$0.$_037, var$1);
 },
 jl_Iterable = $rt_classWithoutFields(0),
 jl_Iterable_forEach = ($this, $action) => {
@@ -6657,6 +6831,19 @@ ju_AbstractCollection_contains = ($this, $o) => {
             return 1;
     }
     return 0;
+},
+ju_AbstractCollection_toArray0 = $this => {
+    let $arr, $i, $iter, var$4, var$5;
+    $arr = $rt_createArray(jl_Object, $this.$size());
+    $i = 0;
+    $iter = $this.$iterator();
+    while ($iter.$hasNext()) {
+        var$4 = $arr.data;
+        var$5 = $i + 1 | 0;
+        var$4[$i] = $iter.$next();
+        $i = var$5;
+    }
+    return $arr;
 },
 ju_AbstractCollection_toArray = ($this, $a) => {
     let var$2, $i, var$4, $iter;
@@ -6699,14 +6886,14 @@ ju_AbstractCollection_toString = $this => {
     if ($iter.$hasNext()) {
         $e = $iter.$next();
         if ($e === $this)
-            $e = $rt_s(356);
+            $e = $rt_s(359);
         $sb.$append($e);
     }
     while ($iter.$hasNext()) {
         $e = $iter.$next();
-        var$4 = $sb.$append1($rt_s(59));
+        var$4 = $sb.$append1($rt_s(62));
         if ($e === $this)
-            $e = $rt_s(356);
+            $e = $rt_s(359);
         var$4.$append($e);
     }
     $sb.$append0(93);
@@ -6716,7 +6903,7 @@ otci_IntegerUtil = $rt_classWithoutFields(),
 otci_IntegerUtil_toUnsignedLogRadixString = ($value, $radixLog2) => {
     let $radix, $mask, $sz, $chars, $pos, $target, var$9, $target_0;
     if (!$value)
-        return $rt_s(357);
+        return $rt_s(360);
     $radix = 1 << $radixLog2;
     $mask = $radix - 1 | 0;
     $sz = (((32 - jl_Integer_numberOfLeadingZeros($value) | 0) + $radixLog2 | 0) - 1 | 0) / $radixLog2 | 0;
@@ -6769,7 +6956,7 @@ jur_LeafQuantifierSet_matches = ($this, $stringIndex, $testString, $matchResult)
     return var$5;
 },
 jur_LeafQuantifierSet_getName = $this => {
-    return $rt_s(358);
+    return $rt_s(361);
 },
 jur_AltQuantifierSet = $rt_classWithoutFields(jur_LeafQuantifierSet),
 jur_AltQuantifierSet__init_ = ($this, $innerSet, $next, $type) => {
@@ -6808,6 +6995,48 @@ jur_PossessiveAltQuantifierSet_matches = ($this, $stringIndex, $testString, $mat
             $stringIndex = $stringIndex + var$4 | 0;
     }
     return $this.$next6.$matches($stringIndex, $testString, $matchResult);
+};
+function oajvo_OpenQasmParser$Barrier() {
+    let a = this; jl_Record.call(a);
+    a.$beforeLevel0 = 0;
+    a.$qubits0 = null;
+    a.$location0 = null;
+}
+let oajvo_OpenQasmParser$Barrier__init_ = ($this, $beforeLevel, $qubits, $location) => {
+    let var$4;
+    jl_Record__init_($this);
+    var$4 = ju_List_copyOf($qubits);
+    $this.$beforeLevel0 = $beforeLevel;
+    $this.$qubits0 = var$4;
+    $this.$location0 = $location;
+},
+oajvo_OpenQasmParser$Barrier__init_0 = (var_0, var_1, var_2) => {
+    let var_3 = new oajvo_OpenQasmParser$Barrier();
+    oajvo_OpenQasmParser$Barrier__init_(var_3, var_0, var_1, var_2);
+    return var_3;
+},
+oajvo_OpenQasmParser$Barrier_toString = $this => {
+    return ((((((((jl_StringBuilder__init_0($rt_s(362))).$append1($rt_s(363))).$append2($this.$beforeLevel0)).$append1($rt_s(364))).$append($this.$qubits0)).$append1($rt_s(365))).$append($this.$location0)).$append1($rt_s(52))).$toString();
+},
+oajvo_OpenQasmParser$Barrier_hashCode = $this => {
+    return ((((31 + jl_Integer_hashCode($this.$beforeLevel0) | 0) * 31 | 0) + ju_Objects_hashCode($this.$qubits0) | 0) * 31 | 0) + ju_Objects_hashCode($this.$location0) | 0;
+},
+oajvo_OpenQasmParser$Barrier_equals = ($this, $o) => {
+    let var$2, var$3;
+    if ($this === $o)
+        var$2 = 1;
+    else if ($o !== null && jl_Object_getClass($o) === $rt_cls(oajvo_OpenQasmParser$Barrier)) {
+        var$3 = $o;
+        var$2 = $this.$beforeLevel0 != var$3.$beforeLevel0 ? 0 : !ju_Objects_equals($this.$qubits0, var$3.$qubits0) ? 0 : ju_Objects_equals($this.$location0, var$3.$location0) ? 1 : 0;
+    } else
+        var$2 = 0;
+    return var$2;
+},
+oajvo_OpenQasmParser$Barrier_beforeLevel = $this => {
+    return $this.$beforeLevel0;
+},
+oajvo_OpenQasmParser$Barrier_qubits = $this => {
+    return $this.$qubits0;
 },
 otji_JS = $rt_classWithoutFields();
 function jur_AbstractCharClass$LazyJavaUnicodeIdentifierStart$1() {
@@ -6912,7 +7141,7 @@ jnc_Charset_encode = ($this, $cb) => {
         }
         return var$3;
     }
-    $rt_throw(jl_AssertionError__init_0($rt_s(359), $e));
+    $rt_throw(jl_AssertionError__init_0($rt_s(366), $e));
 };
 function jnci_UTF16Charset() {
     let a = this; jnc_Charset.call(a);
@@ -6928,6 +7157,25 @@ jnci_UTF16Charset__init_ = (var_0, var_1, var_2) => {
     let var_3 = new jnci_UTF16Charset();
     jnci_UTF16Charset__init_0(var_3, var_0, var_1, var_2);
     return var_3;
+};
+function oajvl_CircuitLinter$report$lambda$_9_0() {
+    jl_Object.call(this);
+    this.$_02 = null;
+}
+let oajvl_CircuitLinter$report$lambda$_9_0__init_ = (var$0, var$1) => {
+    jl_Object__init_(var$0);
+    var$0.$_02 = var$1;
+},
+oajvl_CircuitLinter$report$lambda$_9_0__init_0 = var_0 => {
+    let var_1 = new oajvl_CircuitLinter$report$lambda$_9_0();
+    oajvl_CircuitLinter$report$lambda$_9_0__init_(var_1, var_0);
+    return var_1;
+},
+oajvl_CircuitLinter$report$lambda$_9_0_apply0 = (var$0, var$1) => {
+    return oajvl_CircuitLinter$report$lambda$_9_0_apply(var$0, var$1);
+},
+oajvl_CircuitLinter$report$lambda$_9_0_apply = (var$0, var$1) => {
+    return var$0.$_02.$get0(var$1.$intValue());
 },
 oajq_OperatorExecutor = $rt_classWithoutFields(0),
 oajq_SequentialOperatorExecutor = $rt_classWithoutFields(),
@@ -7100,7 +7348,7 @@ jus_Collectors_toList = () => {
     return jus_Collectors_toCollection(jus_Collectors$toList$lambda$_2_0__init_0());
 },
 jus_Collectors_joining = $delimiter => {
-    return jus_Collectors_joining0($delimiter, $rt_s(69), $rt_s(69));
+    return jus_Collectors_joining0($delimiter, $rt_s(72), $rt_s(72));
 },
 jus_Collectors_joining0 = ($delimiter, $prefix, $suffix) => {
     let $accumulator, $combiner;
@@ -7109,7 +7357,7 @@ jus_Collectors_joining0 = ($delimiter, $prefix, $suffix) => {
     return jus_Collector_of(jus_Collectors$joining$lambda$_8_2__init_0(), $accumulator, $combiner, jus_Collectors$joining$lambda$_8_3__init_0($prefix, $suffix), $rt_createArray(jus_Collector$Characteristics, 0));
 },
 jus_Collectors_lambda$joining$3 = ($prefix, $suffix, $sb) => {
-    return (($sb.$insert9(0, $prefix)).$append11($suffix)).$toString();
+    return (($sb.$insert11(0, $prefix)).$append11($suffix)).$toString();
 },
 jus_Collectors_lambda$joining$1 = ($delimiter, $sb, $item) => {
     if ($sb.$length() > 0)
@@ -7119,14 +7367,14 @@ jus_Collectors_lambda$joining$1 = ($delimiter, $sb, $item) => {
 otp_PlatformRunnable = $rt_classWithoutFields(0);
 function jl_Object$monitorEnterWait$lambda$_6_0() {
     let a = this; jl_Object.call(a);
-    a.$_010 = null;
+    a.$_011 = null;
     a.$_12 = null;
     a.$_2 = 0;
     a.$_3 = null;
 }
 let jl_Object$monitorEnterWait$lambda$_6_0__init_ = (var$0, var$1, var$2, var$3, var$4) => {
     jl_Object__init_(var$0);
-    var$0.$_010 = var$1;
+    var$0.$_011 = var$1;
     var$0.$_12 = var$2;
     var$0.$_2 = var$3;
     var$0.$_3 = var$4;
@@ -7137,7 +7385,7 @@ jl_Object$monitorEnterWait$lambda$_6_0__init_0 = (var_0, var_1, var_2, var_3) =>
     return var_4;
 },
 jl_Object$monitorEnterWait$lambda$_6_0_run = var$0 => {
-    jl_Object_lambda$monitorEnterWait$0(var$0.$_010, var$0.$_12, var$0.$_2, var$0.$_3);
+    jl_Object_lambda$monitorEnterWait$0(var$0.$_011, var$0.$_12, var$0.$_2, var$0.$_3);
 };
 function ju_TreeMap$EntryIterator() {
     let a = this; jl_Object.call(a);
@@ -7228,7 +7476,7 @@ ju_Objects_hashCode = $o => {
     return $o !== null ? $o.$hashCode2() : 0;
 },
 ju_Objects_requireNonNull0 = $obj => {
-    return ju_Objects_requireNonNull($obj, $rt_s(69));
+    return ju_Objects_requireNonNull($obj, $rt_s(72));
 },
 ju_Objects_requireNonNull = ($obj, $message) => {
     if ($obj !== null)
@@ -7324,7 +7572,7 @@ jur_PositiveLookBehind_hasConsumed = ($this, $matchResult) => {
     return 0;
 },
 jur_PositiveLookBehind_getName = $this => {
-    return $rt_s(360);
+    return $rt_s(367);
 };
 function jnc_CharsetEncoder() {
     let a = this; jl_Object.call(a);
@@ -7360,7 +7608,7 @@ jnc_CharsetEncoder_checkReplacement = ($this, $replacement) => {
         if (var$2 && !(var$2 < $this.$maxBytesPerChar))
             return;
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(361)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(368)));
 },
 jnc_CharsetEncoder_onMalformedInput = ($this, $newAction) => {
     if ($newAction !== null) {
@@ -7368,7 +7616,7 @@ jnc_CharsetEncoder_onMalformedInput = ($this, $newAction) => {
         $this.$implOnMalformedInput($newAction);
         return $this;
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(362)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(369)));
 },
 jnc_CharsetEncoder_implOnMalformedInput = ($this, $newAction) => {
     return;
@@ -7379,7 +7627,7 @@ jnc_CharsetEncoder_onUnmappableCharacter = ($this, $newAction) => {
         $this.$implOnUnmappableCharacter($newAction);
         return $this;
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(362)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(369)));
 },
 jnc_CharsetEncoder_implOnUnmappableCharacter = ($this, $newAction) => {
     return;
@@ -7551,6 +7799,21 @@ jur_SequenceSet__init_0 = var_0 => {
 jur_SequenceSet_accepts = ($this, $strIndex, $testString) => {
     return !$this.$startsWith($testString, $strIndex) ? (-1) : $this.$charCount0;
 },
+jur_SequenceSet_find = ($this, $strIndex, $testString, $matchResult) => {
+    let $strLength, var$5;
+    $strLength = $matchResult.$getRightBound();
+    while (true) {
+        if ($strIndex > $strLength)
+            return (-1);
+        var$5 = $this.$indexOf($testString, $strIndex, $strLength);
+        if (var$5 < 0)
+            return (-1);
+        if ($this.$next6.$matches(var$5 + $this.$charCount0 | 0, $testString, $matchResult) >= 0)
+            break;
+        $strIndex = var$5 + 1 | 0;
+    }
+    return var$5;
+},
 jur_SequenceSet_findBack = ($this, $strIndex, $lastIndex, $testString, $matchResult) => {
     let var$5;
     while (true) {
@@ -7569,7 +7832,7 @@ jur_SequenceSet_getName = $this => {
     let var$1, var$2;
     var$1 = $this.$string;
     var$2 = jl_StringBuilder__init_();
-    jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(363)), var$1);
+    jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(370)), var$1);
     return jl_StringBuilder_toString(var$2);
 },
 jur_SequenceSet_first = ($this, $set) => {
@@ -7616,6 +7879,19 @@ jur_SequenceSet_first = ($this, $set) => {
     }
     return var$4;
 },
+jur_SequenceSet_indexOf = ($this, $str, $i, $to) => {
+    let $last, $ch;
+    $last = jl_String_charAt($this.$string, $this.$charCount0 - 1 | 0);
+    while (true) {
+        if ($i > ($to - $this.$charCount0 | 0))
+            return (-1);
+        $ch = $str.$charAt(($i + $this.$charCount0 | 0) - 1 | 0);
+        if ($ch == $last && $this.$startsWith($str, $i))
+            break;
+        $i = $i + $this.$leftToRight.$get3($ch) | 0;
+    }
+    return $i;
+},
 jur_SequenceSet_lastIndexOf = ($this, $str, $to, $i) => {
     let $first, $size, $delta, $ch;
     $first = jl_String_charAt($this.$string, 0);
@@ -7645,7 +7921,7 @@ jur_SequenceSet_startsWith = ($this, $str, $from) => {
 },
 jnci_AsciiCharset = $rt_classWithoutFields(jnc_Charset),
 jnci_AsciiCharset__init_ = $this => {
-    jnc_Charset__init_($this, $rt_s(364), $rt_createArray(jl_String, 0));
+    jnc_Charset__init_($this, $rt_s(371), $rt_createArray(jl_String, 0));
 },
 jnci_AsciiCharset__init_0 = () => {
     let var_0 = new jnci_AsciiCharset();
@@ -7762,6 +8038,9 @@ jur_MatchResultImpl_getGroupNoCheck = ($this, $group) => {
         return ($this.$string3.$subSequence($st, $end)).$toString();
     return null;
 },
+jur_MatchResultImpl_start0 = $this => {
+    return $this.$start(0);
+},
 jur_MatchResultImpl_start = ($this, $group) => {
     jur_MatchResultImpl_checkGroup($this, $group);
     return $this.$groupBounds.data[$group * 2 | 0];
@@ -7784,10 +8063,13 @@ jur_MatchResultImpl_checkGroup = ($this, $group) => {
         $rt_throw(jl_IllegalStateException__init_());
     if ($group >= 0 && $group < $this.$groupCount0)
         return;
-    $rt_throw(jl_IndexOutOfBoundsException__init_2(jl_String_valueOf1($group)));
+    $rt_throw(jl_IndexOutOfBoundsException__init_2(jl_String_valueOf0($group)));
 },
 jur_MatchResultImpl_setValid = $this => {
     $this.$valid = 1;
+},
+jur_MatchResultImpl_isValid = $this => {
+    return $this.$valid;
 },
 jur_MatchResultImpl_reset0 = ($this, $newSequence, $leftBound, $rightBound) => {
     $this.$valid = 0;
@@ -7860,13 +8142,12 @@ jur_UCIRangeSet_accepts = ($this, $strIndex, $testString) => {
 },
 jur_UCIRangeSet_getName = $this => {
     let var$1, var$2, var$3;
-    var$1 = !$this.$alt2 ? $rt_s(49) : $rt_s(50);
+    var$1 = !$this.$alt2 ? $rt_s(53) : $rt_s(54);
     var$2 = $this.$chars1.$toString();
     var$3 = jl_StringBuilder__init_();
-    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(365)), var$1), var$2);
+    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(372)), var$1), var$2);
     return jl_StringBuilder_toString(var$3);
-},
-juf_Function = $rt_classWithoutFields(0);
+};
 function jur_AbstractCharClass$LazyJavaJavaIdentifierPart$1() {
     jur_AbstractCharClass.call(this);
     this.$this$013 = null;
@@ -7882,6 +8163,41 @@ jur_AbstractCharClass$LazyJavaJavaIdentifierPart$1__init_0 = var_0 => {
 },
 jur_AbstractCharClass$LazyJavaJavaIdentifierPart$1_contains = ($this, $ch) => {
     return jl_Character_isJavaIdentifierPart($ch);
+};
+function oajvo_OpenQasmParser$Program() {
+    let a = this; jl_Record.call(a);
+    a.$spec1 = null;
+    a.$levelLocations2 = null;
+    a.$barriers1 = null;
+    a.$qubitNames1 = null;
+}
+let oajvo_OpenQasmParser$Program__init_ = ($this, $spec, $levelLocations, $barriers, $qubitNames) => {
+    let var$5, var$6, var$7;
+    jl_Record__init_($this);
+    var$5 = ju_List_copyOf($levelLocations);
+    var$6 = ju_List_copyOf($barriers);
+    var$7 = ju_List_copyOf($qubitNames);
+    $this.$spec1 = $spec;
+    $this.$levelLocations2 = var$5;
+    $this.$barriers1 = var$6;
+    $this.$qubitNames1 = var$7;
+},
+oajvo_OpenQasmParser$Program__init_0 = (var_0, var_1, var_2, var_3) => {
+    let var_4 = new oajvo_OpenQasmParser$Program();
+    oajvo_OpenQasmParser$Program__init_(var_4, var_0, var_1, var_2, var_3);
+    return var_4;
+},
+oajvo_OpenQasmParser$Program_spec = $this => {
+    return $this.$spec1;
+},
+oajvo_OpenQasmParser$Program_levelLocations = $this => {
+    return $this.$levelLocations2;
+},
+oajvo_OpenQasmParser$Program_barriers = $this => {
+    return $this.$barriers1;
+},
+oajvo_OpenQasmParser$Program_qubitNames = $this => {
+    return $this.$qubitNames1;
 },
 otp_Platform = $rt_classWithoutFields(),
 otp_Platform_clone = var$1 => {
@@ -7926,9 +8242,9 @@ jnc_CodingErrorAction__init_ = var_0 => {
     return var_1;
 },
 jnc_CodingErrorAction__clinit_ = () => {
-    jnc_CodingErrorAction_IGNORE = jnc_CodingErrorAction__init_($rt_s(366));
-    jnc_CodingErrorAction_REPLACE = jnc_CodingErrorAction__init_($rt_s(367));
-    jnc_CodingErrorAction_REPORT = jnc_CodingErrorAction__init_($rt_s(368));
+    jnc_CodingErrorAction_IGNORE = jnc_CodingErrorAction__init_($rt_s(373));
+    jnc_CodingErrorAction_REPLACE = jnc_CodingErrorAction__init_($rt_s(374));
+    jnc_CodingErrorAction_REPORT = jnc_CodingErrorAction__init_($rt_s(375));
 };
 function jl_Boolean() {
     jl_Object.call(this);
@@ -7960,11 +8276,11 @@ jl_Boolean_compare = ($x, $y) => {
 },
 jl_Boolean_parseBoolean = $s => {
     jl_Boolean_$callClinit();
-    return $s !== null && jl_String_equals(jl_String_toLowerCase($s), $rt_s(62)) ? 1 : 0;
+    return $s !== null && jl_String_equals(jl_String_toLowerCase($s), $rt_s(65)) ? 1 : 0;
 },
 jl_Boolean_toString = $value => {
     jl_Boolean_$callClinit();
-    return !$value ? $rt_s(61) : $rt_s(62);
+    return !$value ? $rt_s(64) : $rt_s(65);
 },
 jl_Boolean_toString0 = $this => {
     return jl_Boolean_toString($this.$value3);
@@ -8059,11 +8375,26 @@ jur_NegativeLookBehind_hasConsumed = ($this, $matchResult) => {
     return 0;
 },
 jur_NegativeLookBehind_getName = $this => {
-    return $rt_s(369);
+    return $rt_s(376);
+},
+oajw_JqapiBridge$sampleExpectation$lambda$_18_0 = $rt_classWithoutFields(),
+oajw_JqapiBridge$sampleExpectation$lambda$_18_0__init_ = var$0 => {
+    jl_Object__init_(var$0);
+},
+oajw_JqapiBridge$sampleExpectation$lambda$_18_0__init_0 = () => {
+    let var_0 = new oajw_JqapiBridge$sampleExpectation$lambda$_18_0();
+    oajw_JqapiBridge$sampleExpectation$lambda$_18_0__init_(var_0);
+    return var_0;
+},
+oajw_JqapiBridge$sampleExpectation$lambda$_18_0_test0 = (var$0, var$1) => {
+    return oajw_JqapiBridge$sampleExpectation$lambda$_18_0_test(var$0, var$1);
+},
+oajw_JqapiBridge$sampleExpectation$lambda$_18_0_test = (var$0, var$1) => {
+    return oajw_JqapiBridge_lambda$sampleExpectation$0(var$1);
 },
 oajqg_U3 = $rt_classWithoutFields(oajqg_Gate),
 oajqg_U3__init_ = ($this, $theta, $phi, $lambda, $indexes) => {
-    oajqg_Gate__init_($this, 1, oaju_Constants_u3Matrix($theta, $phi, $lambda), $rt_s(370), $indexes);
+    oajqg_Gate__init_($this, 1, oaju_Constants_u3Matrix($theta, $phi, $lambda), $rt_s(377), $indexes);
 },
 oajqg_U3__init_0 = (var_0, var_1, var_2, var_3) => {
     let var_4 = new oajqg_U3();
@@ -8088,6 +8419,26 @@ jur_BackReferenceSet_matches = ($this, $stringIndex, $testString, $matchResult) 
             return (-1);
         $matchResult.$setConsumed($this.$consCounter1, $shift);
         return $this.$next6.$matches($stringIndex + $shift | 0, $testString, $matchResult);
+    }
+    return (-1);
+},
+jur_BackReferenceSet_find = ($this, $strIndex, $testString, $matchResult) => {
+    let $group, $strLength, $testStr, var$7;
+    $group = $this.$getString($matchResult);
+    $strLength = $matchResult.$getLeftBound();
+    if ($group !== null && ($strIndex + jl_String_length($group) | 0) <= $strLength) {
+        $testStr = $testString.$toString();
+        while (true) {
+            if ($strIndex > $strLength)
+                return (-1);
+            var$7 = jl_String_indexOf0($testStr, $group, $strIndex);
+            if (var$7 < 0)
+                return (-1);
+            if ($this.$next6.$matches(var$7 + jl_String_length($group) | 0, $testString, $matchResult) >= 0)
+                break;
+            $strIndex = var$7 + 1 | 0;
+        }
+        return var$7;
     }
     return (-1);
 },
@@ -8121,16 +8472,16 @@ jur_BackReferenceSet_getName = $this => {
     let var$1, var$2;
     var$1 = $this.$groupIndex;
     var$2 = jl_StringBuilder__init_();
-    jl_StringBuilder_append1(jl_StringBuilder_append(var$2, $rt_s(371)), var$1);
+    jl_StringBuilder_append1(jl_StringBuilder_append(var$2, $rt_s(378)), var$1);
     return jl_StringBuilder_toString(var$2);
 };
 function jur_DotQuantifierSet() {
     jur_QuantifierSet.call(this);
-    this.$lt0 = null;
+    this.$lt = null;
 }
 let jur_DotQuantifierSet__init_ = ($this, $innerSet, $next, $type, $lt) => {
     jur_QuantifierSet__init_($this, $innerSet, $next, $type);
-    $this.$lt0 = $lt;
+    $this.$lt = $lt;
 },
 jur_DotQuantifierSet__init_0 = (var_0, var_1, var_2, var_3) => {
     let var_4 = new jur_DotQuantifierSet();
@@ -8147,18 +8498,44 @@ jur_DotQuantifierSet_matches = ($this, $stringIndex, $testString, $matchResult) 
         return $this.$next6.$findBack($stringIndex, $strLength, $testString, $matchResult);
     return $this.$next6.$matches($stringIndex, $testString, $matchResult);
 },
+jur_DotQuantifierSet_find = ($this, $stringIndex, $testString, $matchResult) => {
+    let $strLength, $res, $nextSearch, var$7, $leftBound;
+    $strLength = $matchResult.$getRightBound();
+    $res = $this.$next6.$find($stringIndex, $testString, $matchResult);
+    if ($res < 0)
+        return (-1);
+    $nextSearch = jur_DotQuantifierSet_findLineTerminator($this, $res, $strLength, $testString);
+    if ($nextSearch >= 0)
+        $strLength = $nextSearch;
+    var$7 = $this.$next6.$findBack($res, $strLength, $testString, $matchResult);
+    var$7 = jl_Math_max($res, var$7);
+    $leftBound = var$7 > 0 ? jur_DotQuantifierSet_findBackLineTerminator($this, $stringIndex, var$7 - 1 | 0, $testString) : var$7 ? (-1) : 0;
+    if ($leftBound >= $stringIndex)
+        $stringIndex = $leftBound >= var$7 ? $leftBound : $leftBound + 1 | 0;
+    return $stringIndex;
+},
 jur_DotQuantifierSet_findLineTerminator = ($this, $i, $to, $testString) => {
     while (true) {
         if ($i >= $to)
             return (-1);
-        if ($this.$lt0.$isLineTerminator($testString.$charAt($i)))
+        if ($this.$lt.$isLineTerminator($testString.$charAt($i)))
             break;
         $i = $i + 1 | 0;
     }
     return $i;
 },
+jur_DotQuantifierSet_findBackLineTerminator = ($this, $from, $i, $testString) => {
+    while (true) {
+        if ($i < $from)
+            return (-1);
+        if ($this.$lt.$isLineTerminator($testString.$charAt($i)))
+            break;
+        $i = $i + (-1) | 0;
+    }
+    return $i;
+},
 jur_DotQuantifierSet_getName = $this => {
-    return $rt_s(372);
+    return $rt_s(379);
 },
 jur_AbstractCharClass$LazyJavaJavaIdentifierPart = $rt_classWithoutFields(jur_AbstractCharClass$LazyCharClass),
 jur_AbstractCharClass$LazyJavaJavaIdentifierPart__init_ = $this => {
@@ -8195,6 +8572,19 @@ jur_UnifiedQuantifierSet_matches = ($this, $stringIndex, $testString, $matchResu
     }
     return $this.$next6.$matches($stringIndex, $testString, $matchResult);
 },
+jur_UnifiedQuantifierSet_find = ($this, $stringIndex, $testString, $matchResult) => {
+    let $startSearch, $newSearch, $newSearch_0;
+    $startSearch = $this.$next6.$find($stringIndex, $testString, $matchResult);
+    if ($startSearch < 0)
+        return (-1);
+    $newSearch = $startSearch - $this.$leaf.$charCount() | 0;
+    while ($newSearch >= $stringIndex && $this.$leaf.$accepts($newSearch, $testString) > 0) {
+        $newSearch_0 = $newSearch - $this.$leaf.$charCount() | 0;
+        $startSearch = $newSearch;
+        $newSearch = $newSearch_0;
+    }
+    return $startSearch;
+},
 jlr_Type = $rt_classWithoutFields(0);
 function jl_Class() {
     let a = this; jl_Object.call(a);
@@ -8216,7 +8606,7 @@ jl_Class_createClass = $classInfo => {
 },
 jl_Class_toString = $this => {
     let var$1, var$2, var$3;
-    var$1 = jl_Class_isInterface($this) ? $rt_s(373) : !jl_Class_isPrimitive($this) ? $rt_s(374) : $rt_s(69);
+    var$1 = jl_Class_isInterface($this) ? $rt_s(380) : !jl_Class_isPrimitive($this) ? $rt_s(381) : $rt_s(72);
     var$2 = jl_Class_getName($this);
     var$3 = jl_StringBuilder__init_();
     jl_StringBuilder_append(jl_StringBuilder_append(var$3, var$1), var$2);
@@ -8248,7 +8638,7 @@ jl_Class_getName = $this => {
                         $result = jl_StringBuilder_toString(var$5);
                     } else {
                         var$5 = jl_StringBuilder__init_();
-                        jl_StringBuilder_append0(jl_StringBuilder_append(jl_StringBuilder_append(var$5, $rt_s(375)), $itemName), 59);
+                        jl_StringBuilder_append0(jl_StringBuilder_append(jl_StringBuilder_append(var$5, $rt_s(382)), $itemName), 59);
                         $result = jl_StringBuilder_toString(var$5);
                     }
                 }
@@ -8622,20 +9012,20 @@ ju_Arrays_copyOf = ($original, $newLength) => {
 ju_Arrays_toString = $a => {
     let $sb, $i, var$4;
     if ($a === null)
-        return $rt_s(60);
+        return $rt_s(63);
     $sb = jl_StringBuilder__init_();
-    $sb.$append1($rt_s(376));
+    $sb.$append1($rt_s(383));
     $i = 0;
     while (true) {
         var$4 = $a.data;
         if ($i >= var$4.length)
             break;
         if ($i > 0)
-            $sb.$append1($rt_s(59));
+            $sb.$append1($rt_s(62));
         $sb.$append(var$4[$i]);
         $i = $i + 1 | 0;
     }
-    $sb.$append1($rt_s(57));
+    $sb.$append1($rt_s(52));
     return $sb.$toString();
 },
 ju_Arrays_fill0 = ($a, $fromIndex, $toIndex, $val) => {
@@ -8842,6 +9232,25 @@ jur_CharSet_charCount = $this => {
 jur_CharSet_accepts = ($this, $strIndex, $testString) => {
     return $this.$ch0 != $testString.$charAt($strIndex) ? (-1) : 1;
 },
+jur_CharSet_find = ($this, $strIndex, $testString, $matchResult) => {
+    let $testStr, $strLength, var$6, var$7;
+    if (!($testString instanceof jl_String))
+        return jur_AbstractSet_find($this, $strIndex, $testString, $matchResult);
+    $testStr = $testString;
+    $strLength = $matchResult.$getRightBound();
+    while (true) {
+        if ($strIndex >= $strLength)
+            return (-1);
+        var$6 = jl_String_indexOf($testStr, $this.$ch0, $strIndex);
+        if (var$6 < 0)
+            return (-1);
+        var$7 = $this.$next6;
+        $strIndex = var$6 + 1 | 0;
+        if (var$7.$matches($strIndex, $testString, $matchResult) >= 0)
+            break;
+    }
+    return var$6;
+},
 jur_CharSet_findBack = ($this, $strIndex, $lastIndex, $testString, $matchResult) => {
     let $testStr, var$6;
     if (!($testString instanceof jl_String))
@@ -8931,7 +9340,7 @@ jur_CharClass$4_contains = ($this, $ch) => {
 oajqg_ControlledSwap = $rt_classWithoutFields(oajqg_Gate),
 oajqg_ControlledSwap__init_ = ($this, $firstQubit, $secondQubit, $thirdQubit) => {
     oaju_Constants_$callClinit();
-    oajqg_Gate__init_($this, 3, oaju_Constants_CONTROLLED_SWAP_MATRIX, $rt_s(377), $rt_wrapArray(jl_Integer, [$firstQubit, $secondQubit, $thirdQubit]));
+    oajqg_Gate__init_($this, 3, oaju_Constants_CONTROLLED_SWAP_MATRIX, $rt_s(384), $rt_wrapArray(jl_Integer, [$firstQubit, $secondQubit, $thirdQubit]));
 },
 oajqg_ControlledSwap__init_0 = (var_0, var_1, var_2) => {
     let var_3 = new oajqg_ControlledSwap();
@@ -9053,6 +9462,67 @@ jur_CharClass$6__init_0 = (var_0, var_1) => {
 },
 jur_CharClass$6_contains = ($this, $ch) => {
     return $this.$val$clazz8.$contains($ch) ? 0 : 1;
+};
+function oajvl_CircuitLinter$Diagnostic() {
+    let a = this; jl_Record.call(a);
+    a.$rule0 = null;
+    a.$severity0 = null;
+    a.$levels2 = null;
+    a.$qubits1 = null;
+    a.$locations0 = null;
+    a.$message = null;
+    a.$suggestion = null;
+}
+let oajvl_CircuitLinter$Diagnostic__init_ = ($this, $rule, $severity, $levels, $qubits, $locations, $message, $suggestion) => {
+    let var$8, var$9, var$10;
+    jl_Record__init_($this);
+    var$8 = ju_List_copyOf($levels);
+    var$9 = ju_List_copyOf($qubits);
+    var$10 = ju_List_copyOf($locations);
+    $this.$rule0 = $rule;
+    $this.$severity0 = $severity;
+    $this.$levels2 = var$8;
+    $this.$qubits1 = var$9;
+    $this.$locations0 = var$10;
+    $this.$message = $message;
+    $this.$suggestion = $suggestion;
+},
+oajvl_CircuitLinter$Diagnostic__init_0 = (var_0, var_1, var_2, var_3, var_4, var_5, var_6) => {
+    let var_7 = new oajvl_CircuitLinter$Diagnostic();
+    oajvl_CircuitLinter$Diagnostic__init_(var_7, var_0, var_1, var_2, var_3, var_4, var_5, var_6);
+    return var_7;
+},
+oajvl_CircuitLinter$Diagnostic_toString = $this => {
+    return ((((((((((((((((jl_StringBuilder__init_0($rt_s(385))).$append1($rt_s(386))).$append($this.$rule0)).$append1($rt_s(387))).$append($this.$severity0)).$append1($rt_s(388))).$append($this.$levels2)).$append1($rt_s(364))).$append($this.$qubits1)).$append1($rt_s(389))).$append($this.$locations0)).$append1($rt_s(390))).$append($this.$message)).$append1($rt_s(391))).$append($this.$suggestion)).$append1($rt_s(52))).$toString();
+},
+oajvl_CircuitLinter$Diagnostic_hashCode = $this => {
+    return ((((((((((((31 + ju_Objects_hashCode($this.$rule0) | 0) * 31 | 0) + ju_Objects_hashCode($this.$severity0) | 0) * 31 | 0) + ju_Objects_hashCode($this.$levels2) | 0) * 31 | 0) + ju_Objects_hashCode($this.$qubits1) | 0) * 31 | 0) + ju_Objects_hashCode($this.$locations0) | 0) * 31 | 0) + ju_Objects_hashCode($this.$message) | 0) * 31 | 0) + ju_Objects_hashCode($this.$suggestion) | 0;
+},
+oajvl_CircuitLinter$Diagnostic_equals = ($this, $o) => {
+    let var$2, var$3;
+    if ($this === $o)
+        var$2 = 1;
+    else if ($o !== null && jl_Object_getClass($o) === $rt_cls(oajvl_CircuitLinter$Diagnostic)) {
+        var$3 = $o;
+        var$2 = !ju_Objects_equals($this.$rule0, var$3.$rule0) ? 0 : !ju_Objects_equals($this.$severity0, var$3.$severity0) ? 0 : !ju_Objects_equals($this.$levels2, var$3.$levels2) ? 0 : !ju_Objects_equals($this.$qubits1, var$3.$qubits1) ? 0 : !ju_Objects_equals($this.$locations0, var$3.$locations0) ? 0 : !ju_Objects_equals($this.$message, var$3.$message) ? 0 : ju_Objects_equals($this.$suggestion, var$3.$suggestion) ? 1 : 0;
+    } else
+        var$2 = 0;
+    return var$2;
+},
+oajvl_CircuitLinter$Diagnostic_rule = $this => {
+    return $this.$rule0;
+},
+oajvl_CircuitLinter$Diagnostic_severity = $this => {
+    return $this.$severity0;
+},
+oajvl_CircuitLinter$Diagnostic_levels = $this => {
+    return $this.$levels2;
+},
+oajvl_CircuitLinter$Diagnostic_qubits = $this => {
+    return $this.$qubits1;
+},
+oajvl_CircuitLinter$Diagnostic_locations = $this => {
+    return $this.$locations0;
 },
 ju_ListIterator = $rt_classWithoutFields(0),
 ju_Collections$5 = $rt_classWithoutFields(),
@@ -9184,11 +9654,11 @@ jm_BigDecimal__init_1 = ($this, $in, $offset, $len) => {
                 else if (var$5[var$8] == 45)
                     var$8 = var$13;
             }
-            var$14 = jl_String_valueOf0($in, var$8, ($last + 1 | 0) - var$8 | 0);
+            var$14 = jl_String_valueOf1($in, var$8, ($last + 1 | 0) - var$8 | 0);
             $newScale = Long_sub(Long_fromInt($this.$scale), Long_fromInt(jl_Integer_parseInt0(var$14)));
             $this.$scale = Long_lo($newScale);
             if (Long_ne($newScale, Long_fromInt($this.$scale)))
-                $rt_throw(jl_NumberFormatException__init_1($rt_s(378)));
+                $rt_throw(jl_NumberFormatException__init_1($rt_s(392)));
         }
         if (var$12 >= 19)
             jm_BigDecimal_setUnscaledValue($this, jm_BigInteger__init_9($unscaledBuffer.$toString()));
@@ -9399,7 +9869,7 @@ jm_BigDecimal_roundingBehavior = ($parityBit, $fraction, $roundingMode) => {
             case 1:
                 if (!$fraction)
                     break a;
-                $rt_throw(jl_ArithmeticException__init_($rt_s(379)));
+                $rt_throw(jl_ArithmeticException__init_($rt_s(393)));
             case 2:
                 $increment = jl_Integer_signum($fraction);
                 break a;
@@ -9500,21 +9970,24 @@ ju_List_getFirst = $this => {
         return $this.$get0(0);
     $rt_throw(ju_NoSuchElementException__init_());
 },
+ju_List_of0 = () => {
+    return ju_Collections_emptyList();
+},
 ju_List_of = $e => {
     return ju_Collections_singletonList($e);
 },
-ju_List_of2 = ($e1, $e2) => {
+ju_List_of1 = ($e1, $e2) => {
     ju_Objects_requireNonNull0($e1);
     ju_Objects_requireNonNull0($e2);
     return ju_TemplateCollections$TwoElementsList__init_0($e1, $e2);
 },
-ju_List_of1 = ($e1, $e2, $e3) => {
+ju_List_of3 = ($e1, $e2, $e3) => {
     ju_Objects_requireNonNull0($e1);
     ju_Objects_requireNonNull0($e2);
     ju_Objects_requireNonNull0($e3);
     return ju_TemplateCollections$ImmutableArrayList__init_($rt_wrapArray(jl_Object, [$e1, $e2, $e3]));
 },
-ju_List_of0 = $elements => {
+ju_List_of2 = $elements => {
     let var$2, var$3, var$4, $element;
     var$2 = $elements.data;
     var$3 = var$2.length;
@@ -9590,14 +10063,26 @@ ju_Collections$3__init_0 = () => {
     let var_0 = new ju_Collections$3();
     ju_Collections$3__init_(var_0);
     return var_0;
+},
+ju_Collections$3_get = ($this, $index) => {
+    $rt_throw(jl_IndexOutOfBoundsException__init_());
+},
+ju_Collections$3_size = $this => {
+    return 0;
+},
+ju_Collections$3_iterator = $this => {
+    return ju_Collections_emptyIterator();
+},
+ju_Collections$3_isEmpty = $this => {
+    return 1;
 };
 function jur_DotSet() {
     jur_JointSet.call(this);
-    this.$lt = null;
+    this.$lt0 = null;
 }
 let jur_DotSet__init_ = ($this, $lt) => {
     jur_JointSet__init_($this);
-    $this.$lt = $lt;
+    $this.$lt0 = $lt;
 },
 jur_DotSet__init_0 = var_0 => {
     let var_1 = new jur_DotSet();
@@ -9618,13 +10103,13 @@ jur_DotSet_matches = ($this, $stringIndex, $testString, $matchResult) => {
         if (var$7 <= $strLength) {
             $low = $testString.$charAt(var$5);
             if (jl_Character_isSurrogatePair($high, $low))
-                return $this.$lt.$isLineTerminator(jl_Character_toCodePoint($high, $low)) ? (-1) : $this.$next6.$matches(var$7, $testString, $matchResult);
+                return $this.$lt0.$isLineTerminator(jl_Character_toCodePoint($high, $low)) ? (-1) : $this.$next6.$matches(var$7, $testString, $matchResult);
         }
     }
-    return $this.$lt.$isLineTerminator($high) ? (-1) : $this.$next6.$matches(var$5, $testString, $matchResult);
+    return $this.$lt0.$isLineTerminator($high) ? (-1) : $this.$next6.$matches(var$5, $testString, $matchResult);
 },
 jur_DotSet_getName = $this => {
-    return $rt_s(380);
+    return $rt_s(394);
 },
 jur_DotSet_setNext = ($this, $next) => {
     $this.$next6 = $next;
@@ -9969,8 +10454,8 @@ jl_Character_getType = $codePoint => {
         if ($codePoint >= $range.$end4)
             $l = $i + 1 | 0;
         else {
-            if ($codePoint >= $range.$start1)
-                return $range.$data6.data[$codePoint - $range.$start1 | 0];
+            if ($codePoint >= $range.$start2)
+                return $range.$data6.data[$codePoint - $range.$start2 | 0];
             $u = $i - 1 | 0;
         }
     }
@@ -10279,6 +10764,9 @@ ju_Set_of2 = ($e1, $e2, $e3, $e4, $e5, $e6) => {
 ju_Set_of1 = $elements => {
     return ju_TemplateCollections$NElementSet__init_($elements);
 },
+ju_Set_copyOf = $collection => {
+    return ju_TemplateCollections$NElementSet__init_2($collection);
+},
 ju_AbstractSet = $rt_classWithoutFields(ju_AbstractCollection),
 ju_AbstractSet__init_ = $this => {
     ju_AbstractCollection__init_($this);
@@ -10346,11 +10834,11 @@ ju_Collections$2__init_0 = () => {
     let var_0 = new ju_Collections$2();
     ju_Collections$2__init_(var_0);
     return var_0;
-},
-ju_Collections$2_entrySet = $this => {
-    return ju_Collections_emptySet();
 };
-let ju_Collections$2_size = $this => {
+let ju_Collections$2_entrySet = $this => {
+    return ju_Collections_emptySet();
+},
+ju_Collections$2_size = $this => {
     return 0;
 },
 ju_Collections$2_get = ($this, $key) => {
@@ -10381,7 +10869,7 @@ jur_CICharSet_getName = $this => {
     let var$1, var$2;
     var$1 = $this.$ch4;
     var$2 = jl_StringBuilder__init_();
-    jl_StringBuilder_append0(jl_StringBuilder_append(var$2, $rt_s(381)), var$1);
+    jl_StringBuilder_append0(jl_StringBuilder_append(var$2, $rt_s(395)), var$1);
     return jl_StringBuilder_toString(var$2);
 };
 function jur_SupplCharSet() {
@@ -10411,6 +10899,26 @@ jur_SupplCharSet_accepts = ($this, $strIndex, $testString) => {
     $high = $testString.$charAt($strIndex);
     $low = $testString.$charAt(var$3);
     return $this.$high0 == $high && $this.$low0 == $low ? 2 : (-1);
+},
+jur_SupplCharSet_find = ($this, $strIndex, $testString, $matchResult) => {
+    let $testStr, $strLength, var$6, $ch;
+    if (!($testString instanceof jl_String))
+        return jur_AbstractSet_find($this, $strIndex, $testString, $matchResult);
+    $testStr = $testString;
+    $strLength = $matchResult.$getRightBound();
+    while ($strIndex < $strLength) {
+        var$6 = jl_String_indexOf($testStr, $this.$high0, $strIndex);
+        if (var$6 < 0)
+            return (-1);
+        $strIndex = var$6 + 1 | 0;
+        if ($strIndex >= $strLength)
+            continue;
+        $ch = jl_String_charAt($testStr, $strIndex);
+        if ($this.$low0 == $ch && $this.$next6.$matches($strIndex + 1 | 0, $testString, $matchResult) >= 0)
+            return $strIndex + (-1) | 0;
+        $strIndex = $strIndex + 1 | 0;
+    }
+    return (-1);
 },
 jur_SupplCharSet_findBack = ($this, $strIndex, $lastIndex, $testString, $matchResult) => {
     let $testStr, var$6, var$7;
@@ -10483,7 +10991,7 @@ jusi_SimpleIntStreamImpl$ArrayFillingConsumer_test = ($this, $t) => {
 oajqg_ControlledY = $rt_classWithoutFields(oajqg_Gate),
 oajqg_ControlledY__init_ = ($this, $controlQubit, $targetQubit) => {
     oaju_Constants_$callClinit();
-    oajqg_Gate__init_($this, 2, oaju_Constants_CONTROLLED_Y_MATRIX, $rt_s(382), $rt_wrapArray(jl_Integer, [$controlQubit, $targetQubit]));
+    oajqg_Gate__init_($this, 2, oaju_Constants_CONTROLLED_Y_MATRIX, $rt_s(396), $rt_wrapArray(jl_Integer, [$controlQubit, $targetQubit]));
 },
 oajqg_ControlledY__init_0 = (var_0, var_1) => {
     let var_2 = new oajqg_ControlledY();
@@ -10493,7 +11001,7 @@ oajqg_ControlledY__init_0 = (var_0, var_1) => {
 oajqg_ControlledZ = $rt_classWithoutFields(oajqg_Gate),
 oajqg_ControlledZ__init_ = ($this, $controlQubit, $targetQubit) => {
     oaju_Constants_$callClinit();
-    oajqg_Gate__init_($this, 2, oaju_Constants_CONTROLLED_Z_MATRIX, $rt_s(383), $rt_wrapArray(jl_Integer, [$controlQubit, $targetQubit]));
+    oajqg_Gate__init_($this, 2, oaju_Constants_CONTROLLED_Z_MATRIX, $rt_s(397), $rt_wrapArray(jl_Integer, [$controlQubit, $targetQubit]));
 },
 oajqg_ControlledZ__init_0 = (var_0, var_1) => {
     let var_2 = new oajqg_ControlledZ();
@@ -10537,7 +11045,7 @@ jur_AbstractCharClass$LazyCategoryScope_computeValue = $this => {
 },
 oajqg_Oracle = $rt_classWithoutFields(oajqg_Gate),
 oajqg_Oracle__init_ = ($this, $matrix, $indexes) => {
-    oajqg_Gate__init_($this, jl_Math_log(($matrix.$getData()).data.length) / jl_Math_log(2.0) | 0, $matrix, $rt_s(384), $indexes);
+    oajqg_Gate__init_($this, jl_Math_log(($matrix.$getData()).data.length) / jl_Math_log(2.0) | 0, $matrix, $rt_s(398), $indexes);
 },
 oajqg_Oracle__init_0 = (var_0, var_1) => {
     let var_2 = new oajqg_Oracle();
@@ -10595,9 +11103,9 @@ jnc_StandardCharsets__clinit_ = () => {
     jnc_StandardCharsets_UTF_8 = jnci_UTF8Charset_INSTANCE;
     jnc_StandardCharsets_US_ASCII = jnci_AsciiCharset__init_0();
     jnc_StandardCharsets_ISO_8859_1 = jnci_Iso8859Charset__init_0();
-    jnc_StandardCharsets_UTF_16 = jnci_UTF16Charset__init_($rt_s(385), 1, 0);
-    jnc_StandardCharsets_UTF_16BE = jnci_UTF16Charset__init_($rt_s(386), 0, 0);
-    jnc_StandardCharsets_UTF_16LE = jnci_UTF16Charset__init_($rt_s(387), 0, 1);
+    jnc_StandardCharsets_UTF_16 = jnci_UTF16Charset__init_($rt_s(399), 1, 0);
+    jnc_StandardCharsets_UTF_16BE = jnci_UTF16Charset__init_($rt_s(400), 0, 0);
+    jnc_StandardCharsets_UTF_16LE = jnci_UTF16Charset__init_($rt_s(401), 0, 1);
 },
 ju_Collections$_clinit_$lambda$_59_0 = $rt_classWithoutFields(),
 ju_Collections$_clinit_$lambda$_59_0__init_ = var$0 => {
@@ -10617,7 +11125,7 @@ function oajvo_OpenQasmGates$Mapping() {
     a.$parameters1 = null;
 }
 let oajvo_OpenQasmGates$Mapping__init_0 = ($this, $name, $kind, $controls, $targets, $parameters) => {
-    oajvo_OpenQasmGates$Mapping__init_1($this, $name, $kind, $controls, $targets, ju_List_of0($parameters));
+    oajvo_OpenQasmGates$Mapping__init_1($this, $name, $kind, $controls, $targets, ju_List_of2($parameters));
 },
 oajvo_OpenQasmGates$Mapping__init_ = (var_0, var_1, var_2, var_3, var_4) => {
     let var_5 = new oajvo_OpenQasmGates$Mapping();
@@ -10638,7 +11146,7 @@ oajvo_OpenQasmGates$Mapping__init_2 = (var_0, var_1, var_2, var_3, var_4) => {
     return var_5;
 },
 oajvo_OpenQasmGates$Mapping_toString = $this => {
-    return ((((((((((((jl_StringBuilder__init_0($rt_s(388))).$append1($rt_s(389))).$append($this.$name0)).$append1($rt_s(390))).$append($this.$kind1)).$append1($rt_s(391))).$append2($this.$controls2)).$append1($rt_s(392))).$append2($this.$targets1)).$append1($rt_s(393))).$append($this.$parameters1)).$append1($rt_s(57))).$toString();
+    return ((((((((((((jl_StringBuilder__init_0($rt_s(402))).$append1($rt_s(403))).$append($this.$name0)).$append1($rt_s(404))).$append($this.$kind1)).$append1($rt_s(405))).$append2($this.$controls2)).$append1($rt_s(406))).$append2($this.$targets1)).$append1($rt_s(407))).$append($this.$parameters1)).$append1($rt_s(52))).$toString();
 },
 oajvo_OpenQasmGates$Mapping_hashCode = $this => {
     return ((((((((31 + ju_Objects_hashCode($this.$name0) | 0) * 31 | 0) + ju_Objects_hashCode($this.$kind1) | 0) * 31 | 0) + jl_Integer_hashCode($this.$controls2) | 0) * 31 | 0) + jl_Integer_hashCode($this.$targets1) | 0) * 31 | 0) + ju_Objects_hashCode($this.$parameters1) | 0;
@@ -10805,7 +11313,7 @@ jur_UEOLSet_hasConsumed = ($this, $matchResult) => {
     return $res;
 },
 jur_UEOLSet_getName = $this => {
-    return $rt_s(394);
+    return $rt_s(408);
 },
 oajv_CircuitSpecs$1 = $rt_classWithoutFields(),
 oajv_CircuitSpecs$1_$SwitchMap$org$aitan$jqapi$visualization$spec$GateKind = null,
@@ -10859,12 +11367,12 @@ jur_UCICharSet_getName = $this => {
     let var$1, var$2;
     var$1 = $this.$ch2;
     var$2 = jl_StringBuilder__init_();
-    jl_StringBuilder_append0(jl_StringBuilder_append(var$2, $rt_s(395)), var$1);
+    jl_StringBuilder_append0(jl_StringBuilder_append(var$2, $rt_s(409)), var$1);
     return jl_StringBuilder_toString(var$2);
 },
 jnci_Iso8859Charset = $rt_classWithoutFields(jnc_Charset),
 jnci_Iso8859Charset__init_ = $this => {
-    jnc_Charset__init_($this, $rt_s(396), $rt_createArray(jl_String, 0));
+    jnc_Charset__init_($this, $rt_s(410), $rt_createArray(jl_String, 0));
 },
 jnci_Iso8859Charset__init_0 = () => {
     let var_0 = new jnci_Iso8859Charset();
@@ -10894,7 +11402,7 @@ jur_AtomicFSet_getIndex = $this => {
     return $this.$index7;
 },
 jur_AtomicFSet_getName = $this => {
-    return $rt_s(397);
+    return $rt_s(411);
 },
 jur_AtomicFSet_hasConsumed = ($this, $mr) => {
     return 0;
@@ -10926,7 +11434,7 @@ jusi_SimpleStreamImpl_toArray = ($this, $generator) => {
     let $estimatedSize, $array, $consumer, var$5, $list, $i;
     $estimatedSize = $this.$estimateSize();
     if ($estimatedSize >= 0) {
-        $array = $generator.$apply0($estimatedSize);
+        $array = $generator.$apply2($estimatedSize);
         $consumer = jusi_SimpleStreamImpl$ArrayFillingConsumer__init_0($array);
         while ($this.$next2($consumer)) {
         }
@@ -10941,7 +11449,7 @@ jusi_SimpleStreamImpl_toArray = ($this, $generator) => {
         if (!$this.$next2(jusi_SimpleStreamImpl$toArray$lambda$_21_0__init_0($list)))
             break;
     }
-    $array = $generator.$apply0($list.$size());
+    $array = $generator.$apply2($list.$size());
     $i = 0;
     while (true) {
         var$5 = $array.data;
@@ -10961,7 +11469,7 @@ jusi_SimpleStreamImpl_collect = ($this, $collector) => {
         if (!$hasMore)
             break;
     }
-    return ($collector.$finisher()).$apply1($collection);
+    return ($collector.$finisher()).$apply3($collection);
 },
 jusi_SimpleStreamImpl_count = $this => {
     let $consumer;
@@ -11050,6 +11558,30 @@ jur_LowSurrogateCharSet_matches = ($this, $stringIndex, $testString, $matchResul
     if ($this.$low != $low)
         return (-1);
     return $this.$next6.$matches(var$4, $testString, $matchResult);
+},
+jur_LowSurrogateCharSet_find = ($this, $strIndex, $testString, $matchResult) => {
+    let $testStr, $startStr, $strLength, var$7, var$8;
+    if (!($testString instanceof jl_String))
+        return jur_AbstractSet_find($this, $strIndex, $testString, $matchResult);
+    $testStr = $testString;
+    $startStr = $matchResult.$getLeftBound();
+    $strLength = $matchResult.$getRightBound();
+    while (true) {
+        if ($strIndex >= $strLength)
+            return (-1);
+        var$7 = jl_String_indexOf($testStr, $this.$low, $strIndex);
+        if (var$7 < 0)
+            return (-1);
+        if (var$7 > $startStr && jl_Character_isHighSurrogate(jl_String_charAt($testStr, var$7 - 1 | 0))) {
+            $strIndex = var$7 + 1 | 0;
+            continue;
+        }
+        var$8 = $this.$next6;
+        $strIndex = var$7 + 1 | 0;
+        if (var$8.$matches($strIndex, $testString, $matchResult) >= 0)
+            break;
+    }
+    return var$7;
 },
 jur_LowSurrogateCharSet_findBack = ($this, $strIndex, $lastIndex, $testString, $matchResult) => {
     let $startStr, $testStr, var$7;
@@ -11367,16 +11899,16 @@ ju_ArrayList_forEach = ($this, $action) => {
 ju_ArrayList_toString = $this => {
     let $length, $buffer, $i;
     if (!$this.$size0)
-        return $rt_s(398);
+        return $rt_s(412);
     $length = $this.$size0 - 1 | 0;
     $buffer = jl_StringBuilder__init_1($this.$size0 * 16 | 0);
     $buffer.$append0(91);
     $i = 0;
     while ($i < $length) {
-        ($buffer.$append($this.$array0.data[$i] === $this ? $rt_s(356) : $this.$array0.data[$i])).$append1($rt_s(59));
+        ($buffer.$append($this.$array0.data[$i] === $this ? $rt_s(359) : $this.$array0.data[$i])).$append1($rt_s(62));
         $i = $i + 1 | 0;
     }
-    $buffer.$append($this.$array0.data[$length] === $this ? $rt_s(356) : $this.$array0.data[$length]);
+    $buffer.$append($this.$array0.data[$length] === $this ? $rt_s(359) : $this.$array0.data[$length]);
     return ($buffer.$append0(93)).$toString();
 },
 ju_ArrayList_hashCode = $this => {
@@ -11417,13 +11949,13 @@ ju_LinkedHashMapIterator$EntryIterator_next0 = $this => {
 };
 function jusi_FilteringStreamImpl$wrap$lambda$_1_0() {
     let a = this; jl_Object.call(a);
-    a.$_031 = null;
-    a.$_16 = null;
+    a.$_034 = null;
+    a.$_17 = null;
 }
 let jusi_FilteringStreamImpl$wrap$lambda$_1_0__init_ = (var$0, var$1, var$2) => {
     jl_Object__init_(var$0);
-    var$0.$_031 = var$1;
-    var$0.$_16 = var$2;
+    var$0.$_034 = var$1;
+    var$0.$_17 = var$2;
 },
 jusi_FilteringStreamImpl$wrap$lambda$_1_0__init_0 = (var_0, var_1) => {
     let var_2 = new jusi_FilteringStreamImpl$wrap$lambda$_1_0();
@@ -11431,7 +11963,7 @@ jusi_FilteringStreamImpl$wrap$lambda$_1_0__init_0 = (var_0, var_1) => {
     return var_2;
 },
 jusi_FilteringStreamImpl$wrap$lambda$_1_0_test = (var$0, var$1) => {
-    return jusi_FilteringStreamImpl_lambda$wrap$0(var$0.$_031, var$0.$_16, var$1);
+    return jusi_FilteringStreamImpl_lambda$wrap$0(var$0.$_034, var$0.$_17, var$1);
 };
 function jur_CompositeQuantifierSet() {
     jur_LeafQuantifierSet.call(this);
@@ -11880,10 +12412,10 @@ jur_SupplRangeSet_matches = ($this, $stringIndex, $testString, $matchResult) => 
 },
 jur_SupplRangeSet_getName = $this => {
     let var$1, var$2, var$3;
-    var$1 = !$this.$alt0 ? $rt_s(49) : $rt_s(50);
+    var$1 = !$this.$alt0 ? $rt_s(53) : $rt_s(54);
     var$2 = $this.$chars.$toString();
     var$3 = jl_StringBuilder__init_();
-    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(51)), var$1), var$2);
+    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(55)), var$1), var$2);
     return jl_StringBuilder_toString(var$3);
 },
 jur_SupplRangeSet_contains = ($this, $ch) => {
@@ -11992,7 +12524,7 @@ jl_String__init_3 = $this => {
     jl_Object__init_($this);
     $this.$nativeString = "";
 },
-jl_String__init_6 = () => {
+jl_String__init_5 = () => {
     let var_0 = new jl_String();
     jl_String__init_3(var_0);
     return var_0;
@@ -12017,7 +12549,7 @@ jl_String__init_2 = var_0 => {
     jl_String__init_4(var_1, var_0);
     return var_1;
 },
-jl_String__init_5 = (var$0, var$1, $offset, $count) => {
+jl_String__init_6 = (var$0, var$1, $offset, $count) => {
     let var$4;
     jl_String_$callClinit();
     var$4 = var$1.data;
@@ -12027,8 +12559,15 @@ jl_String__init_5 = (var$0, var$1, $offset, $count) => {
 },
 jl_String__init_0 = (var_0, var_1, var_2) => {
     let var_3 = new jl_String();
-    jl_String__init_5(var_3, var_0, var_1, var_2);
+    jl_String__init_6(var_3, var_0, var_1, var_2);
     return var_3;
+},
+jl_String_fromArray = $characters => {
+    let $s;
+    jl_String_$callClinit();
+    $s = jl_String__init_5();
+    $s.$nativeString = $rt_fullArrayToString($characters.data);
+    return $s;
 },
 jl_String_charAt = ($this, $index) => {
     if ($index >= 0 && $index < $this.$nativeString.length)
@@ -12040,6 +12579,16 @@ jl_String_length = $this => {
 },
 jl_String_isEmpty = $this => {
     return $this.$nativeString.length ? 0 : 1;
+},
+jl_String_isBlank = $this => {
+    let $i;
+    $i = 0;
+    while ($i < $this.$nativeString.length) {
+        if ($this.$nativeString.charCodeAt($i) != 32)
+            return 0;
+        $i = $i + 1 | 0;
+    }
+    return 1;
 },
 jl_String_compareTo = ($this, $anotherString) => {
     let $l, $i, $a, $b, var$6;
@@ -12102,7 +12651,7 @@ jl_String_regionMatches = ($this, $ignoreCase, $toffset, $other, $ooffset, $len)
     }
     return 0;
 },
-jl_String_indexOf1 = ($this, $ch, $fromIndex) => {
+jl_String_indexOf = ($this, $ch, $fromIndex) => {
     let $i, $bmpChar, $hi, $lo;
     $i = jl_Math_max(0, $fromIndex);
     if ($ch < 65536) {
@@ -12127,8 +12676,8 @@ jl_String_indexOf1 = ($this, $ch, $fromIndex) => {
     }
     return $i;
 },
-jl_String_indexOf0 = ($this, $ch) => {
-    return jl_String_indexOf1($this, $ch, 0);
+jl_String_indexOf1 = ($this, $ch) => {
+    return jl_String_indexOf($this, $ch, 0);
 },
 jl_String_lastIndexOf = ($this, $ch, $fromIndex) => {
     let $i, $bmpChar, $hi, $lo, var$7;
@@ -12158,7 +12707,7 @@ jl_String_lastIndexOf = ($this, $ch, $fromIndex) => {
     }
     return var$7;
 },
-jl_String_indexOf = ($this, $str, $fromIndex) => {
+jl_String_indexOf0 = ($this, $str, $fromIndex) => {
     let $i, $toIndex, $j;
     $i = jl_Math_max(0, $fromIndex);
     $toIndex = jl_String_length($this) - jl_String_length($str) | 0;
@@ -12213,6 +12762,75 @@ jl_String_substring0 = ($this, $beginIndex) => {
 jl_String_subSequence = ($this, $beginIndex, $endIndex) => {
     return jl_String_substring($this, $beginIndex, $endIndex);
 },
+jl_String_replace0 = ($this, $oldChar, $newChar) => {
+    let $buffer, $i, var$5;
+    if ($oldChar == $newChar)
+        return $this;
+    $buffer = $rt_createCharArray(jl_String_length($this));
+    $i = 0;
+    while ($i < jl_String_length($this)) {
+        var$5 = jl_String_charAt($this, $i) != $oldChar ? jl_String_charAt($this, $i) : $newChar;
+        $buffer.data[$i] = var$5;
+        $i = $i + 1 | 0;
+    }
+    return jl_String_fromArray($buffer);
+},
+jl_String_replace = ($this, $target, $replacement) => {
+    let $sb, $i, $sz, $j;
+    if ($target === $replacement)
+        return $this;
+    if ($target.$isEmpty()) {
+        $sb = jl_StringBuilder__init_();
+        $i = 0;
+        while ($i < jl_String_length($this)) {
+            $sb.$append($replacement);
+            $sb.$append0(jl_String_charAt($this, $i));
+            $i = $i + 1 | 0;
+        }
+        $sb.$append($replacement);
+        return $sb.$toString();
+    }
+    if ($target.$length() == 1 && $replacement.$length() == 1)
+        return jl_String_replace0($this, $target.$charAt(0), $replacement.$charAt(0));
+    $sb = jl_StringBuilder__init_();
+    $sz = jl_String_length($this) - $target.$length() | 0;
+    $i = 0;
+    while ($i <= $sz) {
+        $j = 0;
+        a: {
+            while (true) {
+                if ($j >= $target.$length()) {
+                    $sb.$append($replacement);
+                    $i = $i + ($target.$length() - 1 | 0) | 0;
+                    break a;
+                }
+                if (jl_String_charAt($this, $i + $j | 0) != $target.$charAt($j))
+                    break;
+                $j = $j + 1 | 0;
+            }
+            $sb.$append0(jl_String_charAt($this, $i));
+        }
+        $i = $i + 1 | 0;
+    }
+    $sb.$append(jl_String_substring0($this, $i));
+    return $sb.$toString();
+},
+jl_String_trim = $this => {
+    let $lower, $upper;
+    $lower = 0;
+    $upper = jl_String_length($this) - 1 | 0;
+    a: {
+        while ($lower <= $upper) {
+            if (jl_String_charAt($this, $lower) > 32)
+                break a;
+            $lower = $lower + 1 | 0;
+        }
+    }
+    while ($lower <= $upper && jl_String_charAt($this, $upper) <= 32) {
+        $upper = $upper + (-1) | 0;
+    }
+    return jl_String_substring($this, $lower, $upper + 1 | 0);
+},
 jl_String_toString = $this => {
     return $this;
 },
@@ -12231,13 +12849,13 @@ jl_String_toCharArray = $this => {
 },
 jl_String_valueOf = $obj => {
     jl_String_$callClinit();
-    return $obj === null ? $rt_s(60) : $obj.$toString();
+    return $obj === null ? $rt_s(63) : $obj.$toString();
 },
-jl_String_valueOf0 = ($data, $offset, $count) => {
+jl_String_valueOf1 = ($data, $offset, $count) => {
     jl_String_$callClinit();
     return jl_String__init_0($data, $offset, $count);
 },
-jl_String_valueOf1 = $i => {
+jl_String_valueOf0 = $i => {
     jl_String_$callClinit();
     return ((jl_StringBuilder__init_()).$append2($i)).$toString();
 },
@@ -12284,12 +12902,15 @@ jl_String_toLowerCase = $this => {
 jl_String_matches = ($this, $regex) => {
     return jur_Pattern_matches($regex, jl_String_toString($this));
 },
+jl_String_split = ($this, $regex) => {
+    return jur_Pattern_split(jur_Pattern_compile($regex), jl_String_toString($this));
+},
 jl_String_compareTo0 = ($this, var$1) => {
     return jl_String_compareTo($this, var$1);
 },
 jl_String__clinit_ = () => {
     jl_String_EMPTY_CHARS = $rt_createCharArray(0);
-    jl_String_EMPTY = jl_String__init_6();
+    jl_String_EMPTY = jl_String__init_5();
     jl_String_CASE_INSENSITIVE_ORDER = jl_String$_clinit_$lambda$_118_0__init_0();
 };
 function oajqs_SampledExpectation$TermEstimate() {
@@ -12314,7 +12935,7 @@ oajqs_SampledExpectation$TermEstimate__init_ = (var_0, var_1, var_2, var_3, var_
     return var_5;
 },
 oajqs_SampledExpectation$TermEstimate_toString = $this => {
-    return ((((((((((((jl_StringBuilder__init_0($rt_s(399))).$append1($rt_s(55))).$append4($this.$coeff0)).$append1($rt_s(56))).$append($this.$pauli0)).$append1($rt_s(400))).$append2($this.$shots0)).$append1($rt_s(401))).$append4($this.$mean0)).$append1($rt_s(402))).$append4($this.$variance0)).$append1($rt_s(57))).$toString();
+    return ((((((((((((jl_StringBuilder__init_0($rt_s(413))).$append1($rt_s(59))).$append4($this.$coeff0)).$append1($rt_s(60))).$append($this.$pauli0)).$append1($rt_s(414))).$append2($this.$shots0)).$append1($rt_s(415))).$append4($this.$mean0)).$append1($rt_s(416))).$append4($this.$variance0)).$append1($rt_s(52))).$toString();
 },
 oajqs_SampledExpectation$TermEstimate_hashCode = $this => {
     return ((((((((31 + jl_Double_hashCode($this.$coeff0) | 0) * 31 | 0) + ju_Objects_hashCode($this.$pauli0) | 0) * 31 | 0) + jl_Integer_hashCode($this.$shots0) | 0) * 31 | 0) + jl_Double_hashCode($this.$mean0) | 0) * 31 | 0) + jl_Double_hashCode($this.$variance0) | 0;
@@ -12705,7 +13326,7 @@ jur_FSet$PossessiveFSet_matches = ($this, $stringIndex, $testString, $matchResul
     return $stringIndex;
 },
 jur_FSet$PossessiveFSet_getName = $this => {
-    return $rt_s(403);
+    return $rt_s(417);
 },
 jur_FSet$PossessiveFSet_hasConsumed = ($this, $mr) => {
     return 0;
@@ -12815,7 +13436,7 @@ jnci_UTF8Charset_$callClinit = () => {
 },
 jnci_UTF8Charset__init_0 = $this => {
     jnci_UTF8Charset_$callClinit();
-    jnc_Charset__init_($this, $rt_s(404), $rt_createArray(jl_String, 0));
+    jnc_Charset__init_($this, $rt_s(418), $rt_createArray(jl_String, 0));
 },
 jnci_UTF8Charset__init_ = () => {
     let var_0 = new jnci_UTF8Charset();
@@ -12880,7 +13501,7 @@ jur_MultiLineEOLSet_hasConsumed = ($this, $matchResult) => {
     return $res;
 },
 jur_MultiLineEOLSet_getName = $this => {
-    return $rt_s(405);
+    return $rt_s(419);
 },
 ju_Queue = $rt_classWithoutFields(0),
 ju_Deque = $rt_classWithoutFields(0);
@@ -13126,6 +13747,37 @@ jur_AbstractCharClass$LazyJavaSpaceChar$1__init_0 = var_0 => {
 },
 jur_AbstractCharClass$LazyJavaSpaceChar$1_contains = ($this, $ch) => {
     return jl_Character_isSpaceChar($ch);
+},
+oajvl_CircuitLinter$Severity = $rt_classWithoutFields(jl_Enum),
+oajvl_CircuitLinter$Severity_INFO = null,
+oajvl_CircuitLinter$Severity_WARNING = null,
+oajvl_CircuitLinter$Severity_$VALUES = null,
+oajvl_CircuitLinter$Severity_$callClinit = () => {
+    oajvl_CircuitLinter$Severity_$callClinit = $rt_eraseClinit(oajvl_CircuitLinter$Severity);
+    oajvl_CircuitLinter$Severity__clinit_();
+},
+oajvl_CircuitLinter$Severity__init_0 = ($this, var$1, var$2) => {
+    oajvl_CircuitLinter$Severity_$callClinit();
+    jl_Enum__init_($this, var$1, var$2);
+},
+oajvl_CircuitLinter$Severity__init_ = (var_0, var_1) => {
+    let var_2 = new oajvl_CircuitLinter$Severity();
+    oajvl_CircuitLinter$Severity__init_0(var_2, var_0, var_1);
+    return var_2;
+},
+oajvl_CircuitLinter$Severity_$values = () => {
+    let var$1, var$2;
+    oajvl_CircuitLinter$Severity_$callClinit();
+    var$1 = $rt_createArray(oajvl_CircuitLinter$Severity, 2);
+    var$2 = var$1.data;
+    var$2[0] = oajvl_CircuitLinter$Severity_INFO;
+    var$2[1] = oajvl_CircuitLinter$Severity_WARNING;
+    return var$1;
+},
+oajvl_CircuitLinter$Severity__clinit_ = () => {
+    oajvl_CircuitLinter$Severity_INFO = oajvl_CircuitLinter$Severity__init_($rt_s(420), 0);
+    oajvl_CircuitLinter$Severity_WARNING = oajvl_CircuitLinter$Severity__init_($rt_s(421), 1);
+    oajvl_CircuitLinter$Severity_$VALUES = oajvl_CircuitLinter$Severity_$values();
 };
 function jl_Object$Monitor() {
     let a = this; jl_Object.call(a);
@@ -13271,7 +13923,7 @@ jur_PatternSyntaxException__init_ = (var_0, var_1, var_2) => {
 },
 jur_PatternSyntaxException_getMessage = $this => {
     let $filler, $temp, var$3, var$4, var$5, var$6;
-    $filler = $rt_s(69);
+    $filler = $rt_s(72);
     if ($this.$index0 >= 1) {
         $temp = $rt_createCharArray($this.$index0);
         ju_Arrays_fill5($temp, 32);
@@ -13282,10 +13934,10 @@ jur_PatternSyntaxException_getMessage = $this => {
         var$4 = $this.$index0;
         var$5 = $this.$pattern1;
         var$6 = jl_StringBuilder__init_();
-        jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append1(var$6, var$4), $rt_s(59)), var$5), $rt_s(59)), $filler);
+        jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append1(var$6, var$4), $rt_s(62)), var$5), $rt_s(62)), $filler);
         var$5 = jl_StringBuilder_toString(var$6);
     } else
-        var$5 = $rt_s(69);
+        var$5 = $rt_s(72);
     var$6 = jl_StringBuilder__init_();
     jl_StringBuilder_append(jl_StringBuilder_append(var$6, var$3), var$5);
     return jl_StringBuilder_toString(var$6);
@@ -13332,7 +13984,7 @@ oaju_JsonParser_asObject = ($o, $what) => {
         $m = $o;
         return $m;
     }
-    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($what)).$append1($rt_s(406))).$toString()));
+    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($what)).$append1($rt_s(422))).$toString()));
 },
 oaju_JsonParser_asArray = ($o, $what) => {
     let $l;
@@ -13340,7 +13992,7 @@ oaju_JsonParser_asArray = ($o, $what) => {
         $l = $o;
         return $l;
     }
-    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($what)).$append1($rt_s(407))).$toString()));
+    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($what)).$append1($rt_s(423))).$toString()));
 },
 oaju_JsonParser_asString = ($o, $what) => {
     let $s;
@@ -13348,23 +14000,23 @@ oaju_JsonParser_asString = ($o, $what) => {
         $s = $o;
         return $s;
     }
-    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($what)).$append1($rt_s(408))).$toString()));
+    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($what)).$append1($rt_s(424))).$toString()));
 },
 oaju_JsonParser_asDouble = ($o, $what) => {
     let $d;
     if (!($o instanceof jl_Double))
-        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($what)).$append1($rt_s(409))).$toString()));
+        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($what)).$append1($rt_s(425))).$toString()));
     $d = $o;
     if (isFinite($d.$doubleValue()) ? 1 : 0)
         return $d.$doubleValue();
-    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($what)).$append1($rt_s(410))).$toString()));
+    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($what)).$append1($rt_s(426))).$toString()));
 },
 oaju_JsonParser_asInt = ($o, $what) => {
     let $d;
     $d = oaju_JsonParser_asDouble($o, $what);
     if ($d === jl_Math_rint($d) && !(jl_Math_abs1($d) > 2.147483647E9))
         return $d | 0;
-    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($what)).$append1($rt_s(411))).$toString()));
+    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($what)).$append1($rt_s(427))).$toString()));
 },
 oaju_JsonParser_parse0 = $this => {
     let $v;
@@ -13372,13 +14024,13 @@ oaju_JsonParser_parse0 = $this => {
     oaju_JsonParser_skipWs($this);
     if ($this.$pos == jl_String_length($this.$s))
         return $v;
-    $rt_throw(oaju_JsonParser_err($this, $rt_s(412)));
+    $rt_throw(oaju_JsonParser_err($this, $rt_s(428)));
 },
 oaju_JsonParser_parseValue = $this => {
     let $c, var$2;
     oaju_JsonParser_skipWs($this);
     if ($this.$pos >= jl_String_length($this.$s))
-        $rt_throw(oaju_JsonParser_err($this, $rt_s(413)));
+        $rt_throw(oaju_JsonParser_err($this, $rt_s(429)));
     a: {
         $c = jl_String_charAt($this.$s, $this.$pos);
         switch ($c) {
@@ -13410,7 +14062,7 @@ oaju_JsonParser_parseObject = $this => {
     var$1 = $this.$depth + 1 | 0;
     $this.$depth = var$1;
     if (var$1 > $this.$maxDepth)
-        $rt_throw(oaju_JsonParser_err($this, $rt_s(414)));
+        $rt_throw(oaju_JsonParser_err($this, $rt_s(430)));
     a: {
         b: {
             c: {
@@ -13445,7 +14097,7 @@ oaju_JsonParser_parseObject = $this => {
                         if ($c != 44)
                             break;
                     }
-                    $rt_throw(oaju_JsonParser_err($this, $rt_s(415)));
+                    $rt_throw(oaju_JsonParser_err($this, $rt_s(431)));
                 } catch ($$e) {
                     $$je = $rt_wrapException($$e);
                     var$3 = $$je;
@@ -13473,7 +14125,7 @@ oaju_JsonParser_parseArray = $this => {
     var$1 = $this.$depth + 1 | 0;
     $this.$depth = var$1;
     if (var$1 > $this.$maxDepth)
-        $rt_throw(oaju_JsonParser_err($this, $rt_s(414)));
+        $rt_throw(oaju_JsonParser_err($this, $rt_s(430)));
     a: {
         b: {
             c: {
@@ -13504,7 +14156,7 @@ oaju_JsonParser_parseArray = $this => {
                         if ($c != 44)
                             break;
                     }
-                    $rt_throw(oaju_JsonParser_err($this, $rt_s(416)));
+                    $rt_throw(oaju_JsonParser_err($this, $rt_s(432)));
                 } catch ($$e) {
                     $$je = $rt_wrapException($$e);
                     var$3 = $$je;
@@ -13534,7 +14186,7 @@ oaju_JsonParser_parseString = $this => {
     a: {
         while (true) {
             if ($this.$pos >= jl_String_length($this.$s))
-                $rt_throw(oaju_JsonParser_err($this, $rt_s(417)));
+                $rt_throw(oaju_JsonParser_err($this, $rt_s(433)));
             var$2 = $this.$s;
             var$3 = $this.$pos;
             $this.$pos = var$3 + 1 | 0;
@@ -13543,10 +14195,10 @@ oaju_JsonParser_parseString = $this => {
                 break;
             if ($c != 92) {
                 if ($c < 32)
-                    $rt_throw(oaju_JsonParser_err($this, $rt_s(418)));
+                    $rt_throw(oaju_JsonParser_err($this, $rt_s(434)));
                 if (!jl_Character_isHighSurrogate($c)) {
                     if (jl_Character_isLowSurrogate($c))
-                        $rt_throw(oaju_JsonParser_err($this, $rt_s(419)));
+                        $rt_throw(oaju_JsonParser_err($this, $rt_s(435)));
                     $sb.$append0($c);
                 } else {
                     if ($this.$pos >= jl_String_length($this.$s))
@@ -13561,7 +14213,7 @@ oaju_JsonParser_parseString = $this => {
                 }
             } else {
                 if ($this.$pos >= jl_String_length($this.$s))
-                    $rt_throw(oaju_JsonParser_err($this, $rt_s(420)));
+                    $rt_throw(oaju_JsonParser_err($this, $rt_s(436)));
                 b: {
                     var$2 = $this.$s;
                     var$6 = $this.$pos;
@@ -13595,7 +14247,7 @@ oaju_JsonParser_parseString = $this => {
                         case 117:
                             break;
                         default:
-                            $rt_throw(oaju_JsonParser_err($this, ((((jl_StringBuilder__init_()).$append1($rt_s(421))).$append0($e)).$append1($rt_s(422))).$toString()));
+                            $rt_throw(oaju_JsonParser_err($this, ((((jl_StringBuilder__init_()).$append1($rt_s(437))).$append0($e)).$append1($rt_s(438))).$toString()));
                     }
                     oaju_JsonParser_appendUnicodeEscape($this, $sb);
                 }
@@ -13603,7 +14255,7 @@ oaju_JsonParser_parseString = $this => {
         }
         return $sb.$toString();
     }
-    $rt_throw(oaju_JsonParser_err($this, $rt_s(423)));
+    $rt_throw(oaju_JsonParser_err($this, $rt_s(439)));
 },
 oaju_JsonParser_appendUnicodeEscape = ($this, $sb) => {
     let $ch, $low;
@@ -13614,22 +14266,22 @@ oaju_JsonParser_appendUnicodeEscape = ($this, $sb) => {
                 $sb.$append0($ch);
                 break a;
             }
-            $rt_throw(oaju_JsonParser_err($this, $rt_s(424)));
+            $rt_throw(oaju_JsonParser_err($this, $rt_s(440)));
         }
         if (($this.$pos + 2 | 0) <= jl_String_length($this.$s) && jl_String_charAt($this.$s, $this.$pos) == 92 && jl_String_charAt($this.$s, $this.$pos + 1 | 0) == 117) {
             $this.$pos = $this.$pos + 2 | 0;
             $low = oaju_JsonParser_readHexCodeUnit($this) & 65535;
             if (!jl_Character_isLowSurrogate($low))
-                $rt_throw(oaju_JsonParser_err($this, $rt_s(425)));
+                $rt_throw(oaju_JsonParser_err($this, $rt_s(441)));
             ($sb.$append0($ch)).$append0($low);
         } else
-            $rt_throw(oaju_JsonParser_err($this, $rt_s(426)));
+            $rt_throw(oaju_JsonParser_err($this, $rt_s(442)));
     }
 },
 oaju_JsonParser_readHexCodeUnit = $this => {
     let $value, $i, $digit;
     if (($this.$pos + 4 | 0) > jl_String_length($this.$s))
-        $rt_throw(oaju_JsonParser_err($this, $rt_s(427)));
+        $rt_throw(oaju_JsonParser_err($this, $rt_s(443)));
     $value = 0;
     $i = 0;
     while (true) {
@@ -13643,7 +14295,7 @@ oaju_JsonParser_readHexCodeUnit = $this => {
         $value = $value << 4 | $digit;
         $i = $i + 1 | 0;
     }
-    $rt_throw(oaju_JsonParser_err($this, $rt_s(428)));
+    $rt_throw(oaju_JsonParser_err($this, $rt_s(444)));
 },
 oaju_JsonParser_asciiHexDigit = $c => {
     if ($c >= 48 && $c <= 57)
@@ -13680,7 +14332,7 @@ oaju_JsonParser_parseNumber = $this => {
         }
         return var$2;
     }
-    $rt_throw(oaju_JsonParser_err($this, $rt_s(429)));
+    $rt_throw(oaju_JsonParser_err($this, $rt_s(445)));
 },
 oaju_JsonParser_consume = ($this, $c) => {
     if ($this.$pos < jl_String_length($this.$s) && jl_String_charAt($this.$s, $this.$pos) == $c) {
@@ -13697,28 +14349,28 @@ oaju_JsonParser_requireDigits = $this => {
     }
     if ($this.$pos != $start)
         return;
-    $rt_throw(oaju_JsonParser_err($this, $rt_s(430)));
+    $rt_throw(oaju_JsonParser_err($this, $rt_s(446)));
 },
 oaju_JsonParser_parseBool = $this => {
-    if (jl_String_startsWith($this.$s, $rt_s(62), $this.$pos)) {
+    if (jl_String_startsWith($this.$s, $rt_s(65), $this.$pos)) {
         $this.$pos = $this.$pos + 4 | 0;
         jl_Boolean_$callClinit();
         return jl_Boolean_TRUE;
     }
-    if (!jl_String_startsWith($this.$s, $rt_s(61), $this.$pos))
-        $rt_throw(oaju_JsonParser_err($this, $rt_s(431)));
+    if (!jl_String_startsWith($this.$s, $rt_s(64), $this.$pos))
+        $rt_throw(oaju_JsonParser_err($this, $rt_s(447)));
     $this.$pos = $this.$pos + 5 | 0;
     jl_Boolean_$callClinit();
     return jl_Boolean_FALSE;
 },
 oaju_JsonParser_parseNull = $this => {
-    if (!jl_String_startsWith($this.$s, $rt_s(60), $this.$pos))
-        $rt_throw(oaju_JsonParser_err($this, $rt_s(431)));
+    if (!jl_String_startsWith($this.$s, $rt_s(63), $this.$pos))
+        $rt_throw(oaju_JsonParser_err($this, $rt_s(447)));
     $this.$pos = $this.$pos + 4 | 0;
     return null;
 },
 oaju_JsonParser_skipWs = $this => {
-    while ($this.$pos < jl_String_length($this.$s) && jl_String_indexOf0($rt_s(432), jl_String_charAt($this.$s, $this.$pos)) >= 0) {
+    while ($this.$pos < jl_String_length($this.$s) && jl_String_indexOf1($rt_s(448), jl_String_charAt($this.$s, $this.$pos)) >= 0) {
         $this.$pos = $this.$pos + 1 | 0;
     }
 },
@@ -13729,7 +14381,7 @@ oaju_JsonParser_peek = $this => {
 oaju_JsonParser_nextChar = $this => {
     let var$1, var$2;
     if ($this.$pos >= jl_String_length($this.$s))
-        $rt_throw(oaju_JsonParser_err($this, $rt_s(413)));
+        $rt_throw(oaju_JsonParser_err($this, $rt_s(429)));
     var$1 = $this.$s;
     var$2 = $this.$pos;
     $this.$pos = var$2 + 1 | 0;
@@ -13741,10 +14393,10 @@ oaju_JsonParser_expect = ($this, $c) => {
         $this.$pos = $this.$pos + 1 | 0;
         return;
     }
-    $rt_throw(oaju_JsonParser_err($this, ((((jl_StringBuilder__init_()).$append1($rt_s(433))).$append0($c)).$append1($rt_s(422))).$toString()));
+    $rt_throw(oaju_JsonParser_err($this, ((((jl_StringBuilder__init_()).$append1($rt_s(449))).$append0($c)).$append1($rt_s(438))).$toString()));
 },
 oaju_JsonParser_err = ($this, $msg) => {
-    return jl_IllegalArgumentException__init_((((((jl_StringBuilder__init_()).$append1($rt_s(434))).$append2($this.$pos)).$append1($rt_s(26))).$append1($msg)).$toString());
+    return jl_IllegalArgumentException__init_((((((jl_StringBuilder__init_()).$append1($rt_s(450))).$append2($this.$pos)).$append1($rt_s(26))).$append1($msg)).$toString());
 };
 function jur_Pattern() {
     let a = this; jl_Object.call(a);
@@ -13755,20 +14407,59 @@ function jur_Pattern() {
     a.$globalGroupIndex = 0;
     a.$compCount0 = 0;
     a.$consCount0 = 0;
-    a.$start2 = null;
+    a.$start3 = null;
     a.$namedGroups0 = null;
 }
 let jur_Pattern_matcher = ($this, $input) => {
     return jur_Matcher__init_0($this, $input);
+},
+jur_Pattern_split0 = ($this, $inputSeq, $limit) => {
+    let $res, $mat, $index, $curPos, var$7, var$8;
+    $res = ju_ArrayList__init_();
+    $mat = jur_Pattern_matcher($this, $inputSeq);
+    $index = 0;
+    $curPos = 0;
+    if (!$inputSeq.$length()) {
+        var$7 = $rt_createArray(jl_String, 1);
+        var$7.data[0] = $rt_s(72);
+        return var$7;
+    }
+    while (jur_Matcher_find0($mat)) {
+        var$8 = $index + 1 | 0;
+        if (var$8 >= $limit && $limit > 0)
+            break;
+        $res.$add(($inputSeq.$subSequence($curPos, jur_Matcher_start($mat))).$toString());
+        $curPos = jur_Matcher_end($mat);
+        $index = var$8;
+    }
+    a: {
+        $res.$add(($inputSeq.$subSequence($curPos, $inputSeq.$length())).$toString());
+        var$8 = $index + 1 | 0;
+        if (!$limit)
+            while (true) {
+                var$8 = var$8 + (-1) | 0;
+                if (var$8 < 0)
+                    break;
+                if (jl_String_length(jl_String_toString($res.$get0(var$8))))
+                    break a;
+                $res.$remove0(var$8);
+            }
+    }
+    if (var$8 < 0)
+        var$8 = 0;
+    return $res.$toArray($rt_createArray(jl_String, var$8));
+},
+jur_Pattern_split = ($this, $input) => {
+    return jur_Pattern_split0($this, $input, 0);
 },
 jur_Pattern_pattern = $this => {
     return $this.$lexemes.$toString();
 },
 jur_Pattern_compile0 = ($pattern, $flags) => {
     if ($pattern === null)
-        $rt_throw(jl_NullPointerException__init_0($rt_s(435)));
+        $rt_throw(jl_NullPointerException__init_0($rt_s(451)));
     if ($flags && ($flags | 255) != 255)
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(69)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(72)));
     jur_AbstractSet_$callClinit();
     jur_AbstractSet_counter = 1;
     return jur_Pattern_compileImpl(jur_Pattern__init_0(), $pattern, $flags);
@@ -13776,12 +14467,12 @@ jur_Pattern_compile0 = ($pattern, $flags) => {
 jur_Pattern_compileImpl = ($this, $pattern, $flags) => {
     $this.$lexemes = jur_Lexer__init_0($pattern, $flags);
     $this.$flags = $flags;
-    $this.$start2 = jur_Pattern_processExpression($this, (-1), $this.$flags, null);
+    $this.$start3 = jur_Pattern_processExpression($this, (-1), $this.$flags, null);
     if ($this.$lexemes.$isEmpty()) {
         jur_Pattern_finalizeCompile($this);
         return $this;
     }
-    $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$lexemes.$toString(), $this.$lexemes.$getIndex()));
+    $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$lexemes.$toString(), $this.$lexemes.$getIndex()));
 },
 jur_Pattern_processAlternations = ($this, $last) => {
     let $auxRange, var$3, $rangeSet;
@@ -14031,7 +14722,7 @@ jur_Pattern_processSubExpression = ($this, $last) => {
         $cur = jur_Pattern_processQuantifier($this, $last, $term);
     } else {
         if ($last instanceof jur_FinalSet)
-            $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$lexemes.$toString(), $this.$lexemes.$getIndex()));
+            $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$lexemes.$toString(), $this.$lexemes.$getIndex()));
         $cur = jur_EmptySet__init_($last);
     }
     a: {
@@ -14185,7 +14876,7 @@ jur_Pattern_processTerminal = ($this, $last) => {
                         $newFlags = $this.$flags;
                     $term = jur_Pattern_processExpression($this, $ch, $newFlags, $last);
                     if ($this.$lexemes.$peek0() != (-536870871))
-                        $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$lexemes.$toString(), $this.$lexemes.$getIndex()));
+                        $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$lexemes.$toString(), $this.$lexemes.$getIndex()));
                     $this.$lexemes.$next3();
                 }
             } else {
@@ -14261,7 +14952,7 @@ jur_Pattern_processTerminal = ($this, $last) => {
                                 }
                                 $term = jur_Pattern_processRange($this, $negative, $last);
                                 if ($this.$lexemes.$peek0() != (-536870819))
-                                    $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$lexemes.$toString(), $this.$lexemes.$getIndex()));
+                                    $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$lexemes.$toString(), $this.$lexemes.$getIndex()));
                                 $this.$lexemes.$setMode(1);
                                 $this.$lexemes.$next3();
                                 break a;
@@ -14296,7 +14987,7 @@ jur_Pattern_processTerminal = ($this, $last) => {
                     }
                     $number = ($ch & 2147483647) - 48 | 0;
                     if ($this.$globalGroupIndex < $number)
-                        $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$lexemes.$toString(), $this.$lexemes.$getIndex()));
+                        $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$lexemes.$toString(), $this.$lexemes.$getIndex()));
                     $this.$lexemes.$next3();
                     $this.$consCount0 = $this.$consCount0 + 1 | 0;
                     $term = !jur_Pattern_hasFlag($this, 2) ? jur_BackReferenceSet__init_0($number, $this.$consCount0) : jur_Pattern_hasFlag($this, 64) ? jur_UCIBackReferenceSet__init_0($number, $this.$consCount0) : jur_CIBackReferenceSet__init_0($number, $this.$consCount0);
@@ -14318,7 +15009,7 @@ jur_Pattern_processTerminal = ($this, $last) => {
                         $rt_throw(var$9);
                     }
                     if ($last instanceof jur_FinalSet)
-                        $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$lexemes.$toString(), $this.$lexemes.$getIndex()));
+                        $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$lexemes.$toString(), $this.$lexemes.$getIndex()));
                     $term = jur_EmptySet__init_($last);
                 }
             }
@@ -14476,16 +15167,16 @@ jur_Pattern_processRangeExpression = ($this, $alt) => {
                 }
                 $firstInClass = 0;
             }
-            $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), jur_Pattern_pattern($this), $this.$lexemes.$getIndex()));
+            $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), jur_Pattern_pattern($this), $this.$lexemes.$getIndex()));
         }
-        $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), jur_Pattern_pattern($this), $this.$lexemes.$getIndex()));
+        $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), jur_Pattern_pattern($this), $this.$lexemes.$getIndex()));
     }
     if (!$notClosed) {
         if ($buffer >= 0)
             $res.$add0($buffer);
         return $res;
     }
-    $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), jur_Pattern_pattern($this), $this.$lexemes.$getIndex() - 1 | 0));
+    $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), jur_Pattern_pattern($this), $this.$lexemes.$getIndex() - 1 | 0));
 },
 jur_Pattern_processCharSet = ($this, $ch) => {
     let $isSupplCodePoint;
@@ -14546,7 +15237,7 @@ jur_Pattern_compile = $pattern => {
 },
 jur_Pattern_finalizeCompile = $this => {
     if ($this.$needsBackRefReplacement)
-        $this.$start2.$processSecondPass();
+        $this.$start3.$processSecondPass();
     if ($this.$namedGroups0 === null)
         $this.$namedGroups0 = ju_Collections_emptyMap();
     else
@@ -14557,17 +15248,17 @@ jur_Pattern_matches = ($regex, $input) => {
 },
 jur_Pattern_quote = $s => {
     let $sb, $apos, var$4, $apos_0;
-    $sb = (jl_StringBuilder__init_()).$append1($rt_s(436));
+    $sb = (jl_StringBuilder__init_()).$append1($rt_s(452));
     $apos = 0;
     while (true) {
-        var$4 = jl_String_indexOf($s, $rt_s(437), $apos);
+        var$4 = jl_String_indexOf0($s, $rt_s(453), $apos);
         if (var$4 < 0)
             break;
         $apos_0 = var$4 + 2 | 0;
-        ($sb.$append1(jl_String_substring($s, $apos, $apos_0))).$append1($rt_s(438));
+        ($sb.$append1(jl_String_substring($s, $apos, $apos_0))).$append1($rt_s(454));
         $apos = $apos_0;
     }
-    return (($sb.$append1(jl_String_substring0($s, $apos))).$append1($rt_s(437))).$toString();
+    return (($sb.$append1(jl_String_substring0($s, $apos))).$append1($rt_s(453))).$toString();
 },
 jur_Pattern_namedGroups = $this => {
     return $this.$namedGroups0;
@@ -14627,7 +15318,7 @@ jur_PosAltGroupQuantifierSet_setNext = ($this, $next) => {
 juf_IntConsumer = $rt_classWithoutFields(0);
 function oajq_QuantumRegister$applyOperator$lambda$_18_0() {
     let a = this; jl_Object.call(a);
-    a.$_014 = null;
+    a.$_015 = null;
     a.$_14 = 0;
     a.$_20 = null;
     a.$_30 = null;
@@ -14636,7 +15327,7 @@ function oajq_QuantumRegister$applyOperator$lambda$_18_0() {
 }
 let oajq_QuantumRegister$applyOperator$lambda$_18_0__init_ = (var$0, var$1, var$2, var$3, var$4, var$5, var$6) => {
     jl_Object__init_(var$0);
-    var$0.$_014 = var$1;
+    var$0.$_015 = var$1;
     var$0.$_14 = var$2;
     var$0.$_20 = var$3;
     var$0.$_30 = var$4;
@@ -14649,7 +15340,7 @@ oajq_QuantumRegister$applyOperator$lambda$_18_0__init_0 = (var_0, var_1, var_2, 
     return var_6;
 },
 oajq_QuantumRegister$applyOperator$lambda$_18_0_accept = (var$0, var$1) => {
-    oajq_QuantumRegister_lambda$applyOperator$0(var$0.$_014, var$0.$_14, var$0.$_20, var$0.$_30, var$0.$_4, var$0.$_5, var$1);
+    oajq_QuantumRegister_lambda$applyOperator$0(var$0.$_015, var$0.$_14, var$0.$_20, var$0.$_30, var$0.$_4, var$0.$_5, var$1);
 };
 function ju_Collections$14() {
     ju_AbstractSet.call(this);
@@ -14719,11 +15410,11 @@ ju_Collections$13_entrySet = $this => {
 };
 function oajvo_OpenQasmGates$forKind$lambda$_2_1() {
     jl_Object.call(this);
-    this.$_011 = null;
+    this.$_012 = null;
 }
 let oajvo_OpenQasmGates$forKind$lambda$_2_1__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_011 = var$1;
+    var$0.$_012 = var$1;
 },
 oajvo_OpenQasmGates$forKind$lambda$_2_1__init_0 = var_0 => {
     let var_1 = new oajvo_OpenQasmGates$forKind$lambda$_2_1();
@@ -14734,15 +15425,15 @@ oajvo_OpenQasmGates$forKind$lambda$_2_1_get0 = var$0 => {
     return oajvo_OpenQasmGates$forKind$lambda$_2_1_get(var$0);
 },
 oajvo_OpenQasmGates$forKind$lambda$_2_1_get = var$0 => {
-    return oajvo_OpenQasmGates_lambda$forKind$1(var$0.$_011);
+    return oajvo_OpenQasmGates_lambda$forKind$1(var$0.$_012);
 };
 function oajvo_OpenQasmGates$forKind$lambda$_2_0() {
     jl_Object.call(this);
-    this.$_033 = null;
+    this.$_035 = null;
 }
 let oajvo_OpenQasmGates$forKind$lambda$_2_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_033 = var$1;
+    var$0.$_035 = var$1;
 },
 oajvo_OpenQasmGates$forKind$lambda$_2_0__init_0 = var_0 => {
     let var_1 = new oajvo_OpenQasmGates$forKind$lambda$_2_0();
@@ -14753,7 +15444,7 @@ oajvo_OpenQasmGates$forKind$lambda$_2_0_test0 = (var$0, var$1) => {
     return oajvo_OpenQasmGates$forKind$lambda$_2_0_test(var$0, var$1);
 },
 oajvo_OpenQasmGates$forKind$lambda$_2_0_test = (var$0, var$1) => {
-    return oajvo_OpenQasmGates_lambda$forKind$0(var$0.$_033, var$1);
+    return oajvo_OpenQasmGates_lambda$forKind$0(var$0.$_035, var$1);
 };
 function ju_TemplateCollections$ImmutableArrayList() {
     ju_TemplateCollections$AbstractImmutableList.call(this);
@@ -14847,11 +15538,11 @@ jur_AbstractCharClass$LazyJavaLetterOrDigit_computeValue = $this => {
 };
 function oajvo_OpenQasmGates$named$lambda$_1_0() {
     jl_Object.call(this);
-    this.$_017 = null;
+    this.$_018 = null;
 }
 let oajvo_OpenQasmGates$named$lambda$_1_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_017 = var$1;
+    var$0.$_018 = var$1;
 },
 oajvo_OpenQasmGates$named$lambda$_1_0__init_0 = var_0 => {
     let var_1 = new oajvo_OpenQasmGates$named$lambda$_1_0();
@@ -14862,17 +15553,17 @@ oajvo_OpenQasmGates$named$lambda$_1_0_test0 = (var$0, var$1) => {
     return oajvo_OpenQasmGates$named$lambda$_1_0_test(var$0, var$1);
 },
 oajvo_OpenQasmGates$named$lambda$_1_0_test = (var$0, var$1) => {
-    return oajvo_OpenQasmGates_lambda$named$0(var$0.$_017, var$1);
+    return oajvo_OpenQasmGates_lambda$named$0(var$0.$_018, var$1);
 };
 function otciu_UnicodeHelper$Range() {
     let a = this; jl_Object.call(a);
-    a.$start1 = 0;
+    a.$start2 = 0;
     a.$end4 = 0;
     a.$data6 = null;
 }
 let otciu_UnicodeHelper$Range__init_ = ($this, $start, $end, $data) => {
     jl_Object__init_($this);
-    $this.$start1 = $start;
+    $this.$start2 = $start;
     $this.$end4 = $end;
     $this.$data6 = $data;
 },
@@ -14885,7 +15576,7 @@ function oajvs_CircuitSpec() {
     let a = this; jl_Record.call(a);
     a.$version0 = 0;
     a.$numQubits1 = 0;
-    a.$levels0 = null;
+    a.$levels1 = null;
     a.$numClassicalBits0 = 0;
 }
 let oajvs_CircuitSpec__init_ = ($this, $version, $numQubits, $levels, $numClassicalBits) => {
@@ -14904,7 +15595,7 @@ let oajvs_CircuitSpec__init_ = ($this, $version, $numQubits, $levels, $numClassi
                     if (!var$7.$anyMatch(var$8))
                         break a;
                 }
-                $rt_throw(jl_IllegalArgumentException__init_($rt_s(439)));
+                $rt_throw(jl_IllegalArgumentException__init_($rt_s(455)));
             }
         }
         var$8 = var$6.$iterator();
@@ -14912,7 +15603,7 @@ let oajvs_CircuitSpec__init_ = ($this, $version, $numQubits, $levels, $numClassi
             if (!var$8.$hasNext()) {
                 $this.$version0 = $version;
                 $this.$numQubits1 = $numQubits;
-                $this.$levels0 = var$6;
+                $this.$levels1 = var$6;
                 $this.$numClassicalBits0 = $numClassicalBits;
                 return;
             }
@@ -14925,16 +15616,16 @@ let oajvs_CircuitSpec__init_ = ($this, $version, $numQubits, $levels, $numClassi
                 if (oajvs_GateSpec_classicalTarget($gate) !== null) {
                     $bit = (oajvs_GateSpec_classicalTarget($gate)).$intValue();
                     if ($bit >= $numClassicalBits)
-                        $rt_throw(jl_IllegalArgumentException__init_($rt_s(440)));
+                        $rt_throw(jl_IllegalArgumentException__init_($rt_s(456)));
                     var$15 = $writes.data;
                     if (var$15[$bit])
-                        $rt_throw(jl_IllegalArgumentException__init_($rt_s(441)));
+                        $rt_throw(jl_IllegalArgumentException__init_($rt_s(457)));
                     var$15[$bit] = 1;
                 }
                 if (oajvs_GateSpec_condition($gate) !== null) {
                     $bit = oajqc_Condition_bitIndex(oajvs_GateSpec_condition($gate));
                     if ($bit >= $numClassicalBits)
-                        $rt_throw(jl_IllegalArgumentException__init_($rt_s(442)));
+                        $rt_throw(jl_IllegalArgumentException__init_($rt_s(458)));
                     $reads.data[$bit] = 1;
                 }
             }
@@ -14945,9 +15636,9 @@ let oajvs_CircuitSpec__init_ = ($this, $version, $numQubits, $levels, $numClassi
                 $bit = $bit + 1 | 0;
             }
         }
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(443)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(459)));
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(444)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(460)));
 },
 oajvs_CircuitSpec__init_0 = (var_0, var_1, var_2, var_3) => {
     let var_4 = new oajvs_CircuitSpec();
@@ -14958,10 +15649,10 @@ oajvs_CircuitSpec_of = ($numQubits, $levels, $numClassicalBits) => {
     return oajvs_CircuitSpec__init_0(2, $numQubits, $levels, $numClassicalBits);
 },
 oajvs_CircuitSpec_toString = $this => {
-    return ((((((((((jl_StringBuilder__init_0($rt_s(445))).$append1($rt_s(446))).$append2($this.$version0)).$append1($rt_s(447))).$append2($this.$numQubits1)).$append1($rt_s(448))).$append($this.$levels0)).$append1($rt_s(449))).$append2($this.$numClassicalBits0)).$append1($rt_s(57))).$toString();
+    return ((((((((((jl_StringBuilder__init_0($rt_s(461))).$append1($rt_s(462))).$append2($this.$version0)).$append1($rt_s(463))).$append2($this.$numQubits1)).$append1($rt_s(388))).$append($this.$levels1)).$append1($rt_s(464))).$append2($this.$numClassicalBits0)).$append1($rt_s(52))).$toString();
 },
 oajvs_CircuitSpec_hashCode = $this => {
-    return ((((((31 + jl_Integer_hashCode($this.$version0) | 0) * 31 | 0) + jl_Integer_hashCode($this.$numQubits1) | 0) * 31 | 0) + ju_Objects_hashCode($this.$levels0) | 0) * 31 | 0) + jl_Integer_hashCode($this.$numClassicalBits0) | 0;
+    return ((((((31 + jl_Integer_hashCode($this.$version0) | 0) * 31 | 0) + jl_Integer_hashCode($this.$numQubits1) | 0) * 31 | 0) + ju_Objects_hashCode($this.$levels1) | 0) * 31 | 0) + jl_Integer_hashCode($this.$numClassicalBits0) | 0;
 },
 oajvs_CircuitSpec_equals = ($this, $o) => {
     let var$2, var$3;
@@ -14969,7 +15660,7 @@ oajvs_CircuitSpec_equals = ($this, $o) => {
         var$2 = 1;
     else if ($o !== null && jl_Object_getClass($o) === $rt_cls(oajvs_CircuitSpec)) {
         var$3 = $o;
-        var$2 = $this.$version0 != var$3.$version0 ? 0 : $this.$numQubits1 != var$3.$numQubits1 ? 0 : !ju_Objects_equals($this.$levels0, var$3.$levels0) ? 0 : $this.$numClassicalBits0 == var$3.$numClassicalBits0 ? 1 : 0;
+        var$2 = $this.$version0 != var$3.$version0 ? 0 : $this.$numQubits1 != var$3.$numQubits1 ? 0 : !ju_Objects_equals($this.$levels1, var$3.$levels1) ? 0 : $this.$numClassicalBits0 == var$3.$numClassicalBits0 ? 1 : 0;
     } else
         var$2 = 0;
     return var$2;
@@ -14981,7 +15672,7 @@ oajvs_CircuitSpec_numQubits = $this => {
     return $this.$numQubits1;
 },
 oajvs_CircuitSpec_levels = $this => {
-    return $this.$levels0;
+    return $this.$levels1;
 },
 oajvs_CircuitSpec_numClassicalBits = $this => {
     return $this.$numClassicalBits0;
@@ -15119,7 +15810,7 @@ oajvo_OpenQasmParser$Register__init_0 = (var_0, var_1) => {
     return var_2;
 },
 oajvo_OpenQasmParser$Register_toString = $this => {
-    return ((((((jl_StringBuilder__init_0($rt_s(450))).$append1($rt_s(451))).$append2($this.$offset0)).$append1($rt_s(452))).$append2($this.$size3)).$append1($rt_s(57))).$toString();
+    return ((((((jl_StringBuilder__init_0($rt_s(465))).$append1($rt_s(466))).$append2($this.$offset0)).$append1($rt_s(467))).$append2($this.$size3)).$append1($rt_s(52))).$toString();
 },
 oajvo_OpenQasmParser$Register_hashCode = $this => {
     return ((31 + jl_Integer_hashCode($this.$offset0) | 0) * 31 | 0) + jl_Integer_hashCode($this.$size3) | 0;
@@ -15175,10 +15866,10 @@ jur_RangeSet_accepts = ($this, $strIndex, $testString) => {
 },
 jur_RangeSet_getName = $this => {
     let var$1, var$2, var$3;
-    var$1 = !$this.$alt3 ? $rt_s(49) : $rt_s(50);
+    var$1 = !$this.$alt3 ? $rt_s(53) : $rt_s(54);
     var$2 = $this.$chars0.$toString();
     var$3 = jl_StringBuilder__init_();
-    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(51)), var$1), var$2);
+    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(55)), var$1), var$2);
     return jl_StringBuilder_toString(var$3);
 },
 jur_RangeSet_first = ($this, $set) => {
@@ -15741,7 +16432,7 @@ jusi_FlatMappingStreamImpl_next = ($this, $consumer) => {
     return 1;
 },
 jusi_FlatMappingStreamImpl_lambda$next$0 = ($this, $e) => {
-    $this.$current = $this.$mapper0.$apply1($e);
+    $this.$current = $this.$mapper0.$apply3($e);
     $this.$currentSet = 1;
     return 0;
 },
@@ -15783,15 +16474,15 @@ oajqs_SamplingOptions__init_1 = ($this, $shots, $measuredQubits, $classicalBits,
     jl_Object__init_($this);
     if ($shots >= 1 && $shots <= 10000) {
         if (Long_lt($maxWork, Long_fromInt(1)))
-            $rt_throw(jl_IllegalArgumentException__init_($rt_s(453)));
+            $rt_throw(jl_IllegalArgumentException__init_($rt_s(468)));
         $this.$shots1 = $shots;
         $this.$classicalBits = $classicalBits.$clone0();
         $this.$measuredQubits = $measuredQubits !== null ? $measuredQubits.$clone0() : null;
         $this.$maxWork0 = $maxWork;
-        $this.$randomFactory = ju_Objects_requireNonNull($randomFactory, $rt_s(454));
+        $this.$randomFactory = ju_Objects_requireNonNull($randomFactory, $rt_s(469));
         return;
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(455)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(470)));
 },
 oajqs_SamplingOptions__init_ = (var_0, var_1, var_2, var_3, var_4) => {
     let var_5 = new oajqs_SamplingOptions();
@@ -15799,12 +16490,12 @@ oajqs_SamplingOptions__init_ = (var_0, var_1, var_2, var_3, var_4) => {
     return var_5;
 },
 oajqs_SamplingOptions_withMeasuredQubits = ($this, $indexes) => {
-    ju_Objects_requireNonNull($indexes, $rt_s(456));
+    ju_Objects_requireNonNull($indexes, $rt_s(471));
     oajqs_SamplingOptions_validateIndexes($indexes, 30);
     return oajqs_SamplingOptions__init_($this.$shots1, $indexes, $this.$classicalBits, $this.$maxWork0, $this.$randomFactory);
 },
 oajqs_SamplingOptions_withClassicalBits = ($this, $indexes) => {
-    ju_Objects_requireNonNull($indexes, $rt_s(456));
+    ju_Objects_requireNonNull($indexes, $rt_s(471));
     oajqs_SamplingOptions_validateIndexes($indexes, 30);
     return oajqs_SamplingOptions__init_($this.$shots1, $this.$measuredQubits, $indexes, $this.$maxWork0, $this.$randomFactory);
 },
@@ -15840,7 +16531,7 @@ oajqs_SamplingOptions_indexesFor = ($this, $numQubits) => {
     return $indexes;
 },
 oajqs_SamplingOptions_newRandom = $this => {
-    return ju_Objects_requireNonNull($this.$randomFactory.$get5(), $rt_s(457));
+    return ju_Objects_requireNonNull($this.$randomFactory.$get5(), $rt_s(472));
 },
 oajqs_SamplingOptions_validateIndexes = ($indexes, $numQubits) => {
     let var$3, var$4, $seen, var$6, $index, var$8;
@@ -15864,9 +16555,9 @@ oajqs_SamplingOptions_validateIndexes = ($indexes, $numQubits) => {
             }
             return;
         }
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(458)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(473)));
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(459)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(474)));
 },
 oajqs_SamplingOptions_lambda$new$0 = () => {
     return oajqs_SamplingOptions$lambda$new$0$lambda$_14_0__init_0(js_SecureRandom__init_());
@@ -15893,8 +16584,8 @@ function otrfm_InMemoryVirtualFileSystem() {
 }
 let otrfm_InMemoryVirtualFileSystem__init_ = var$0 => {
     jl_Object__init_(var$0);
-    var$0.$root0 = otrfm_InMemoryVirtualDirectory__init_0($rt_s(69));
-    var$0.$userDir = $rt_s(460);
+    var$0.$root0 = otrfm_InMemoryVirtualDirectory__init_0($rt_s(72));
+    var$0.$userDir = $rt_s(475);
 },
 otrfm_InMemoryVirtualFileSystem__init_0 = () => {
     let var_0 = new otrfm_InMemoryVirtualFileSystem();
@@ -16019,19 +16710,19 @@ oajv_CircuitSpecs_build = $g => {
                 $gate = oajqg_Reset__init_0(oajv_CircuitSpecs_arr($t));
                 break a;
             case 10:
-                $gate = oajqg_Rx__init_0(oajv_CircuitSpecs_param($g, $rt_s(461)), oajv_CircuitSpecs_arr($t));
+                $gate = oajqg_Rx__init_0(oajv_CircuitSpecs_param($g, $rt_s(476)), oajv_CircuitSpecs_arr($t));
                 break a;
             case 11:
-                $gate = oajqg_Ry__init_0(oajv_CircuitSpecs_param($g, $rt_s(461)), oajv_CircuitSpecs_arr($t));
+                $gate = oajqg_Ry__init_0(oajv_CircuitSpecs_param($g, $rt_s(476)), oajv_CircuitSpecs_arr($t));
                 break a;
             case 12:
-                $gate = oajqg_Rz__init_0(oajv_CircuitSpecs_param($g, $rt_s(461)), oajv_CircuitSpecs_arr($t));
+                $gate = oajqg_Rz__init_0(oajv_CircuitSpecs_param($g, $rt_s(476)), oajv_CircuitSpecs_arr($t));
                 break a;
             case 13:
-                $gate = oajqg_Phase__init_0(oajv_CircuitSpecs_param($g, $rt_s(461)), oajv_CircuitSpecs_arr($t));
+                $gate = oajqg_Phase__init_0(oajv_CircuitSpecs_param($g, $rt_s(476)), oajv_CircuitSpecs_arr($t));
                 break a;
             case 14:
-                $gate = oajqg_U3__init_0(oajv_CircuitSpecs_param($g, $rt_s(461)), oajv_CircuitSpecs_param($g, $rt_s(462)), oajv_CircuitSpecs_param($g, $rt_s(463)), oajv_CircuitSpecs_arr($t));
+                $gate = oajqg_U3__init_0(oajv_CircuitSpecs_param($g, $rt_s(476)), oajv_CircuitSpecs_param($g, $rt_s(477)), oajv_CircuitSpecs_param($g, $rt_s(478)), oajv_CircuitSpecs_arr($t));
                 break a;
             case 15:
                 $gate = oajqg_ControlledNot__init_0($c.$get0(0), $t.$get0(0));
@@ -16087,7 +16778,7 @@ oajv_CircuitSpecs_matrixOf = $g => {
     let $cells, $rows, $cols, $data, $r, $row, $col;
     oajv_CircuitSpecs_$callClinit();
     if (oajvs_GateSpec_matrix($g) === null)
-        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append(oajvs_GateSpec_kind($g))).$append1($rt_s(464))).$toString()));
+        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append(oajvs_GateSpec_kind($g))).$append1($rt_s(479))).$toString()));
     $cells = oajvs_GateSpec_matrix($g);
     $rows = $cells.$size();
     $cols = ($cells.$get0(0)).$size();
@@ -16110,35 +16801,35 @@ oajv_CircuitSpecs__clinit_ = () => {
     var$2 = var$1.data;
     oajvs_GateKind_$callClinit();
     var$3 = oajvs_GateKind_H;
-    var$2[0] = ju_Map_entry($rt_s(465), var$3);
+    var$2[0] = ju_Map_entry($rt_s(480), var$3);
     var$3 = oajvs_GateKind_X;
-    var$2[1] = ju_Map_entry($rt_s(466), var$3);
+    var$2[1] = ju_Map_entry($rt_s(481), var$3);
     var$3 = oajvs_GateKind_Y;
-    var$2[2] = ju_Map_entry($rt_s(467), var$3);
+    var$2[2] = ju_Map_entry($rt_s(482), var$3);
     var$3 = oajvs_GateKind_Z;
-    var$2[3] = ju_Map_entry($rt_s(468), var$3);
+    var$2[3] = ju_Map_entry($rt_s(483), var$3);
     var$3 = oajvs_GateKind_S;
-    var$2[4] = ju_Map_entry($rt_s(102), var$3);
+    var$2[4] = ju_Map_entry($rt_s(105), var$3);
     var$3 = oajvs_GateKind_T;
-    var$2[5] = ju_Map_entry($rt_s(469), var$3);
+    var$2[5] = ju_Map_entry($rt_s(484), var$3);
     var$3 = oajvs_GateKind_IDENTITY;
-    var$2[6] = ju_Map_entry($rt_s(470), var$3);
+    var$2[6] = ju_Map_entry($rt_s(485), var$3);
     var$3 = oajvs_GateKind_MEASUREMENT;
-    var$2[7] = ju_Map_entry($rt_s(471), var$3);
+    var$2[7] = ju_Map_entry($rt_s(486), var$3);
     var$3 = oajvs_GateKind_RESET;
-    var$2[8] = ju_Map_entry($rt_s(472), var$3);
+    var$2[8] = ju_Map_entry($rt_s(487), var$3);
     var$3 = oajvs_GateKind_CNOT;
-    var$2[9] = ju_Map_entry($rt_s(473), var$3);
+    var$2[9] = ju_Map_entry($rt_s(488), var$3);
     var$3 = oajvs_GateKind_CZ;
-    var$2[10] = ju_Map_entry($rt_s(383), var$3);
+    var$2[10] = ju_Map_entry($rt_s(397), var$3);
     var$3 = oajvs_GateKind_CY;
-    var$2[11] = ju_Map_entry($rt_s(382), var$3);
+    var$2[11] = ju_Map_entry($rt_s(396), var$3);
     var$3 = oajvs_GateKind_SWAP;
-    var$2[12] = ju_Map_entry($rt_s(474), var$3);
+    var$2[12] = ju_Map_entry($rt_s(489), var$3);
     var$3 = oajvs_GateKind_CSWAP;
-    var$2[13] = ju_Map_entry($rt_s(377), var$3);
+    var$2[13] = ju_Map_entry($rt_s(384), var$3);
     var$3 = oajvs_GateKind_TOFFOLI;
-    var$2[14] = ju_Map_entry($rt_s(475), var$3);
+    var$2[14] = ju_Map_entry($rt_s(490), var$3);
     var$3 = oajvs_GateKind_RX;
     var$2[15] = ju_Map_entry($rt_s(31), var$3);
     var$3 = oajvs_GateKind_RY;
@@ -16146,13 +16837,13 @@ oajv_CircuitSpecs__clinit_ = () => {
     var$3 = oajvs_GateKind_RZ;
     var$2[17] = ju_Map_entry($rt_s(21), var$3);
     var$3 = oajvs_GateKind_PHASE;
-    var$2[18] = ju_Map_entry($rt_s(476), var$3);
+    var$2[18] = ju_Map_entry($rt_s(491), var$3);
     var$3 = oajvs_GateKind_U3;
-    var$2[19] = ju_Map_entry($rt_s(370), var$3);
+    var$2[19] = ju_Map_entry($rt_s(377), var$3);
     var$3 = oajvs_GateKind_MULTI_CONTROLLED;
     var$2[20] = ju_Map_entry($rt_s(2), var$3);
     var$3 = oajvs_GateKind_ORACLE;
-    var$2[21] = ju_Map_entry($rt_s(384), var$3);
+    var$2[21] = ju_Map_entry($rt_s(398), var$3);
     var$3 = oajvs_GateKind_GENERIC;
     var$2[22] = ju_Map_entry($rt_s(46), var$3);
     oajv_CircuitSpecs_KIND_BY_TYPE = ju_Map_ofEntries(var$1);
@@ -16171,20 +16862,20 @@ let oajvs_GateSpec__init_ = ($this, $kind, $targets, $controls, $params, $matrix
     let var$8, var$9, var$10, var$11;
     a: {
         jl_Record__init_($this);
-        ju_Objects_requireNonNull($kind, $rt_s(307));
+        ju_Objects_requireNonNull($kind, $rt_s(310));
         if ($classicalTarget !== null) {
             if ($classicalTarget.$intValue() >= 0 && $classicalTarget.$intValue() < 30) {
                 oajvs_GateKind_$callClinit();
                 if ($kind === oajvs_GateKind_MEASUREMENT && $targets.$size() == 1 && $controls.$isEmpty())
                     break a;
             }
-            $rt_throw(jl_IllegalArgumentException__init_($rt_s(477)));
+            $rt_throw(jl_IllegalArgumentException__init_($rt_s(492)));
         }
     }
     if ($condition !== null) {
         oajvs_GateKind_$callClinit();
         if (!($kind !== oajvs_GateKind_MEASUREMENT && $kind !== oajvs_GateKind_RESET))
-            $rt_throw(jl_IllegalArgumentException__init_($rt_s(478)));
+            $rt_throw(jl_IllegalArgumentException__init_($rt_s(493)));
     }
     var$8 = ju_List_copyOf($targets);
     var$9 = ju_List_copyOf($controls);
@@ -16204,7 +16895,7 @@ oajvs_GateSpec__init_0 = (var_0, var_1, var_2, var_3, var_4, var_5, var_6) => {
     return var_7;
 },
 oajvs_GateSpec_toString = $this => {
-    return ((((((((((((((((jl_StringBuilder__init_0($rt_s(479))).$append1($rt_s(480))).$append($this.$kind0)).$append1($rt_s(392))).$append($this.$targets2)).$append1($rt_s(391))).$append($this.$controls1)).$append1($rt_s(481))).$append($this.$params0)).$append1($rt_s(482))).$append($this.$matrix0)).$append1($rt_s(483))).$append($this.$classicalTarget0)).$append1($rt_s(484))).$append($this.$condition0)).$append1($rt_s(57))).$toString();
+    return ((((((((((((((((jl_StringBuilder__init_0($rt_s(494))).$append1($rt_s(495))).$append($this.$kind0)).$append1($rt_s(406))).$append($this.$targets2)).$append1($rt_s(405))).$append($this.$controls1)).$append1($rt_s(496))).$append($this.$params0)).$append1($rt_s(497))).$append($this.$matrix0)).$append1($rt_s(498))).$append($this.$classicalTarget0)).$append1($rt_s(499))).$append($this.$condition0)).$append1($rt_s(52))).$toString();
 },
 oajvs_GateSpec_hashCode = $this => {
     return ((((((((((((31 + ju_Objects_hashCode($this.$kind0) | 0) * 31 | 0) + ju_Objects_hashCode($this.$targets2) | 0) * 31 | 0) + ju_Objects_hashCode($this.$controls1) | 0) * 31 | 0) + ju_Objects_hashCode($this.$params0) | 0) * 31 | 0) + ju_Objects_hashCode($this.$matrix0) | 0) * 31 | 0) + ju_Objects_hashCode($this.$classicalTarget0) | 0) * 31 | 0) + ju_Objects_hashCode($this.$condition0) | 0;
@@ -16824,13 +17515,13 @@ jl_Long_parseLongImpl = ($s, $beginIndex, $endIndex, $radix) => {
                 var$12 = new jl_NumberFormatException;
                 var$13 = jl_String_valueOf($s.$subSequence($beginIndex, $endIndex));
                 var$14 = jl_StringBuilder__init_();
-                jl_StringBuilder_append(jl_StringBuilder_append(var$14, $rt_s(485)), var$13);
+                jl_StringBuilder_append(jl_StringBuilder_append(var$14, $rt_s(500)), var$13);
                 jl_NumberFormatException__init_0(var$12, jl_StringBuilder_toString(var$14));
                 $rt_throw(var$12);
             }
             var$6 = var$10;
         }
-        $rt_throw(jl_NumberFormatException__init_1($rt_s(486)));
+        $rt_throw(jl_NumberFormatException__init_1($rt_s(501)));
     }
     var$13 = new jl_NumberFormatException;
     var$14 = jl_StringBuilder__init_();
@@ -16894,10 +17585,13 @@ jl_Long_signum = $i => {
 jl_Long_divideUnsigned = (var$1, var$2) => {
     return Long_udiv(var$1, var$2);
 },
+jl_Long_remainderUnsigned = (var$1, var$2) => {
+    return Long_urem(var$1, var$2);
+},
 jl_Long_compareUnsigned = (var$1, var$2) => {
     return Long_ucompare(var$1, var$2);
-},
-jl_Long__clinit_ = () => {
+};
+let jl_Long__clinit_ = () => {
     jl_Long_TYPE = $rt_cls($rt_longcls);
 };
 function jur_SequenceSet$IntHash() {
@@ -16990,9 +17684,9 @@ jm_BigInteger__init_1 = ($this, $val, $radix) => {
             jm_BigInteger_setFromString($this, $val, $radix);
             return;
         }
-        $rt_throw(jl_NumberFormatException__init_1($rt_s(487)));
+        $rt_throw(jl_NumberFormatException__init_1($rt_s(502)));
     }
-    $rt_throw(jl_NumberFormatException__init_1($rt_s(488)));
+    $rt_throw(jl_NumberFormatException__init_1($rt_s(503)));
 },
 jm_BigInteger__init_10 = (var_0, var_1) => {
     let var_2 = new jm_BigInteger();
@@ -17167,7 +17861,7 @@ jm_BigInteger_testBit = ($this, $n) => {
     if (!$n)
         return !($this.$digits.data[0] & 1) ? 0 : 1;
     if ($n < 0)
-        $rt_throw(jl_ArithmeticException__init_($rt_s(489)));
+        $rt_throw(jl_ArithmeticException__init_($rt_s(504)));
     $intCount = $n >> 5;
     if ($intCount >= $this.$numberLength)
         return $this.$sign0 >= 0 ? 0 : 1;
@@ -17237,7 +17931,7 @@ jm_BigInteger_multiply = ($this, $val) => {
 jm_BigInteger_pow = ($this, $exp) => {
     let $x;
     if ($exp < 0)
-        $rt_throw(jl_ArithmeticException__init_($rt_s(490)));
+        $rt_throw(jl_ArithmeticException__init_($rt_s(505)));
     if (!$exp) {
         jm_BigInteger_$callClinit();
         return jm_BigInteger_ONE;
@@ -17260,7 +17954,7 @@ jm_BigInteger_divideAndRemainder = ($this, $divisor) => {
     let $divisorSign, $divisorLen, $divisorDigits, $thisDigits, $thisLen, var$7, $cmp, var$9, var$10, $thisSign, $quotientLength, $quotientSign, $quotientDigits, $remainderDigits, $result0, $result1;
     $divisorSign = $divisor.$sign0;
     if (!$divisorSign)
-        $rt_throw(jl_ArithmeticException__init_($rt_s(491)));
+        $rt_throw(jl_ArithmeticException__init_($rt_s(506)));
     $divisorLen = $divisor.$numberLength;
     $divisorDigits = $divisor.$digits;
     if ($divisorLen == 1)
@@ -17385,12 +18079,12 @@ let jur_AbstractCharClass$LazyNonDigit_computeValue = $this => {
 };
 function jusi_SimpleStreamImpl$collect$lambda$_26_0() {
     let a = this; jl_Object.call(a);
-    a.$_02 = null;
+    a.$_03 = null;
     a.$_10 = null;
 }
 let jusi_SimpleStreamImpl$collect$lambda$_26_0__init_ = (var$0, var$1, var$2) => {
     jl_Object__init_(var$0);
-    var$0.$_02 = var$1;
+    var$0.$_03 = var$1;
     var$0.$_10 = var$2;
 },
 jusi_SimpleStreamImpl$collect$lambda$_26_0__init_0 = (var_0, var_1) => {
@@ -17399,7 +18093,7 @@ jusi_SimpleStreamImpl$collect$lambda$_26_0__init_0 = (var_0, var_1) => {
     return var_2;
 },
 jusi_SimpleStreamImpl$collect$lambda$_26_0_test = (var$0, var$1) => {
-    return jusi_SimpleStreamImpl_lambda$collect$4(var$0.$_02, var$0.$_10, var$1);
+    return jusi_SimpleStreamImpl_lambda$collect$4(var$0.$_03, var$0.$_10, var$1);
 },
 ju_EnumSet = $rt_classWithoutFields(ju_AbstractSet),
 ju_EnumSet__init_ = $this => {
@@ -17585,7 +18279,7 @@ oajqs_LocalSimulator_execute = ($this, $listener) => {
         $g = 0;
         while ($g < $gates.$size()) {
             $gate = $gates.$get0($g);
-            if (!jl_String_equals($gate.$getType2(), $rt_s(470)))
+            if (!jl_String_equals($gate.$getType2(), $rt_s(485)))
                 $listener.$onOperation($l, $g, $gate, oajqs_LocalSimulator_step($this, $gate));
             $g = $g + 1 | 0;
         }
@@ -17600,8 +18294,8 @@ oajqs_LocalSimulator_step = ($this, $gate) => {
         if (var$3[oajqc_Condition_bitIndex(oajqg_ConditionalGate_condition($conditional))] != oajqc_Condition_expected(oajqg_ConditionalGate_condition($conditional)))
             return 0;
     }
-    if (!jl_String_equals($gate.$getType2(), $rt_s(471))) {
-        if (jl_String_equals($gate.$getType2(), $rt_s(472))) {
+    if (!jl_String_equals($gate.$getType2(), $rt_s(486))) {
+        if (jl_String_equals($gate.$getType2(), $rt_s(487))) {
             $this.$quantumRegister.$resetQubitAtIndexes($gate.$getIndexes());
             return 1;
         }
@@ -17655,7 +18349,7 @@ jusi_DistinctStreamImpl__init_0 = var_0 => {
 },
 jusi_DistinctStreamImpl_wrap = ($this, $consumer) => {
     let $visited;
-    $visited = ju_HashSet__init_0();
+    $visited = ju_HashSet__init_();
     return jusi_DistinctStreamImpl$wrap$lambda$_1_0__init_0($visited, $consumer);
 },
 jusi_DistinctStreamImpl_lambda$wrap$0 = ($visited, $consumer, $e) => {
@@ -17744,7 +18438,7 @@ oajqg_Measurement__init_1 = var_0 => {
     return var_1;
 },
 oajqg_Measurement__init_ = ($this, $classicalTarget, $indexes) => {
-    oajqg_Gate__init_($this, 1, oajm_ComplexMatrix_createIdentityMatrix(2), $rt_s(471), $indexes);
+    oajqg_Gate__init_($this, 1, oajm_ComplexMatrix_createIdentityMatrix(2), $rt_s(486), $indexes);
     $this.$classicalTarget1 = $classicalTarget;
 },
 oajqg_Measurement__init_2 = (var_0, var_1) => {
@@ -17762,7 +18456,7 @@ oajqg_Measurement_into = ($qubit, $classicalBit) => {
         oajqg_Measurement__init_(var$3, var$4, var$5);
         return var$3;
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(492)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(507)));
 },
 oajqg_Measurement_classicalTarget = $this => {
     return $this.$classicalTarget1;
@@ -17917,7 +18611,7 @@ oajq_CircuitLevel_verify = ($this, $gate) => {
         ju_Objects_requireNonNull0(var$3);
         $verify = var$2.$anyMatch(oajq_CircuitLevel$verify$lambda$_5_1__init_0(var$3));
         if ($verify)
-            $rt_throw(jl_IllegalArgumentException__init_($rt_s(493)));
+            $rt_throw(jl_IllegalArgumentException__init_($rt_s(508)));
     }
 },
 oajq_CircuitLevel_lambda$verify$0 = $g => {
@@ -18043,7 +18737,7 @@ jur_UCISequenceSet_getName = $this => {
     let var$1, var$2;
     var$1 = $this.$string2;
     var$2 = jl_StringBuilder__init_();
-    jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(494)), var$1);
+    jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(509)), var$1);
     return jl_StringBuilder_toString(var$2);
 };
 function jur_CharClass$16() {
@@ -18174,6 +18868,10 @@ jl_StringBuilder_append1 = ($this, $value) => {
     jl_AbstractStringBuilder_append2($this, $value);
     return $this;
 },
+jl_StringBuilder_append9 = ($this, $value) => {
+    jl_AbstractStringBuilder_append8($this, $value);
+    return $this;
+},
 jl_StringBuilder_append5 = ($this, $value) => {
     jl_AbstractStringBuilder_append4($this, $value);
     return $this;
@@ -18186,47 +18884,51 @@ jl_StringBuilder_append4 = ($this, $chars, $offset, $len) => {
     jl_AbstractStringBuilder_append1($this, $chars, $offset, $len);
     return $this;
 },
-jl_StringBuilder_append10 = ($this, $chars) => {
+jl_StringBuilder_append11 = ($this, $chars) => {
     jl_AbstractStringBuilder_append0($this, $chars);
     return $this;
 },
-jl_StringBuilder_append9 = ($this, $s, $start, $end) => {
+jl_StringBuilder_append10 = ($this, $s, $start, $end) => {
     jl_AbstractStringBuilder_append3($this, $s, $start, $end);
     return $this;
 },
 jl_StringBuilder_append8 = ($this, $s) => {
-    jl_AbstractStringBuilder_append8($this, $s);
+    jl_AbstractStringBuilder_append9($this, $s);
     return $this;
 },
 jl_StringBuilder_append3 = ($this, $b) => {
     jl_AbstractStringBuilder_append7($this, $b);
     return $this;
 },
-jl_StringBuilder_insert0 = ($this, $target, $value) => {
+jl_StringBuilder_insert1 = ($this, $target, $value) => {
+    jl_AbstractStringBuilder_insert4($this, $target, $value);
+    return $this;
+},
+jl_StringBuilder_insert2 = ($this, $target, $value) => {
     jl_AbstractStringBuilder_insert2($this, $target, $value);
     return $this;
 },
-jl_StringBuilder_insert6 = ($this, $index, $s, $start, $end) => {
-    jl_AbstractStringBuilder_insert4($this, $index, $s, $start, $end);
+jl_StringBuilder_insert8 = ($this, $index, $s, $start, $end) => {
+    jl_AbstractStringBuilder_insert5($this, $index, $s, $start, $end);
     return $this;
 },
-jl_StringBuilder_insert = ($this, $index, $s) => {
-    jl_AbstractStringBuilder_insert5($this, $index, $s);
+jl_StringBuilder_insert0 = ($this, $index, $s) => {
+    jl_AbstractStringBuilder_insert6($this, $index, $s);
     return $this;
 },
-jl_StringBuilder_insert10 = ($this, $index, $chars, $offset, $len) => {
+jl_StringBuilder_insert12 = ($this, $index, $chars, $offset, $len) => {
     jl_AbstractStringBuilder_insert($this, $index, $chars, $offset, $len);
     return $this;
 },
-jl_StringBuilder_insert12 = ($this, $index, $obj) => {
+jl_StringBuilder_insert14 = ($this, $index, $obj) => {
     jl_AbstractStringBuilder_insert3($this, $index, $obj);
     return $this;
 },
-jl_StringBuilder_insert7 = ($this, $index, $b) => {
+jl_StringBuilder_insert9 = ($this, $index, $b) => {
     jl_AbstractStringBuilder_insert1($this, $index, $b);
     return $this;
 },
-jl_StringBuilder_insert8 = ($this, $index, $c) => {
+jl_StringBuilder_insert10 = ($this, $index, $c) => {
     jl_AbstractStringBuilder_insert0($this, $index, $c);
     return $this;
 },
@@ -18238,21 +18940,21 @@ jl_StringBuilder_deleteCharAt = ($this, $index) => {
     jl_AbstractStringBuilder_deleteCharAt($this, $index);
     return $this;
 },
-jl_StringBuilder_insert2 = ($this, $index, $string) => {
-    jl_AbstractStringBuilder_insert6($this, $index, $string);
+jl_StringBuilder_insert4 = ($this, $index, $string) => {
+    jl_AbstractStringBuilder_insert7($this, $index, $string);
     return $this;
 },
-jl_StringBuilder_insert1 = ($this, var$1, var$2, var$3, var$4) => {
-    return $this.$insert11(var$1, var$2, var$3, var$4);
+jl_StringBuilder_insert3 = ($this, var$1, var$2, var$3, var$4) => {
+    return $this.$insert13(var$1, var$2, var$3, var$4);
 },
 jl_StringBuilder_append7 = ($this, var$1, var$2, var$3) => {
     return $this.$append12(var$1, var$2, var$3);
 },
-jl_StringBuilder_insert9 = ($this, var$1, var$2, var$3, var$4) => {
-    return $this.$insert12(var$1, var$2, var$3, var$4);
+jl_StringBuilder_insert11 = ($this, var$1, var$2, var$3, var$4) => {
+    return $this.$insert14(var$1, var$2, var$3, var$4);
 },
 jl_StringBuilder_append6 = ($this, var$1, var$2, var$3) => {
-    return $this.$append21(var$1, var$2, var$3);
+    return $this.$append22(var$1, var$2, var$3);
 },
 jl_StringBuilder_charAt = ($this, var$1) => {
     return jl_AbstractStringBuilder_charAt($this, var$1);
@@ -18266,20 +18968,23 @@ jl_StringBuilder_toString = $this => {
 jl_StringBuilder_ensureCapacity = ($this, var$1) => {
     jl_AbstractStringBuilder_ensureCapacity($this, var$1);
 },
-jl_StringBuilder_insert3 = ($this, var$1, var$2) => {
-    return $this.$insert13(var$1, var$2);
-},
 jl_StringBuilder_insert5 = ($this, var$1, var$2) => {
-    return $this.$insert14(var$1, var$2);
-},
-jl_StringBuilder_insert4 = ($this, var$1, var$2) => {
     return $this.$insert15(var$1, var$2);
 },
-jl_StringBuilder_insert11 = ($this, var$1, var$2) => {
+jl_StringBuilder_insert7 = ($this, var$1, var$2) => {
     return $this.$insert16(var$1, var$2);
 },
-jl_StringBuilder_insert13 = ($this, var$1, var$2) => {
+jl_StringBuilder_insert6 = ($this, var$1, var$2) => {
     return $this.$insert17(var$1, var$2);
+},
+jl_StringBuilder_insert13 = ($this, var$1, var$2) => {
+    return $this.$insert18(var$1, var$2);
+},
+jl_StringBuilder_insert = ($this, var$1, var$2) => {
+    return $this.$insert19(var$1, var$2);
+},
+jl_StringBuilder_insert15 = ($this, var$1, var$2) => {
+    return $this.$insert20(var$1, var$2);
 };
 function otrfm_InMemoryVirtualDirectory() {
     otrfm_AbstractInMemoryVirtualFile.call(this);
@@ -18296,7 +19001,7 @@ otrfm_InMemoryVirtualDirectory__init_0 = var_0 => {
 },
 oajqg_Phase = $rt_classWithoutFields(oajqg_Gate),
 oajqg_Phase__init_ = ($this, $theta, $indexes) => {
-    oajqg_Gate__init_($this, 1, oaju_Constants_phaseMatrix($theta), $rt_s(476), $indexes);
+    oajqg_Gate__init_($this, 1, oaju_Constants_phaseMatrix($theta), $rt_s(491), $indexes);
 },
 oajqg_Phase__init_0 = (var_0, var_1) => {
     let var_2 = new oajqg_Phase();
@@ -18337,7 +19042,7 @@ jur_CompositeRangeSet_getName = $this => {
     var$1 = jl_String_valueOf($this.$withoutSurrogates);
     var$2 = jl_String_valueOf($this.$withSurrogates);
     var$3 = jl_StringBuilder__init_();
-    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(495)), var$1), $rt_s(496)), var$2);
+    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(510)), var$1), $rt_s(511)), var$2);
     return jl_StringBuilder_toString(var$3);
 },
 jur_CompositeRangeSet_hasConsumed = ($this, $matchResult) => {
@@ -18358,7 +19063,7 @@ ju_ConcurrentModificationException__init_ = () => {
 oajqg_Hadamard = $rt_classWithoutFields(oajqg_Gate),
 oajqg_Hadamard__init_ = ($this, $qubitIndex) => {
     oaju_Constants_$callClinit();
-    oajqg_Gate__init_($this, 1, oaju_Constants_HADAMARD_MATRIX, $rt_s(465), $qubitIndex);
+    oajqg_Gate__init_($this, 1, oaju_Constants_HADAMARD_MATRIX, $rt_s(480), $qubitIndex);
 },
 oajqg_Hadamard__init_0 = var_0 => {
     let var_1 = new oajqg_Hadamard();
@@ -18446,11 +19151,11 @@ ju_Hashtable$Entry_equalsKey = ($this, $aKey, $hash) => {
 };
 function ju_TreeMap$_init_$lambda$_3_0() {
     jl_Object.call(this);
-    this.$_05 = null;
+    this.$_07 = null;
 }
 let ju_TreeMap$_init_$lambda$_3_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_05 = var$1;
+    var$0.$_07 = var$1;
 },
 ju_TreeMap$_init_$lambda$_3_0__init_0 = var_0 => {
     let var_1 = new ju_TreeMap$_init_$lambda$_3_0();
@@ -18461,16 +19166,16 @@ ju_TreeMap$_init_$lambda$_3_0_compare0 = (var$0, var$1, var$2) => {
     return ju_TreeMap$_init_$lambda$_3_0_compare(var$0, var$1, var$2);
 },
 ju_TreeMap$_init_$lambda$_3_0_compare = (var$0, var$1, var$2) => {
-    return ju_TreeMap_lambda$new$0(var$0.$_05, var$1, var$2);
+    return ju_TreeMap_lambda$new$0(var$0.$_07, var$1, var$2);
 };
 function oajqs_LocalSimulator$step$lambda$_7_0() {
     let a = this; jl_Object.call(a);
-    a.$_034 = null;
+    a.$_036 = null;
     a.$_18 = null;
 }
 let oajqs_LocalSimulator$step$lambda$_7_0__init_ = (var$0, var$1, var$2) => {
     jl_Object__init_(var$0);
-    var$0.$_034 = var$1;
+    var$0.$_036 = var$1;
     var$0.$_18 = var$2;
 },
 oajqs_LocalSimulator$step$lambda$_7_0__init_0 = (var_0, var_1) => {
@@ -18482,7 +19187,7 @@ oajqs_LocalSimulator$step$lambda$_7_0_accept0 = (var$0, var$1) => {
     oajqs_LocalSimulator$step$lambda$_7_0_accept(var$0, var$1);
 },
 oajqs_LocalSimulator$step$lambda$_7_0_accept = (var$0, var$1) => {
-    oajqs_LocalSimulator_lambda$step$0(var$0.$_034, var$0.$_18, var$1);
+    oajqs_LocalSimulator_lambda$step$0(var$0.$_036, var$0.$_18, var$1);
 },
 jur_FinalSet = $rt_classWithoutFields(jur_FSet),
 jur_FinalSet__init_ = $this => {
@@ -18501,7 +19206,7 @@ jur_FinalSet_matches = ($this, $stringIndex, $testString, $matchResult) => {
     return $stringIndex;
 },
 jur_FinalSet_getName = $this => {
-    return $rt_s(497);
+    return $rt_s(512);
 },
 oaju_Utils = $rt_classWithoutFields(),
 oaju_Utils_round = ($value, $scale) => {
@@ -18517,7 +19222,7 @@ oaju_Utils_round = ($value, $scale) => {
 },
 oajqg_Reset = $rt_classWithoutFields(oajqg_Gate),
 oajqg_Reset__init_ = ($this, $indexes) => {
-    oajqg_Gate__init_($this, 1, oajm_ComplexMatrix_createIdentityMatrix(2), $rt_s(472), $indexes);
+    oajqg_Gate__init_($this, 1, oajm_ComplexMatrix_createIdentityMatrix(2), $rt_s(487), $indexes);
 },
 oajqg_Reset__init_0 = var_0 => {
     let var_1 = new oajqg_Reset();
@@ -18538,19 +19243,19 @@ oajqs_CircuitSampler_sample = ($circuit, $options) => {
     return oajqs_CircuitSampler_execute($circuit, $options, null);
 },
 oajqs_CircuitSampler_sample0 = ($circuit, $options, $initialState) => {
-    return oajqs_CircuitSampler_execute($circuit, $options, ju_Objects_requireNonNull($initialState, $rt_s(498)));
+    return oajqs_CircuitSampler_execute($circuit, $options, ju_Objects_requireNonNull($initialState, $rt_s(513)));
 },
 oajqs_CircuitSampler_execute = ($circuit, $options, $initialState) => {
     let $size, $classicalIndexes, $indexes, $work, var$8, var$9, $random, var$11, var$12, var$13, $histogramCells, $counts, $classicalCounts, $one, $shot, $simulator, $records, $classicalOutcome, var$22, $bit, var$24, $measured, $outcome, var$27, $index;
-    ju_Objects_requireNonNull($circuit, $rt_s(499));
-    ju_Objects_requireNonNull($options, $rt_s(500));
+    ju_Objects_requireNonNull($circuit, $rt_s(514));
+    ju_Objects_requireNonNull($options, $rt_s(515));
     $circuit.$validateClassicalOperations();
     $size = $circuit.$getInputSize();
     $classicalIndexes = oajqs_SamplingOptions_classicalIndexesFor($options, $circuit.$getNumClassicalBits());
     $indexes = oajqs_SamplingOptions_indexesFor($options, $size);
     $work = Long_mul(Long_fromInt(oajqs_SamplingOptions_shots($options)), Long_shl(Long_fromInt(1), $size));
     if (Long_gt($work, Long_div(oajqs_SamplingOptions_maxWork($options), oajqs_CircuitSampler_passes($circuit))))
-        $rt_throw(oaje_JQApiLimitException__init_($rt_s(501)));
+        $rt_throw(oaje_JQApiLimitException__init_($rt_s(516)));
     var$8 = $classicalIndexes.data;
     var$9 = $indexes.data;
     $random = oajqs_SamplingOptions_newRandom($options);
@@ -18559,7 +19264,7 @@ oajqs_CircuitSampler_execute = ($circuit, $options, $initialState) => {
     var$13 = var$8.length;
     $histogramCells = Long_add(var$12, !var$13 ? Long_ZERO : Long_shl(Long_fromInt(1), var$13));
     if (Long_gt($histogramCells, oajqs_SamplingOptions_maxWork($options)))
-        $rt_throw(oaje_JQApiLimitException__init_($rt_s(502)));
+        $rt_throw(oaje_JQApiLimitException__init_($rt_s(517)));
     $counts = $rt_createIntArray(1 << var$11);
     $classicalCounts = !var$13 ? $rt_createIntArray(0) : $rt_createIntArray(1 << var$13);
     $one = oajq_QubitOne__init_();
@@ -18622,6 +19327,30 @@ jur_EmptySet__init_ = var_0 => {
 jur_EmptySet_accepts = ($this, $stringIndex, $testString) => {
     return 0;
 },
+jur_EmptySet_find = ($this, $stringIndex, $testString, $matchResult) => {
+    let $strLength, $startStr, var$6, $low, $high;
+    $strLength = $matchResult.$getRightBound();
+    $startStr = $matchResult.$getLeftBound();
+    while (true) {
+        var$6 = $rt_compare($stringIndex, $strLength);
+        if (var$6 > 0)
+            return (-1);
+        if (var$6 < 0) {
+            $low = $testString.$charAt($stringIndex);
+            if (jl_Character_isLowSurrogate($low) && $stringIndex > $startStr) {
+                $high = $testString.$charAt($stringIndex - 1 | 0);
+                if (jl_Character_isHighSurrogate($high)) {
+                    $stringIndex = $stringIndex + 1 | 0;
+                    continue;
+                }
+            }
+        }
+        if ($this.$next6.$matches($stringIndex, $testString, $matchResult) >= 0)
+            break;
+        $stringIndex = $stringIndex + 1 | 0;
+    }
+    return $stringIndex;
+},
 jur_EmptySet_findBack = ($this, $stringIndex, $startSearch, $testString, $matchResult) => {
     let $strLength, $startStr, $low, $high;
     $strLength = $matchResult.$getRightBound();
@@ -18646,7 +19375,7 @@ jur_EmptySet_findBack = ($this, $stringIndex, $startSearch, $testString, $matchR
     return $startSearch;
 },
 jur_EmptySet_getName = $this => {
-    return $rt_s(503);
+    return $rt_s(518);
 },
 jur_EmptySet_hasConsumed = ($this, $mr) => {
     return 0;
@@ -18805,12 +19534,12 @@ ju_LinkedHashMap$LinkedHashMapEntry__init_0 = (var_0, var_1) => {
 };
 function jus_Collectors$joining$lambda$_8_3() {
     let a = this; jl_Object.call(a);
-    a.$_06 = null;
+    a.$_08 = null;
     a.$_11 = null;
 }
 let jus_Collectors$joining$lambda$_8_3__init_ = (var$0, var$1, var$2) => {
     jl_Object__init_(var$0);
-    var$0.$_06 = var$1;
+    var$0.$_08 = var$1;
     var$0.$_11 = var$2;
 },
 jus_Collectors$joining$lambda$_8_3__init_0 = (var_0, var_1) => {
@@ -18822,7 +19551,7 @@ jus_Collectors$joining$lambda$_8_3_apply0 = (var$0, var$1) => {
     return jus_Collectors$joining$lambda$_8_3_apply(var$0, var$1);
 },
 jus_Collectors$joining$lambda$_8_3_apply = (var$0, var$1) => {
-    return jus_Collectors_lambda$joining$3(var$0.$_06, var$0.$_11, var$1);
+    return jus_Collectors_lambda$joining$3(var$0.$_08, var$0.$_11, var$1);
 },
 jur_AbstractCharClass$LazyASCII = $rt_classWithoutFields(jur_AbstractCharClass$LazyCharClass),
 jur_AbstractCharClass$LazyASCII__init_ = $this => {
@@ -18862,11 +19591,11 @@ oaje_JQApiLimitException__init_ = var_0 => {
 };
 function jus_Collectors$joining$lambda$_8_1() {
     jl_Object.call(this);
-    this.$_037 = null;
+    this.$_039 = null;
 }
 let jus_Collectors$joining$lambda$_8_1__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_037 = var$1;
+    var$0.$_039 = var$1;
 },
 jus_Collectors$joining$lambda$_8_1__init_0 = var_0 => {
     let var_1 = new jus_Collectors$joining$lambda$_8_1();
@@ -18875,11 +19604,11 @@ jus_Collectors$joining$lambda$_8_1__init_0 = var_0 => {
 };
 function oajqs_ExpectationSampler$support$lambda$_6_0() {
     jl_Object.call(this);
-    this.$_03 = null;
+    this.$_04 = null;
 }
 let oajqs_ExpectationSampler$support$lambda$_6_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_03 = var$1;
+    var$0.$_04 = var$1;
 },
 oajqs_ExpectationSampler$support$lambda$_6_0__init_0 = var_0 => {
     let var_1 = new oajqs_ExpectationSampler$support$lambda$_6_0();
@@ -18887,15 +19616,15 @@ oajqs_ExpectationSampler$support$lambda$_6_0__init_0 = var_0 => {
     return var_1;
 },
 oajqs_ExpectationSampler$support$lambda$_6_0_test = (var$0, var$1) => {
-    return oajqs_ExpectationSampler_lambda$support$0(var$0.$_03, var$1);
+    return oajqs_ExpectationSampler_lambda$support$0(var$0.$_04, var$1);
 };
 function jus_Collectors$joining$lambda$_8_0() {
     jl_Object.call(this);
-    this.$_029 = null;
+    this.$_032 = null;
 }
 let jus_Collectors$joining$lambda$_8_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_029 = var$1;
+    var$0.$_032 = var$1;
 },
 jus_Collectors$joining$lambda$_8_0__init_0 = var_0 => {
     let var_1 = new jus_Collectors$joining$lambda$_8_0();
@@ -18906,7 +19635,7 @@ jus_Collectors$joining$lambda$_8_0_accept0 = (var$0, var$1, var$2) => {
     jus_Collectors$joining$lambda$_8_0_accept(var$0, var$1, var$2);
 },
 jus_Collectors$joining$lambda$_8_0_accept = (var$0, var$1, var$2) => {
-    jus_Collectors_lambda$joining$1(var$0.$_029, var$1, var$2);
+    jus_Collectors_lambda$joining$1(var$0.$_032, var$1, var$2);
 };
 function oajm_ComplexVector() {
     jl_Object.call(this);
@@ -18991,7 +19720,7 @@ oajm_ComplexVector_outerProduct = ($this, $vector) => {
 oajm_ComplexVector_innerProduct = ($this, $vector) => {
     let $sum, $d, $i;
     if ($this.$getDimension() != $vector.$getDimension())
-        $rt_throw(jl_IllegalArgumentException__init_((((((jl_StringBuilder__init_()).$append1($rt_s(504))).$append2($this.$getDimension())).$append1($rt_s(505))).$append2($vector.$getDimension())).$toString()));
+        $rt_throw(jl_IllegalArgumentException__init_((((((jl_StringBuilder__init_()).$append1($rt_s(519))).$append2($this.$getDimension())).$append1($rt_s(520))).$append2($vector.$getDimension())).$toString()));
     oajm_Complex_$callClinit();
     $sum = oajm_Complex_ZERO;
     $d = $this.$getDimension();
@@ -19053,7 +19782,7 @@ oajm_ComplexVector_hashCode = $this => {
     return $result;
 },
 oajm_ComplexVector_toString = $this => {
-    return ((((jl_StringBuilder__init_()).$append1($rt_s(506))).$append1(ju_Arrays_toString($this.$getData0()))).$append0(125)).$toString();
+    return ((((jl_StringBuilder__init_()).$append1($rt_s(521))).$append1(ju_Arrays_toString($this.$getData0()))).$append0(125)).$toString();
 },
 oajm_ComplexVector_box = ($re, $im) => {
     if ($re === 0.0 && $im === 0.0) {
@@ -19109,7 +19838,7 @@ oajw_BrowserBudget_config = () => {
 },
 oajw_BrowserBudget_input = $value => {
     if ($value === null)
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(507)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(522)));
     oajw_BrowserBudget_require(jl_String_length($value) > 1000000 ? 0 : 1);
 },
 oajw_BrowserBudget_check = $spec => {
@@ -19154,7 +19883,7 @@ oajw_BrowserBudget_work = ($spec, $trajectories, $extraPasses) => {
 oajw_BrowserBudget_require = $allowed => {
     if ($allowed)
         return;
-    $rt_throw(oaje_JQApiLimitException__init_($rt_s(508)));
+    $rt_throw(oaje_JQApiLimitException__init_($rt_s(523)));
 };
 function ju_AbstractMap$SimpleEntry() {
     let a = this; jl_Object.call(a);
@@ -19206,11 +19935,11 @@ ju_AbstractMap$SimpleEntry_toString = $this => {
 otjc_Crypto = $rt_classWithoutFields();
 function oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0() {
     jl_Object.call(this);
-    this.$_021 = null;
+    this.$_022 = null;
 }
 let oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_021 = var$1;
+    var$0.$_022 = var$1;
 },
 oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0__init_0 = var_0 => {
     let var_1 = new oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0();
@@ -19221,7 +19950,7 @@ oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0_accept0 = (var$0, var$1) =
     oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0_accept(var$0, var$1);
 },
 oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0_accept = (var$0, var$1) => {
-    oajq_QuantumRegister_lambda$resetQubitAtIndexes$0(var$0.$_021, var$1);
+    oajq_QuantumRegister_lambda$resetQubitAtIndexes$0(var$0.$_022, var$1);
 };
 function oaj_JQAPIConfig() {
     let a = this; jl_Object.call(a);
@@ -19241,13 +19970,13 @@ oaj_JQAPIConfig__init_0 = ($this, $maxQubits, $maxSearchQubits, $parallelEnabled
     oaj_JQAPIConfig_$callClinit();
     jl_Object__init_($this);
     if ($maxQubits <= 0)
-        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(509))).$append2($maxQubits)).$toString()));
+        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(524))).$append2($maxQubits)).$toString()));
     if ($maxQubits > 30)
-        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(510))).$append2($maxQubits)).$toString()));
+        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(525))).$append2($maxQubits)).$toString()));
     if ($maxSearchQubits <= 0)
-        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(511))).$append2($maxSearchQubits)).$toString()));
+        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(526))).$append2($maxSearchQubits)).$toString()));
     if ($maxSearchQubits > 30)
-        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(512))).$append2($maxSearchQubits)).$toString()));
+        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(527))).$append2($maxSearchQubits)).$toString()));
     if ($parallelThreshold >= 1) {
         $this.$maxQubits0 = $maxQubits;
         $this.$maxSearchQubits = $maxSearchQubits;
@@ -19256,7 +19985,7 @@ oaj_JQAPIConfig__init_0 = ($this, $maxQubits, $maxSearchQubits, $parallelEnabled
         $this.$operatorExecutor0 = $operatorExecutor;
         return;
     }
-    $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(513))).$append2($parallelThreshold)).$toString()));
+    $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(528))).$append2($parallelThreshold)).$toString()));
 },
 oaj_JQAPIConfig__init_ = (var_0, var_1, var_2, var_3, var_4) => {
     let var_5 = new oaj_JQAPIConfig();
@@ -19296,16 +20025,16 @@ oaj_JQAPIConfig_operatorExecutor = $this => {
     return $this.$operatorExecutor0;
 },
 oaj_JQAPIConfig__clinit_ = () => {
-    oaj_JQAPIConfig_RESOLVED_PARALLEL_ENABLED = oaj_JQAPIConfig_readBooleanProperty($rt_s(514), 1);
-    oaj_JQAPIConfig_RESOLVED_PARALLEL_THRESHOLD = oaj_JQAPIConfig_readThresholdProperty($rt_s(515), 65536);
+    oaj_JQAPIConfig_RESOLVED_PARALLEL_ENABLED = oaj_JQAPIConfig_readBooleanProperty($rt_s(529), 1);
+    oaj_JQAPIConfig_RESOLVED_PARALLEL_THRESHOLD = oaj_JQAPIConfig_readThresholdProperty($rt_s(530), 65536);
 };
 function oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1() {
     jl_Object.call(this);
-    this.$_025 = null;
+    this.$_028 = null;
 }
 let oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_025 = var$1;
+    var$0.$_028 = var$1;
 },
 oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1__init_0 = var_0 => {
     let var_1 = new oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1();
@@ -19316,7 +20045,7 @@ oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1_accept0 = (var$0, var$1) =
     oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1_accept(var$0, var$1);
 },
 oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1_accept = (var$0, var$1) => {
-    var$0.$_025.$reset1(var$1.$intValue());
+    var$0.$_028.$reset1(var$1.$intValue());
 };
 function jur_Quantifier() {
     let a = this; jur_SpecialToken.call(a);
@@ -19342,7 +20071,7 @@ jur_Quantifier_max = $this => {
 jur_Quantifier_toString = $this => {
     let var$1, var$2, var$3;
     var$1 = $this.$min1;
-    var$2 = $this.$max1 == 2147483647 ? $rt_s(69) : jl_Integer_toString($this.$max1);
+    var$2 = $this.$max1 == 2147483647 ? $rt_s(72) : jl_Integer_toString($this.$max1);
     var$3 = jl_StringBuilder__init_();
     jl_StringBuilder_append0(jl_StringBuilder_append(jl_StringBuilder_append0(jl_StringBuilder_append1(jl_StringBuilder_append0(var$3, 123), var$1), 44), var$2), 125);
     return jl_StringBuilder_toString(var$3);
@@ -19649,47 +20378,6 @@ jusi_StreamOverSpliterator_next = ($this, $consumer) => {
 jusi_StreamOverSpliterator_estimateSize = $this => {
     return Long_lo(($this.$spliterator0.$estimateSize0()));
 },
-juf_DoubleSupplier = $rt_classWithoutFields(0);
-function oajw_JqapiBridge$trace$lambda$_9_0() {
-    jl_Object.call(this);
-    this.$_09 = null;
-}
-let oajw_JqapiBridge$trace$lambda$_9_0__init_ = (var$0, var$1) => {
-    jl_Object__init_(var$0);
-    var$0.$_09 = var$1;
-},
-oajw_JqapiBridge$trace$lambda$_9_0__init_0 = var_0 => {
-    let var_1 = new oajw_JqapiBridge$trace$lambda$_9_0();
-    oajw_JqapiBridge$trace$lambda$_9_0__init_(var_1, var_0);
-    return var_1;
-},
-oajw_JqapiBridge$trace$lambda$_9_0_getAsDouble = var$0 => {
-    return var$0.$_09.$nextDouble();
-};
-function oajw_JqapiBridge$trace$lambda$_9_1() {
-    let a = this; jl_Object.call(a);
-    a.$_032 = null;
-    a.$_17 = null;
-    a.$_21 = null;
-    a.$_31 = null;
-    a.$_40 = null;
-}
-let oajw_JqapiBridge$trace$lambda$_9_1__init_ = (var$0, var$1, var$2, var$3, var$4, var$5) => {
-    jl_Object__init_(var$0);
-    var$0.$_032 = var$1;
-    var$0.$_17 = var$2;
-    var$0.$_21 = var$3;
-    var$0.$_31 = var$4;
-    var$0.$_40 = var$5;
-},
-oajw_JqapiBridge$trace$lambda$_9_1__init_0 = (var_0, var_1, var_2, var_3, var_4) => {
-    let var_5 = new oajw_JqapiBridge$trace$lambda$_9_1();
-    oajw_JqapiBridge$trace$lambda$_9_1__init_(var_5, var_0, var_1, var_2, var_3, var_4);
-    return var_5;
-},
-oajw_JqapiBridge$trace$lambda$_9_1_onOperation = (var$0, var$1, var$2, var$3, var$4) => {
-    oajw_JqapiBridge_lambda$trace$0(var$0.$_032, var$0.$_17, var$0.$_21, var$0.$_31, var$0.$_40, var$1, var$2, var$3, var$4);
-},
 jur_EOISet = $rt_classWithoutFields(jur_AbstractSet),
 jur_EOISet__init_ = $this => {
     jur_AbstractSet__init_($this);
@@ -19712,7 +20400,7 @@ jur_EOISet_hasConsumed = ($this, $matchResult) => {
     return 0;
 },
 jur_EOISet_getName = $this => {
-    return $rt_s(516);
+    return $rt_s(531);
 },
 ju_Spliterator = $rt_classWithoutFields(0);
 function jusi_SpliteratorOverCollection() {
@@ -19847,16 +20535,16 @@ function ju_HashSet() {
     this.$backingMap = null;
 }
 let ju_HashSet__init_2 = $this => {
-    ju_HashSet__init_($this, ju_HashMap__init_1());
+    ju_HashSet__init_0($this, ju_HashMap__init_1());
 },
-ju_HashSet__init_0 = () => {
+ju_HashSet__init_ = () => {
     let var_0 = new ju_HashSet();
     ju_HashSet__init_2(var_0);
     return var_0;
 },
 ju_HashSet__init_3 = ($this, $collection) => {
     let $iter;
-    ju_HashSet__init_($this, ju_HashMap__init_3($collection.$size() < 6 ? 11 : $collection.$size() * 2 | 0));
+    ju_HashSet__init_0($this, ju_HashMap__init_3($collection.$size() < 6 ? 11 : $collection.$size() * 2 | 0));
     $iter = $collection.$iterator();
     while ($iter.$hasNext()) {
         $this.$add($iter.$next());
@@ -19867,13 +20555,13 @@ ju_HashSet__init_1 = var_0 => {
     ju_HashSet__init_3(var_1, var_0);
     return var_1;
 },
-ju_HashSet__init_ = ($this, $backingMap) => {
+ju_HashSet__init_0 = ($this, $backingMap) => {
     ju_AbstractSet__init_($this);
     $this.$backingMap = $backingMap;
 },
 ju_HashSet__init_4 = var_0 => {
     let var_1 = new ju_HashSet();
-    ju_HashSet__init_(var_1, var_0);
+    ju_HashSet__init_0(var_1, var_0);
     return var_1;
 },
 ju_HashSet_add = ($this, $object) => {
@@ -19895,7 +20583,7 @@ function oajqc_ClassicalRecord() {
 let oajqc_ClassicalRecord__init_ = ($this, $bit) => {
     jl_Record__init_($this);
     if ($bit && $bit != 1)
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(517)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(532)));
     $this.$bit0 = $bit;
 },
 oajqc_ClassicalRecord__init_0 = var_0 => {
@@ -19904,7 +20592,7 @@ oajqc_ClassicalRecord__init_0 = var_0 => {
     return var_1;
 },
 oajqc_ClassicalRecord_toString = $this => {
-    return ((((jl_StringBuilder__init_0($rt_s(518))).$append1($rt_s(519))).$append2($this.$bit0)).$append1($rt_s(57))).$toString();
+    return ((((jl_StringBuilder__init_0($rt_s(533))).$append1($rt_s(534))).$append2($this.$bit0)).$append1($rt_s(52))).$toString();
 },
 oajqc_ClassicalRecord_hashCode = $this => {
     return 31 + jl_Integer_hashCode($this.$bit0) | 0;
@@ -19966,7 +20654,7 @@ jur_MultiLineSOLSet_hasConsumed = ($this, $matchResult) => {
     return 0;
 },
 jur_MultiLineSOLSet_getName = $this => {
-    return $rt_s(520);
+    return $rt_s(535);
 };
 function oajvs_ComplexCell() {
     let a = this; jl_Record.call(a);
@@ -19984,7 +20672,7 @@ oajvs_ComplexCell__init_0 = (var_0, var_1) => {
     return var_2;
 },
 oajvs_ComplexCell_toString = $this => {
-    return ((((((jl_StringBuilder__init_0($rt_s(521))).$append1($rt_s(522))).$append4($this.$re0)).$append1($rt_s(523))).$append4($this.$im0)).$append1($rt_s(57))).$toString();
+    return ((((((jl_StringBuilder__init_0($rt_s(536))).$append1($rt_s(537))).$append4($this.$re0)).$append1($rt_s(538))).$append4($this.$im0)).$append1($rt_s(52))).$toString();
 },
 oajvs_ComplexCell_hashCode = $this => {
     return ((31 + jl_Double_hashCode($this.$re0) | 0) * 31 | 0) + jl_Double_hashCode($this.$im0) | 0;
@@ -20106,21 +20794,21 @@ jur_AbstractCharClass$LazyJavaTitleCase_computeValue = $this => {
 oajvo_OpenQasmSerializer = $rt_classWithoutFields(),
 oajvo_OpenQasmSerializer_serialize = ($spec, $config) => {
     let $output, $bit, $operations, var$6, $level, $used, var$9, $original, $operands, var$12, $operand, var$14, $gate, $gateOperands, $mapping, $placements, var$19, $placement, var$21, var$22;
-    ju_Objects_requireNonNull($spec, $rt_s(524));
+    ju_Objects_requireNonNull($spec, $rt_s(539));
     ju_Objects_requireNonNull($config, $rt_s(8));
     if (oajvs_CircuitSpec_numQubits($spec) >= 1 && oajvs_CircuitSpec_numQubits($spec) <= oaj_JQAPIConfig_maxQubits($config) && oajvs_CircuitSpec_numClassicalBits($spec) <= oaj_JQAPIConfig_maxQubits($config)) {
-        $output = jl_StringBuilder__init_0($rt_s(525));
-        (($output.$append1($rt_s(526))).$append2(oajvs_CircuitSpec_numQubits($spec))).$append1($rt_s(527));
+        $output = jl_StringBuilder__init_0($rt_s(540));
+        (($output.$append1($rt_s(541))).$append2(oajvs_CircuitSpec_numQubits($spec))).$append1($rt_s(542));
         $bit = 0;
         while ($bit < oajvs_CircuitSpec_numClassicalBits($spec)) {
-            (($output.$append1($rt_s(528))).$append2($bit)).$append1($rt_s(529));
+            (($output.$append1($rt_s(543))).$append2($bit)).$append1($rt_s(544));
             $bit = $bit + 1 | 0;
         }
         $operations = 0;
         var$6 = (oajvs_CircuitSpec_levels($spec)).$iterator();
         while (var$6.$hasNext()) {
             $level = var$6.$next();
-            $used = ju_HashSet__init_0();
+            $used = ju_HashSet__init_();
             var$9 = (oajvs_LevelSpec_gates($level)).$iterator();
             while (var$9.$hasNext()) {
                 $original = var$9.$next();
@@ -20131,7 +20819,7 @@ oajvo_OpenQasmSerializer_serialize = ($spec, $config) => {
                 while (var$12.$hasNext()) {
                     $operand = (var$12.$next()).$intValue();
                     if (!$used.$add(jl_Integer_valueOf($operand)))
-                        $rt_throw(jl_IllegalArgumentException__init_($rt_s(530)));
+                        $rt_throw(jl_IllegalArgumentException__init_($rt_s(545)));
                 }
                 var$14 = (oajvo_OpenQasmSerializer_lowerSwaps($original)).$iterator();
                 while (var$14.$hasNext()) {
@@ -20145,10 +20833,10 @@ oajvo_OpenQasmSerializer_serialize = ($spec, $config) => {
                         $placement = var$19.$next();
                         $operations = $operations + 1 | 0;
                         if ($operations > 10000)
-                            $rt_throw(oaje_JQApiLimitException__init_($rt_s(531)));
+                            $rt_throw(oaje_JQApiLimitException__init_($rt_s(546)));
                         if (oajvs_GateSpec_condition($gate) !== null) {
-                            var$21 = (($output.$append1($rt_s(532))).$append2(oajqc_Condition_bitIndex(oajvs_GateSpec_condition($gate)))).$append1($rt_s(533));
-                            (var$21.$append2(oajqc_Condition_expected(oajvs_GateSpec_condition($gate)))).$append1($rt_s(534));
+                            var$21 = (($output.$append1($rt_s(547))).$append2(oajqc_Condition_bitIndex(oajvs_GateSpec_condition($gate)))).$append1($rt_s(548));
+                            (var$21.$append2(oajqc_Condition_expected(oajvs_GateSpec_condition($gate)))).$append1($rt_s(549));
                         }
                         $output.$append1(oajvo_OpenQasmGates$Mapping_name($mapping));
                         if (!(oajvo_OpenQasmGates$Mapping_parameters($mapping)).$isEmpty()) {
@@ -20156,28 +20844,28 @@ oajvo_OpenQasmSerializer_serialize = ($spec, $config) => {
                             var$22 = (oajvo_OpenQasmGates$Mapping_parameters($mapping)).$stream();
                             var$21 = oajvo_OpenQasmSerializer$serialize$lambda$_2_2__init_0($gate);
                             var$21 = var$22.$map(var$21);
-                            var$21 = var$21.$collect(jus_Collectors_joining($rt_s(535)));
+                            var$21 = var$21.$collect(jus_Collectors_joining($rt_s(550)));
                             var$21 = var$12.$append1(var$21);
                             var$21.$append0(41);
                         }
                         var$21 = $output.$append0(32);
                         var$12 = ($placement.$stream()).$map(oajvo_OpenQasmSerializer$serialize$lambda$_2_1__init_0());
-                        var$12 = var$12.$collect(jus_Collectors_joining($rt_s(535)));
+                        var$12 = var$12.$collect(jus_Collectors_joining($rt_s(550)));
                         var$21.$append1(var$12);
                         var$21 = oajvs_GateSpec_kind($gate);
                         oajvs_GateKind_$callClinit();
                         if (var$21 === oajvs_GateKind_MEASUREMENT)
-                            (($output.$append1($rt_s(536))).$append(oajvs_GateSpec_classicalTarget($gate))).$append1($rt_s(537));
-                        $output.$append1($rt_s(538));
+                            (($output.$append1($rt_s(551))).$append(oajvs_GateSpec_classicalTarget($gate))).$append1($rt_s(552));
+                        $output.$append1($rt_s(553));
                         if ($output.$length() > 1000000)
-                            $rt_throw(oaje_JQApiLimitException__init_($rt_s(539)));
+                            $rt_throw(oaje_JQApiLimitException__init_($rt_s(554)));
                     }
                 }
             }
         }
         return $output.$toString();
     }
-    $rt_throw(oaje_JQApiLimitException__init_($rt_s(540)));
+    $rt_throw(oaje_JQApiLimitException__init_($rt_s(555)));
 },
 oajvo_OpenQasmSerializer_lowerSwaps = $gate => {
     let var$2, $a, $b, $middle, var$6, var$7, var$8;
@@ -20188,13 +20876,13 @@ oajvo_OpenQasmSerializer_lowerSwaps = $gate => {
     $a = ((oajvs_GateSpec_targets($gate)).$get0(0)).$intValue();
     $b = ((oajvs_GateSpec_targets($gate)).$get0(1)).$intValue();
     if (oajvs_GateSpec_kind($gate) === oajvs_GateKind_SWAP)
-        return ju_List_of1(oajvo_OpenQasmSerializer_cx($a, $b, $gate), oajvo_OpenQasmSerializer_cx($b, $a, $gate), oajvo_OpenQasmSerializer_cx($a, $b, $gate));
+        return ju_List_of3(oajvo_OpenQasmSerializer_cx($a, $b, $gate), oajvo_OpenQasmSerializer_cx($b, $a, $gate), oajvo_OpenQasmSerializer_cx($a, $b, $gate));
     $middle = new oajvs_GateSpec;
     var$6 = oajvs_GateKind_TOFFOLI;
     var$7 = ju_List_of(jl_Integer_valueOf($b));
-    var$8 = ju_List_of2((oajvs_GateSpec_controls($gate)).$getFirst(), jl_Integer_valueOf($a));
+    var$8 = ju_List_of1((oajvs_GateSpec_controls($gate)).$getFirst(), jl_Integer_valueOf($a));
     oajvs_GateSpec__init_($middle, var$6, var$7, var$8, ju_Map_of(), null, null, oajvs_GateSpec_condition($gate));
-    return ju_List_of1(oajvo_OpenQasmSerializer_cx($b, $a, $gate), $middle, oajvo_OpenQasmSerializer_cx($b, $a, $gate));
+    return ju_List_of3(oajvo_OpenQasmSerializer_cx($b, $a, $gate), $middle, oajvo_OpenQasmSerializer_cx($b, $a, $gate));
 },
 oajvo_OpenQasmSerializer_cx = ($control, $target, $source) => {
     let var$4;
@@ -20204,7 +20892,7 @@ oajvo_OpenQasmSerializer_cx = ($control, $target, $source) => {
     return var$4;
 },
 oajvo_OpenQasmSerializer_lambda$serialize$1 = $index => {
-    return ((((jl_StringBuilder__init_()).$append1($rt_s(541))).$append($index)).$append1($rt_s(57))).$toString();
+    return ((((jl_StringBuilder__init_()).$append1($rt_s(556))).$append($index)).$append1($rt_s(52))).$toString();
 },
 oajvo_OpenQasmSerializer_lambda$serialize$0 = ($gate, $parameter) => {
     return jl_Double_toString(((oajvs_GateSpec_params($gate)).$get($parameter)).$doubleValue());
@@ -20224,6 +20912,7 @@ oajvs_CircuitSpec$_init_$lambda$_0_0_apply0 = (var$0, var$1) => {
 oajvs_CircuitSpec$_init_$lambda$_0_0_apply = (var$0, var$1) => {
     return oajvs_CircuitSpec_lambda$new$0(var$1);
 },
+juf_DoubleSupplier = $rt_classWithoutFields(0),
 oajvs_CircuitSpec$_init_$lambda$_0_1 = $rt_classWithoutFields(),
 oajvs_CircuitSpec$_init_$lambda$_0_1__init_ = var$0 => {
     jl_Object__init_(var$0);
@@ -20257,7 +20946,7 @@ jur_PreviousMatch_hasConsumed = ($this, $matchResult) => {
     return 0;
 },
 jur_PreviousMatch_getName = $this => {
-    return $rt_s(542);
+    return $rt_s(557);
 };
 function oajm_Complex() {
     let a = this; jl_Object.call(a);
@@ -20320,7 +21009,7 @@ oajm_Complex_conjugate = $this => {
     return oajm_Complex__init_($this.$real,  -$this.$imaginary);
 },
 oajm_Complex_toString = $this => {
-    return ((((((jl_StringBuilder__init_()).$append1($rt_s(543))).$append4($this.$real)).$append1($rt_s(59))).$append4($this.$imaginary)).$append1($rt_s(544))).$toString();
+    return ((((((jl_StringBuilder__init_()).$append1($rt_s(558))).$append4($this.$real)).$append1($rt_s(62))).$append4($this.$imaginary)).$append1($rt_s(559))).$toString();
 },
 oajm_Complex__clinit_ = () => {
     oajm_Complex_ZERO = oajm_Complex__init_(0.0, 0.0);
@@ -20404,29 +21093,29 @@ oajvs_GateKind_$values = () => {
     return var$1;
 },
 oajvs_GateKind__clinit_ = () => {
-    oajvs_GateKind_H = oajvs_GateKind__init_($rt_s(465), 0);
-    oajvs_GateKind_X = oajvs_GateKind__init_($rt_s(466), 1);
-    oajvs_GateKind_Y = oajvs_GateKind__init_($rt_s(467), 2);
-    oajvs_GateKind_Z = oajvs_GateKind__init_($rt_s(468), 3);
-    oajvs_GateKind_S = oajvs_GateKind__init_($rt_s(102), 4);
-    oajvs_GateKind_T = oajvs_GateKind__init_($rt_s(469), 5);
-    oajvs_GateKind_CNOT = oajvs_GateKind__init_($rt_s(545), 6);
-    oajvs_GateKind_CZ = oajvs_GateKind__init_($rt_s(383), 7);
-    oajvs_GateKind_CY = oajvs_GateKind__init_($rt_s(382), 8);
-    oajvs_GateKind_SWAP = oajvs_GateKind__init_($rt_s(546), 9);
-    oajvs_GateKind_CSWAP = oajvs_GateKind__init_($rt_s(547), 10);
-    oajvs_GateKind_TOFFOLI = oajvs_GateKind__init_($rt_s(548), 11);
-    oajvs_GateKind_RX = oajvs_GateKind__init_($rt_s(549), 12);
-    oajvs_GateKind_RY = oajvs_GateKind__init_($rt_s(550), 13);
-    oajvs_GateKind_RZ = oajvs_GateKind__init_($rt_s(551), 14);
-    oajvs_GateKind_PHASE = oajvs_GateKind__init_($rt_s(552), 15);
-    oajvs_GateKind_U3 = oajvs_GateKind__init_($rt_s(370), 16);
-    oajvs_GateKind_MULTI_CONTROLLED = oajvs_GateKind__init_($rt_s(553), 17);
-    oajvs_GateKind_ORACLE = oajvs_GateKind__init_($rt_s(554), 18);
-    oajvs_GateKind_GENERIC = oajvs_GateKind__init_($rt_s(555), 19);
-    oajvs_GateKind_MEASUREMENT = oajvs_GateKind__init_($rt_s(556), 20);
-    oajvs_GateKind_RESET = oajvs_GateKind__init_($rt_s(557), 21);
-    oajvs_GateKind_IDENTITY = oajvs_GateKind__init_($rt_s(558), 22);
+    oajvs_GateKind_H = oajvs_GateKind__init_($rt_s(480), 0);
+    oajvs_GateKind_X = oajvs_GateKind__init_($rt_s(481), 1);
+    oajvs_GateKind_Y = oajvs_GateKind__init_($rt_s(482), 2);
+    oajvs_GateKind_Z = oajvs_GateKind__init_($rt_s(483), 3);
+    oajvs_GateKind_S = oajvs_GateKind__init_($rt_s(105), 4);
+    oajvs_GateKind_T = oajvs_GateKind__init_($rt_s(484), 5);
+    oajvs_GateKind_CNOT = oajvs_GateKind__init_($rt_s(560), 6);
+    oajvs_GateKind_CZ = oajvs_GateKind__init_($rt_s(397), 7);
+    oajvs_GateKind_CY = oajvs_GateKind__init_($rt_s(396), 8);
+    oajvs_GateKind_SWAP = oajvs_GateKind__init_($rt_s(561), 9);
+    oajvs_GateKind_CSWAP = oajvs_GateKind__init_($rt_s(562), 10);
+    oajvs_GateKind_TOFFOLI = oajvs_GateKind__init_($rt_s(563), 11);
+    oajvs_GateKind_RX = oajvs_GateKind__init_($rt_s(564), 12);
+    oajvs_GateKind_RY = oajvs_GateKind__init_($rt_s(565), 13);
+    oajvs_GateKind_RZ = oajvs_GateKind__init_($rt_s(566), 14);
+    oajvs_GateKind_PHASE = oajvs_GateKind__init_($rt_s(567), 15);
+    oajvs_GateKind_U3 = oajvs_GateKind__init_($rt_s(377), 16);
+    oajvs_GateKind_MULTI_CONTROLLED = oajvs_GateKind__init_($rt_s(568), 17);
+    oajvs_GateKind_ORACLE = oajvs_GateKind__init_($rt_s(569), 18);
+    oajvs_GateKind_GENERIC = oajvs_GateKind__init_($rt_s(570), 19);
+    oajvs_GateKind_MEASUREMENT = oajvs_GateKind__init_($rt_s(571), 20);
+    oajvs_GateKind_RESET = oajvs_GateKind__init_($rt_s(572), 21);
+    oajvs_GateKind_IDENTITY = oajvs_GateKind__init_($rt_s(573), 22);
     oajvs_GateKind_$VALUES = oajvs_GateKind_$values();
 },
 jur_NonCapFSet = $rt_classWithoutFields(jur_FSet);
@@ -20445,7 +21134,7 @@ jur_NonCapFSet_matches = ($this, $stringIndex, $testString, $matchResult) => {
     return $this.$next6.$matches($stringIndex, $testString, $matchResult);
 },
 jur_NonCapFSet_getName = $this => {
-    return $rt_s(559);
+    return $rt_s(574);
 },
 jur_NonCapFSet_hasConsumed = ($this, $mr) => {
     return 0;
@@ -20475,7 +21164,7 @@ jur_UCISupplCharSet_getName = $this => {
     let var$1, var$2;
     var$1 = jl_String__init_(jl_Character_toChars($this.$ch3));
     var$2 = jl_StringBuilder__init_();
-    jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(395)), var$1);
+    jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(409)), var$1);
     return jl_StringBuilder_toString(var$2);
 },
 jl_System = $rt_classWithoutFields(),
@@ -20530,7 +21219,7 @@ jl_System_arraycopy = ($src, $srcPos, $dest, $destPos, $length) => {
         }
         $rt_throw(jl_IndexOutOfBoundsException__init_());
     }
-    $rt_throw(jl_NullPointerException__init_0($rt_s(560)));
+    $rt_throw(jl_NullPointerException__init_0($rt_s(575)));
 },
 jl_System_fastArraycopy = ($src, $srcPos, $dest, $destPos, $length) => {
     let var$6;
@@ -20567,29 +21256,29 @@ jl_System_initPropertiesIfNeeded = () => {
     let var$1;
     if (jl_System_properties === null) {
         var$1 = ju_Properties__init_1();
-        var$1.$put($rt_s(561), $rt_s(562));
-        var$1.$put($rt_s(563), $rt_s(564));
-        var$1.$put($rt_s(565), !(otrf_VirtualFileSystemProvider_getInstance()).$isWindows() ? $rt_s(460) : $rt_s(566));
-        var$1.$put($rt_s(567), !(otrf_VirtualFileSystemProvider_getInstance()).$isWindows() ? $rt_s(568) : $rt_s(569));
-        var$1.$put($rt_s(570), jl_System_lineSeparator());
-        var$1.$put($rt_s(571), jl_System_getTempDir());
-        var$1.$put($rt_s(572), $rt_s(562));
-        var$1.$put($rt_s(573), jl_System_getHomeDir());
+        var$1.$put($rt_s(576), $rt_s(577));
+        var$1.$put($rt_s(578), $rt_s(579));
+        var$1.$put($rt_s(580), !(otrf_VirtualFileSystemProvider_getInstance()).$isWindows() ? $rt_s(475) : $rt_s(581));
+        var$1.$put($rt_s(582), !(otrf_VirtualFileSystemProvider_getInstance()).$isWindows() ? $rt_s(583) : $rt_s(584));
+        var$1.$put($rt_s(585), jl_System_lineSeparator());
+        var$1.$put($rt_s(586), jl_System_getTempDir());
+        var$1.$put($rt_s(587), $rt_s(577));
+        var$1.$put($rt_s(588), jl_System_getHomeDir());
         jl_System_properties = ju_Properties__init_2(var$1);
     }
 },
 jl_System_getTempDir = () => {
-    return $rt_s(574);
+    return $rt_s(589);
 },
 jl_System_getHomeDir = () => {
-    return $rt_s(460);
+    return $rt_s(475);
 },
 jl_System_getProperty = $key => {
     jl_System_initPropertiesIfNeeded();
     return jl_System_properties.$getProperty($key);
 },
 jl_System_lineSeparator = () => {
-    return $rt_s(575);
+    return $rt_s(590);
 },
 jm_Conversion = $rt_classWithoutFields(),
 jm_Conversion_digitFitInInt = null,
@@ -20604,12 +21293,12 @@ jm_Conversion__clinit_ = () => {
 };
 function jur_AbstractCharClass$LazyRange() {
     let a = this; jur_AbstractCharClass$LazyCharClass.call(a);
-    a.$start4 = 0;
+    a.$start6 = 0;
     a.$end3 = 0;
 }
 let jur_AbstractCharClass$LazyRange__init_0 = ($this, $start, $end) => {
     jur_AbstractCharClass$LazyCharClass__init_($this);
-    $this.$start4 = $start;
+    $this.$start6 = $start;
     $this.$end3 = $end;
 },
 jur_AbstractCharClass$LazyRange__init_ = (var_0, var_1) => {
@@ -20619,7 +21308,7 @@ jur_AbstractCharClass$LazyRange__init_ = (var_0, var_1) => {
 },
 jur_AbstractCharClass$LazyRange_computeValue = $this => {
     let $chCl;
-    $chCl = (jur_CharClass__init_()).$add1($this.$start4, $this.$end3);
+    $chCl = (jur_CharClass__init_()).$add1($this.$start6, $this.$end3);
     return $chCl;
 },
 jur_AbstractCharClass$LazyXDigit = $rt_classWithoutFields(jur_AbstractCharClass$LazyCharClass),
@@ -20700,8 +21389,8 @@ jusi_DistinctStreamImpl$wrap$lambda$_1_0_test = (var$0, var$1) => {
 function jur_Matcher() {
     let a = this; jl_Object.call(a);
     a.$pat = null;
-    a.$start5 = null;
-    a.$string1 = null;
+    a.$start4 = null;
+    a.$string0 = null;
     a.$matchResult = null;
     a.$leftBound = 0;
     a.$rightBound = 0;
@@ -20710,7 +21399,7 @@ function jur_Matcher() {
 }
 let jur_Matcher_region = ($this, $start, $end) => {
     let var$3, var$4;
-    if ($start <= $end && $start >= 0 && $end >= 0 && $start <= $this.$string1.$length() && $end <= $this.$string1.$length()) {
+    if ($start <= $end && $start >= 0 && $end >= 0 && $start <= $this.$string0.$length() && $end <= $this.$string0.$length()) {
         $this.$leftBound = $start;
         $this.$rightBound = $end;
         $this.$matchResult.$reset0(null, $start, $end);
@@ -20720,7 +21409,7 @@ let jur_Matcher_region = ($this, $start, $end) => {
     }
     var$3 = new jl_IndexOutOfBoundsException;
     var$4 = jl_StringBuilder__init_();
-    jl_StringBuilder_append1(jl_StringBuilder_append(jl_StringBuilder_append1(var$4, $start), $rt_s(59)), $end);
+    jl_StringBuilder_append1(jl_StringBuilder_append(jl_StringBuilder_append1(var$4, $start), $rt_s(62)), $end);
     jl_IndexOutOfBoundsException__init_1(var$3, jl_StringBuilder_toString(var$4));
     $rt_throw(var$3);
 },
@@ -20730,6 +21419,48 @@ jur_Matcher_group = ($this, $group) => {
 jur_Matcher_group0 = $this => {
     return jur_Matcher_group($this, 0);
 },
+jur_Matcher_find = ($this, $start) => {
+    let $stringLength, var$3;
+    $stringLength = $this.$string0.$length();
+    if ($start >= 0 && $start <= $stringLength) {
+        var$3 = jur_Matcher_findAt($this, $start);
+        if (var$3 >= 0 && $this.$matchResult.$isValid()) {
+            $this.$matchResult.$finalizeMatch();
+            return 1;
+        }
+        $this.$matchResult.$startIndex = (-1);
+        return 0;
+    }
+    $rt_throw(jl_IndexOutOfBoundsException__init_2(jl_String_valueOf0($start)));
+},
+jur_Matcher_findAt = ($this, $startIndex) => {
+    let $foundIndex;
+    $this.$matchResult.$reset2();
+    $this.$matchResult.$setMode(1);
+    $this.$matchResult.$setStartIndex($startIndex);
+    $foundIndex = $this.$start4.$find($startIndex, $this.$string0, $this.$matchResult);
+    if ($foundIndex == (-1))
+        $this.$matchResult.$hitEnd = 1;
+    return $foundIndex;
+},
+jur_Matcher_find0 = $this => {
+    let $length, var$2;
+    $length = $this.$string0.$length();
+    if (!jur_Matcher_hasTransparentBounds($this))
+        $length = $this.$rightBound;
+    if ($this.$matchResult.$startIndex >= 0 && $this.$matchResult.$mode() == 1) {
+        $this.$matchResult.$startIndex = $this.$matchResult.$end0();
+        if ($this.$matchResult.$end0() == $this.$matchResult.$start0()) {
+            var$2 = $this.$matchResult;
+            var$2.$startIndex = var$2.$startIndex + 1 | 0;
+        }
+        return $this.$matchResult.$startIndex <= $length && jur_Matcher_find($this, $this.$matchResult.$startIndex) ? 1 : 0;
+    }
+    return jur_Matcher_find($this, $this.$leftBound);
+},
+jur_Matcher_start0 = ($this, $group) => {
+    return $this.$matchResult.$start($group);
+},
 jur_Matcher_end0 = ($this, $group) => {
     return $this.$matchResult.$end($group);
 },
@@ -20737,7 +21468,7 @@ jur_Matcher_matches = $this => {
     return jur_Matcher_lookingAt($this, $this.$leftBound, 2);
 },
 jur_Matcher_runMatch = ($this, $set, $index, $matchResult) => {
-    if ($set.$matches($index, $this.$string1, $matchResult) < 0)
+    if ($set.$matches($index, $this.$string0, $matchResult) < 0)
         return 0;
     $matchResult.$finalizeMatch();
     return 1;
@@ -20749,10 +21480,16 @@ jur_Matcher_lookingAt = ($this, $startIndex, $mode) => {
     $this.$matchResult.$reset2();
     $this.$matchResult.$setMode($mode);
     $this.$matchResult.$setStartIndex($startIndex);
-    return jur_Matcher_runMatch($this, $this.$start5, $startIndex, $this.$matchResult);
+    return jur_Matcher_runMatch($this, $this.$start4, $startIndex, $this.$matchResult);
+},
+jur_Matcher_start = $this => {
+    return jur_Matcher_start0($this, 0);
 },
 jur_Matcher_end = $this => {
     return jur_Matcher_end0($this, 0);
+},
+jur_Matcher_hasTransparentBounds = $this => {
+    return $this.$matchResult.$hasTransparentBounds();
 },
 jur_Matcher__init_ = ($this, $pat, $cs) => {
     let var$3, var$4, var$5, var$6, var$7;
@@ -20760,10 +21497,10 @@ jur_Matcher__init_ = ($this, $pat, $cs) => {
     $this.$leftBound = (-1);
     $this.$rightBound = (-1);
     $this.$pat = $pat;
-    $this.$start5 = $pat.$start2;
-    $this.$string1 = $cs;
+    $this.$start4 = $pat.$start3;
+    $this.$string0 = $cs;
     $this.$leftBound = 0;
-    $this.$rightBound = $this.$string1.$length();
+    $this.$rightBound = $this.$string0.$length();
     var$3 = new jur_MatchResultImpl;
     var$4 = $this.$leftBound;
     var$5 = $this.$rightBound;
@@ -20807,7 +21544,7 @@ jur_DotAllSet_matches = ($this, $stringIndex, $testString, $matchResult) => {
     return $this.$next6.$matches(var$5, $testString, $matchResult);
 },
 jur_DotAllSet_getName = $this => {
-    return $rt_s(576);
+    return $rt_s(591);
 },
 jur_DotAllSet_setNext = ($this, $next) => {
     $this.$next6 = $next;
@@ -20820,11 +21557,11 @@ jur_DotAllSet_hasConsumed = ($this, $matchResult) => {
 };
 function jusi_SimpleStreamImpl$toArray$lambda$_21_0() {
     jl_Object.call(this);
-    this.$_018 = null;
+    this.$_019 = null;
 }
 let jusi_SimpleStreamImpl$toArray$lambda$_21_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_018 = var$1;
+    var$0.$_019 = var$1;
 },
 jusi_SimpleStreamImpl$toArray$lambda$_21_0__init_0 = var_0 => {
     let var_1 = new jusi_SimpleStreamImpl$toArray$lambda$_21_0();
@@ -20832,7 +21569,7 @@ jusi_SimpleStreamImpl$toArray$lambda$_21_0__init_0 = var_0 => {
     return var_1;
 },
 jusi_SimpleStreamImpl$toArray$lambda$_21_0_test = (var$0, var$1) => {
-    return var$0.$_018.$add(var$1);
+    return var$0.$_019.$add(var$1);
 };
 function jur_AbstractCharClass$LazyJavaLowerCase$1() {
     jur_AbstractCharClass.call(this);
@@ -20866,7 +21603,7 @@ oajvs_LevelSpec__init_0 = var_0 => {
     return var_1;
 },
 oajvs_LevelSpec_toString = $this => {
-    return ((((jl_StringBuilder__init_0($rt_s(577))).$append1($rt_s(578))).$append($this.$gates1)).$append1($rt_s(57))).$toString();
+    return ((((jl_StringBuilder__init_0($rt_s(592))).$append1($rt_s(593))).$append($this.$gates1)).$append1($rt_s(52))).$toString();
 },
 oajvs_LevelSpec_hashCode = $this => {
     return 31 + ju_Objects_hashCode($this.$gates1) | 0;
@@ -20924,10 +21661,10 @@ jur_UCISupplRangeSet_contains = ($this, $ch) => {
 },
 jur_UCISupplRangeSet_getName = $this => {
     let var$1, var$2, var$3;
-    var$1 = !$this.$alt0 ? $rt_s(49) : $rt_s(50);
+    var$1 = !$this.$alt0 ? $rt_s(53) : $rt_s(54);
     var$2 = $this.$chars.$toString();
     var$3 = jl_StringBuilder__init_();
-    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(365)), var$1), var$2);
+    jl_StringBuilder_append(jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(372)), var$1), var$2);
     return jl_StringBuilder_toString(var$3);
 },
 jur_AbstractCharClass$LazyJavaUpperCase = $rt_classWithoutFields(jur_AbstractCharClass$LazyCharClass),
@@ -20973,7 +21710,7 @@ jur_HangulDecomposedCharSet_getName = $this => {
     let var$1, var$2;
     var$1 = jur_HangulDecomposedCharSet_getDecomposedChar($this);
     var$2 = jl_StringBuilder__init_();
-    jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(579)), var$1);
+    jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(594)), var$1);
     return jl_StringBuilder_toString(var$2);
 },
 jur_HangulDecomposedCharSet_matches = ($this, $strIndex, $testString, $matchResult) => {
@@ -21091,17 +21828,17 @@ function oajqg_ConditionalGate() {
 }
 let oajqg_ConditionalGate__init_ = ($this, $gate, $condition) => {
     let var$3, var$4, var$5, var$6;
-    var$3 = (ju_Objects_requireNonNull($gate, $rt_s(306))).$getNumberQubits();
+    var$3 = (ju_Objects_requireNonNull($gate, $rt_s(309))).$getNumberQubits();
     var$4 = $gate.$getMatrix();
     var$5 = $gate.$getType2();
     var$6 = ($gate.$getIndexes()).$toArray($rt_createArray(jl_Integer, 0));
     oajqg_Gate__init_($this, var$3, var$4, var$5, var$6);
-    if (!($gate instanceof oajqg_ConditionalGate) && !jl_String_equals($rt_s(471), $gate.$getType2()) && !jl_String_equals($rt_s(472), $gate.$getType2())) {
+    if (!($gate instanceof oajqg_ConditionalGate) && !jl_String_equals($rt_s(486), $gate.$getType2()) && !jl_String_equals($rt_s(487), $gate.$getType2())) {
         $this.$gate = $gate;
-        $this.$condition1 = ju_Objects_requireNonNull($condition, $rt_s(314));
+        $this.$condition1 = ju_Objects_requireNonNull($condition, $rt_s(317));
         return;
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(580)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(595)));
 },
 oajqg_ConditionalGate__init_0 = (var_0, var_1) => {
     let var_2 = new oajqg_ConditionalGate();
@@ -21133,7 +21870,7 @@ function ju_TemplateCollections$NElementSet() {
     ju_TemplateCollections$AbstractImmutableSet.call(this);
     this.$data3 = null;
 }
-let ju_TemplateCollections$NElementSet__init_0 = ($this, $data) => {
+let ju_TemplateCollections$NElementSet__init_1 = ($this, $data) => {
     let var$2, $table, var$4, var$5, $element, $suggestedIndex, $found, var$9, $existingElement;
     var$2 = $data.data;
     ju_TemplateCollections$AbstractImmutableSet__init_($this);
@@ -21178,6 +21915,57 @@ let ju_TemplateCollections$NElementSet__init_0 = ($this, $data) => {
     $this.$data3 = $table;
 },
 ju_TemplateCollections$NElementSet__init_ = var_0 => {
+    let var_1 = new ju_TemplateCollections$NElementSet();
+    ju_TemplateCollections$NElementSet__init_1(var_1, var_0);
+    return var_1;
+},
+ju_TemplateCollections$NElementSet__init_0 = ($this, $collection) => {
+    let $temp, $index, var$4, var$5, var$6, var$7, $element, var$9, var$10, $indexTemp, $result;
+    ju_TemplateCollections$AbstractImmutableSet__init_($this);
+    $temp = $rt_createArray(jl_Object, $collection.$size());
+    $index = 0;
+    var$4 = ($collection.$toArray0()).data;
+    var$5 = var$4.length;
+    var$6 = 0;
+    while (var$6 < var$5) {
+        var$7 = $temp.data;
+        $element = var$4[var$6];
+        ju_Objects_requireNonNull0($element);
+        var$9 = jl_Math_abs($element.$hashCode2());
+        var$10 = var$7.length;
+        $indexTemp = var$9 % var$10 | 0;
+        a: {
+            while (true) {
+                if (var$7[$indexTemp] === null) {
+                    var$7[$indexTemp] = $element;
+                    $index = $index + 1 | 0;
+                    break a;
+                }
+                if (var$7[$indexTemp].$equals($element))
+                    break;
+                $indexTemp = ($indexTemp + 1 | 0) % var$10 | 0;
+            }
+        }
+        var$6 = var$6 + 1 | 0;
+    }
+    var$4 = $temp.data;
+    $result = $rt_createArray(jl_Object, $index);
+    var$5 = 0;
+    var$6 = var$4.length;
+    var$10 = 0;
+    while (var$10 < var$6) {
+        $element = var$4[var$10];
+        if ($element !== null) {
+            var$7 = $result.data;
+            var$9 = var$5 + 1 | 0;
+            var$7[var$5] = $element;
+            var$5 = var$9;
+        }
+        var$10 = var$10 + 1 | 0;
+    }
+    $this.$data3 = $result;
+},
+ju_TemplateCollections$NElementSet__init_2 = var_0 => {
     let var_1 = new ju_TemplateCollections$NElementSet();
     ju_TemplateCollections$NElementSet__init_0(var_1, var_0);
     return var_1;
@@ -21228,15 +22016,15 @@ function ju_AbstractList$SubAbstractList$SubAbstractListIterator() {
     let a = this; jl_Object.call(a);
     a.$subList0 = null;
     a.$iterator2 = null;
-    a.$start3 = 0;
+    a.$start5 = 0;
     a.$end1 = 0;
 }
 let ju_AbstractList$SubAbstractList$SubAbstractListIterator__init_ = ($this, $it, $list, $offset, $length) => {
     jl_Object__init_($this);
     $this.$iterator2 = $it;
     $this.$subList0 = $list;
-    $this.$start3 = $offset;
-    $this.$end1 = $this.$start3 + $length | 0;
+    $this.$start5 = $offset;
+    $this.$end1 = $this.$start5 + $length | 0;
 },
 ju_AbstractList$SubAbstractList$SubAbstractListIterator__init_0 = (var_0, var_1, var_2, var_3) => {
     let var_4 = new ju_AbstractList$SubAbstractList$SubAbstractListIterator();
@@ -21462,7 +22250,7 @@ jm_Multiplication_powerOf10 = $exp => {
         return (jm_Multiplication_bigFivePows.data[1].$pow1($intExp)).$shiftLeft($intExp);
     $byteArraySize = Long_add(Long_fromInt(1), Long_fromNumber(Long_toNumber($exp) / 2.4082399653118496));
     if (Long_gt($byteArraySize, Long_fromInt(1000000)))
-        $rt_throw(jl_ArithmeticException__init_($rt_s(581)));
+        $rt_throw(jl_ArithmeticException__init_($rt_s(596)));
     if (Long_le($exp, Long_fromInt(2147483647)))
         return (jm_Multiplication_bigFivePows.data[1].$pow1($intExp)).$shiftLeft($intExp);
     $powerOfFive = jm_Multiplication_bigFivePows.data[1].$pow1(2147483647);
@@ -21560,7 +22348,7 @@ jur_WordBoundary_hasConsumed = ($this, $matchResult) => {
     return 0;
 },
 jur_WordBoundary_getName = $this => {
-    return $rt_s(582);
+    return $rt_s(597);
 },
 jur_WordBoundary_isSpace = ($this, $ch, $index, $leftBound, $testString) => {
     let var$5;
@@ -21597,7 +22385,7 @@ jur_AbstractCharClass$LazySpace_computeValue = $this => {
 oajqg_Toffoli = $rt_classWithoutFields(oajqg_Gate),
 oajqg_Toffoli__init_ = ($this, $firstQubit, $secondQubit, $thirdQubit) => {
     oaju_Constants_$callClinit();
-    oajqg_Gate__init_($this, 3, oaju_Constants_TOFFOLI_MATRIX, $rt_s(475), $rt_wrapArray(jl_Integer, [$firstQubit, $secondQubit, $thirdQubit]));
+    oajqg_Gate__init_($this, 3, oaju_Constants_TOFFOLI_MATRIX, $rt_s(490), $rt_wrapArray(jl_Integer, [$firstQubit, $secondQubit, $thirdQubit]));
 },
 oajqg_Toffoli__init_0 = (var_0, var_1, var_2) => {
     let var_3 = new oajqg_Toffoli();
@@ -21638,11 +22426,11 @@ ju_HashMap$1_iterator = $this => {
 };
 function oajqs_SamplingOptions$lambda$new$0$lambda$_14_0() {
     jl_Object.call(this);
-    this.$_08 = null;
+    this.$_010 = null;
 }
 let oajqs_SamplingOptions$lambda$new$0$lambda$_14_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_08 = var$1;
+    var$0.$_010 = var$1;
 },
 oajqs_SamplingOptions$lambda$new$0$lambda$_14_0__init_0 = var_0 => {
     let var_1 = new oajqs_SamplingOptions$lambda$new$0$lambda$_14_0();
@@ -21650,7 +22438,7 @@ oajqs_SamplingOptions$lambda$new$0$lambda$_14_0__init_0 = var_0 => {
     return var_1;
 },
 oajqs_SamplingOptions$lambda$new$0$lambda$_14_0_getAsDouble = var$0 => {
-    return var$0.$_08.$nextDouble();
+    return var$0.$_010.$nextDouble();
 };
 function jl_Double() {
     jl_Number.call(this);
@@ -21736,9 +22524,9 @@ jl_Double_parseDouble = $string => {
                             $start = $start + 1 | 0;
                         }
                     } else {
-                        if ($c == 73 && ($end - $start | 0) == 8 && jl_String_regionMatches($string, 0, $start, $rt_s(583), 0, 8))
+                        if ($c == 73 && ($end - $start | 0) == 8 && jl_String_regionMatches($string, 0, $start, $rt_s(598), 0, 8))
                             return !$negative ? Infinity : (-Infinity);
-                        if ($c == 78 && ($end - $start | 0) == 3 && jl_String_regionMatches($string, 0, $start, $rt_s(584), 0, 3))
+                        if ($c == 78 && ($end - $start | 0) == 3 && jl_String_regionMatches($string, 0, $start, $rt_s(599), 0, 3))
                             return NaN;
                         $rt_throw(jl_NumberFormatException__init_());
                     }
@@ -22088,7 +22876,7 @@ oajvo_OpenQasmParser$Argument__init_ = (var_0, var_1) => {
     return var_2;
 },
 oajvo_OpenQasmParser$Argument_toString = $this => {
-    return ((((((jl_StringBuilder__init_0($rt_s(585))).$append1($rt_s(586))).$append($this.$indexes0)).$append1($rt_s(587))).$append22($this.$wholeRegister0)).$append1($rt_s(57))).$toString();
+    return ((((((jl_StringBuilder__init_0($rt_s(600))).$append1($rt_s(601))).$append($this.$indexes0)).$append1($rt_s(602))).$append23($this.$wholeRegister0)).$append1($rt_s(52))).$toString();
 },
 oajvo_OpenQasmParser$Argument_hashCode = $this => {
     return ((31 + ju_Objects_hashCode($this.$indexes0) | 0) * 31 | 0) + jl_Boolean_hashCode($this.$wholeRegister0) | 0;
@@ -22173,12 +22961,12 @@ jl_NegativeArraySizeException__init_0 = () => {
 };
 function jusi_MappingStreamImpl$wrap$lambda$_1_0() {
     let a = this; jl_Object.call(a);
-    a.$_012 = null;
+    a.$_013 = null;
     a.$_13 = null;
 }
 let jusi_MappingStreamImpl$wrap$lambda$_1_0__init_ = (var$0, var$1, var$2) => {
     jl_Object__init_(var$0);
-    var$0.$_012 = var$1;
+    var$0.$_013 = var$1;
     var$0.$_13 = var$2;
 },
 jusi_MappingStreamImpl$wrap$lambda$_1_0__init_0 = (var_0, var_1) => {
@@ -22187,7 +22975,7 @@ jusi_MappingStreamImpl$wrap$lambda$_1_0__init_0 = (var_0, var_1) => {
     return var_2;
 },
 jusi_MappingStreamImpl$wrap$lambda$_1_0_test = (var$0, var$1) => {
-    return jusi_MappingStreamImpl_lambda$wrap$0(var$0.$_012, var$0.$_13, var$1);
+    return jusi_MappingStreamImpl_lambda$wrap$0(var$0.$_013, var$0.$_13, var$1);
 },
 jur_AbstractCharClass$LazyJavaWhitespace = $rt_classWithoutFields(jur_AbstractCharClass$LazyCharClass),
 jur_AbstractCharClass$LazyJavaWhitespace__init_ = $this => {
@@ -22203,7 +22991,7 @@ jur_AbstractCharClass$LazyJavaWhitespace_computeValue = $this => {
 },
 oajqg_Identity = $rt_classWithoutFields(oajqg_Gate),
 oajqg_Identity__init_ = ($this, $qubitIndex) => {
-    oajqg_Gate__init_($this, 1, oajm_ComplexMatrix_createIdentityMatrix(2), $rt_s(470), $qubitIndex);
+    oajqg_Gate__init_($this, 1, oajm_ComplexMatrix_createIdentityMatrix(2), $rt_s(485), $qubitIndex);
 },
 oajqg_Identity__init_0 = var_0 => {
     let var_1 = new oajqg_Identity();
@@ -22244,11 +23032,11 @@ oajvo_OpenQasmSerializer$serialize$lambda$_2_1_apply = (var$0, var$1) => {
 };
 function oajvo_OpenQasmSerializer$serialize$lambda$_2_2() {
     jl_Object.call(this);
-    this.$_020 = null;
+    this.$_021 = null;
 }
 let oajvo_OpenQasmSerializer$serialize$lambda$_2_2__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_020 = var$1;
+    var$0.$_021 = var$1;
 },
 oajvo_OpenQasmSerializer$serialize$lambda$_2_2__init_0 = var_0 => {
     let var_1 = new oajvo_OpenQasmSerializer$serialize$lambda$_2_2();
@@ -22259,7 +23047,7 @@ oajvo_OpenQasmSerializer$serialize$lambda$_2_2_apply0 = (var$0, var$1) => {
     return oajvo_OpenQasmSerializer$serialize$lambda$_2_2_apply(var$0, var$1);
 },
 oajvo_OpenQasmSerializer$serialize$lambda$_2_2_apply = (var$0, var$1) => {
-    return oajvo_OpenQasmSerializer_lambda$serialize$0(var$0.$_020, var$1);
+    return oajvo_OpenQasmSerializer_lambda$serialize$0(var$0.$_021, var$1);
 };
 function jusi_BoxedIntStream() {
     jusi_SimpleStreamImpl.call(this);
@@ -22304,12 +23092,12 @@ let oajqc_Condition__init_0 = ($this, $bitIndex, $expected) => {
     jl_Record__init_($this);
     if ($bitIndex >= 0 && $bitIndex < 30) {
         if ($expected && $expected != 1)
-            $rt_throw(jl_IllegalArgumentException__init_($rt_s(588)));
+            $rt_throw(jl_IllegalArgumentException__init_($rt_s(603)));
         $this.$bitIndex0 = $bitIndex;
         $this.$expected0 = $expected;
         return;
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(589)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(604)));
 },
 oajqc_Condition__init_ = (var_0, var_1) => {
     let var_2 = new oajqc_Condition();
@@ -22317,7 +23105,7 @@ oajqc_Condition__init_ = (var_0, var_1) => {
     return var_2;
 },
 oajqc_Condition_toString = $this => {
-    return ((((((jl_StringBuilder__init_0($rt_s(590))).$append1($rt_s(591))).$append2($this.$bitIndex0)).$append1($rt_s(592))).$append2($this.$expected0)).$append1($rt_s(57))).$toString();
+    return ((((((jl_StringBuilder__init_0($rt_s(605))).$append1($rt_s(606))).$append2($this.$bitIndex0)).$append1($rt_s(607))).$append2($this.$expected0)).$append1($rt_s(52))).$toString();
 },
 oajqc_Condition_hashCode = $this => {
     return ((31 + jl_Integer_hashCode($this.$bitIndex0) | 0) * 31 | 0) + jl_Integer_hashCode($this.$expected0) | 0;
@@ -22346,7 +23134,7 @@ oajw_JqapiBridge_$callClinit = () => {
 },
 oajw_JqapiBridge_capabilities = () => {
     oajw_JqapiBridge_$callClinit();
-    return $rt_s(593);
+    return $rt_s(608);
 },
 oajw_JqapiBridge_importQasm = $source => {
     let $spec, var$3, $e, $$je;
@@ -22357,7 +23145,7 @@ oajw_JqapiBridge_importQasm = $source => {
                 oajw_BrowserBudget_input($source);
                 $spec = oajvo_OpenQasmParser_parse($source, oajw_BrowserBudget_config());
                 oajw_BrowserBudget_check($spec);
-                var$3 = oajw_JqapiBridge_boundedResult(((((jl_StringBuilder__init_()).$append1($rt_s(594))).$append1(oajvs_CircuitSpecJson_toJson($spec))).$append1($rt_s(595))).$toString());
+                var$3 = oajw_JqapiBridge_boundedResult(((((jl_StringBuilder__init_()).$append1($rt_s(609))).$append1(oajvs_CircuitSpecJson_toJson($spec))).$append1($rt_s(610))).$toString());
             } catch ($$e) {
                 $$je = $rt_wrapException($$e);
                 if ($$je instanceof oaje_JQApiLimitException) {
@@ -22376,7 +23164,7 @@ oajw_JqapiBridge_importQasm = $source => {
         }
         return oajw_JqapiBridge_qasmError($e);
     }
-    return oajw_JqapiBridge_error($rt_s(596));
+    return oajw_JqapiBridge_error($rt_s(611));
 },
 oajw_JqapiBridge_exportQasm = $specJson => {
     let $source, var$3, $e, $$je;
@@ -22385,7 +23173,7 @@ oajw_JqapiBridge_exportQasm = $specJson => {
         b: {
             try {
                 $source = oajvo_OpenQasmSerializer_serialize(oajw_JqapiBridge_parseSpec($specJson), oajw_BrowserBudget_config());
-                var$3 = oajw_JqapiBridge_boundedResult(((((jl_StringBuilder__init_()).$append1($rt_s(597))).$append1(oajw_JqapiBridge_quote($source))).$append1($rt_s(595))).$toString());
+                var$3 = oajw_JqapiBridge_boundedResult(((((jl_StringBuilder__init_()).$append1($rt_s(612))).$append1(oajw_JqapiBridge_quote($source))).$append1($rt_s(610))).$toString());
             } catch ($$e) {
                 $$je = $rt_wrapException($$e);
                 if ($$je instanceof oaje_JQApiLimitException) {
@@ -22404,18 +23192,120 @@ oajw_JqapiBridge_exportQasm = $specJson => {
         }
         return oajw_JqapiBridge_qasmError($e);
     }
-    return oajw_JqapiBridge_error($rt_s(596));
+    return oajw_JqapiBridge_error($rt_s(611));
+},
+oajw_JqapiBridge_lint = ($specJson, $disabledRules) => {
+    let var$3, $e, $$je;
+    oajw_JqapiBridge_$callClinit();
+    a: {
+        b: {
+            try {
+                var$3 = (jl_StringBuilder__init_()).$append1($rt_s(613));
+                var$3 = ((var$3.$append1(oajw_JqapiBridge_diagnostics(oajvl_CircuitLinter_lint(oajw_JqapiBridge_parseSpec($specJson), oajw_JqapiBridge_rules($disabledRules))))).$append1($rt_s(610))).$toString();
+                var$3 = oajw_JqapiBridge_boundedResult(var$3);
+            } catch ($$e) {
+                $$je = $rt_wrapException($$e);
+                if ($$je instanceof oaje_JQApiLimitException) {
+                    break a;
+                } else if ($$je instanceof jl_RuntimeException) {
+                    $e = $$je;
+                    break b;
+                } else {
+                    throw $$e;
+                }
+            }
+            return var$3;
+        }
+        return oajw_JqapiBridge_errorFor($e);
+    }
+    return oajw_JqapiBridge_error($rt_s(611));
+},
+oajw_JqapiBridge_lintQasm = ($source, $disabledRules) => {
+    let $program, $names, var$5, $name, $e, $$je;
+    oajw_JqapiBridge_$callClinit();
+    a: {
+        b: {
+            try {
+                oajw_BrowserBudget_input($source);
+                $program = oajvo_OpenQasmParser_parseProgram($source, oajw_BrowserBudget_config());
+                oajw_BrowserBudget_check(oajvo_OpenQasmParser$Program_spec($program));
+                $names = jl_StringBuilder__init_0($rt_s(383));
+                var$5 = (oajvo_OpenQasmParser$Program_qubitNames($program)).$iterator();
+                while (var$5.$hasNext()) {
+                    $name = var$5.$next();
+                    ($names.$append1($names.$length() <= 1 ? $rt_s(72) : $rt_s(550))).$append1(oajw_JqapiBridge_quote($name));
+                }
+                var$5 = (((jl_StringBuilder__init_()).$append1($rt_s(613))).$append1(oajw_JqapiBridge_diagnostics(oajvl_CircuitLinter_lint0($program, oajw_JqapiBridge_rules($disabledRules))))).$append1($rt_s(614));
+                var$5 = ((((var$5.$append($names.$append0(93))).$append1($rt_s(615))).$append1(oajvs_CircuitSpecJson_toJson(oajvo_OpenQasmParser$Program_spec($program)))).$append1($rt_s(610))).$toString();
+                var$5 = oajw_JqapiBridge_boundedResult(var$5);
+            } catch ($$e) {
+                $$je = $rt_wrapException($$e);
+                if ($$je instanceof oaje_JQApiLimitException) {
+                    break a;
+                } else if ($$je instanceof jl_IllegalArgumentException) {
+                    $e = $$je;
+                    break b;
+                } else if ($$je instanceof jl_RuntimeException) {
+                    $e = $$je;
+                    return oajw_JqapiBridge_errorFor($e);
+                } else {
+                    throw $$e;
+                }
+            }
+            return var$5;
+        }
+        return oajw_JqapiBridge_qasmError($e);
+    }
+    return oajw_JqapiBridge_error($rt_s(611));
+},
+oajw_JqapiBridge_rules = $list => {
+    let $rules, var$3, var$4, var$5, $rule;
+    oajw_JqapiBridge_$callClinit();
+    $rules = ju_HashSet__init_();
+    var$3 = (jl_String_split($list, $rt_s(550))).data;
+    var$4 = var$3.length;
+    var$5 = 0;
+    while (var$5 < var$4) {
+        $rule = var$3[var$5];
+        if (!jl_String_isBlank($rule))
+            $rules.$add(jl_String_trim($rule));
+        var$5 = var$5 + 1 | 0;
+    }
+    return $rules;
+},
+oajw_JqapiBridge_diagnostics = $diagnostics => {
+    let $result, var$3, $d, var$5, $i, $location;
+    oajw_JqapiBridge_$callClinit();
+    $result = jl_StringBuilder__init_0($rt_s(383));
+    var$3 = $diagnostics.$iterator();
+    while (var$3.$hasNext()) {
+        $d = var$3.$next();
+        if ($result.$length() > 1)
+            $result.$append0(44);
+        var$5 = ((($result.$append1($rt_s(616))).$append1(oajvl_CircuitLinter$Diagnostic_rule($d))).$append1($rt_s(617))).$append(oajvl_CircuitLinter$Diagnostic_severity($d));
+        var$5 = (var$5.$append1($rt_s(618))).$append1(jl_String_replace((oajvl_CircuitLinter$Diagnostic_levels($d)).$toString(), $rt_s(53), $rt_s(72)));
+        ((var$5.$append1($rt_s(619))).$append1(jl_String_replace((oajvl_CircuitLinter$Diagnostic_qubits($d)).$toString(), $rt_s(53), $rt_s(72)))).$append1($rt_s(620));
+        $i = 0;
+        while ($i < (oajvl_CircuitLinter$Diagnostic_locations($d)).$size()) {
+            $location = (oajvl_CircuitLinter$Diagnostic_locations($d)).$get0($i);
+            var$5 = (($result.$append1($i <= 0 ? $rt_s(72) : $rt_s(550))).$append1($rt_s(621))).$append2(oajvo_OpenQasmParser$Location_line($location));
+            ((var$5.$append1($rt_s(622))).$append2(oajvo_OpenQasmParser$Location_column($location))).$append0(125);
+            $i = $i + 1 | 0;
+        }
+        $result.$append1($rt_s(272));
+    }
+    return ($result.$append0(93)).$toString();
 },
 oajw_JqapiBridge_qasmError = $e => {
     oajw_JqapiBridge_$callClinit();
     if ($e instanceof oaje_UnsupportedSpecVersionException)
         return oajw_JqapiBridge_errorFor($e);
-    return ((((jl_StringBuilder__init_()).$append1($rt_s(598))).$append1(oajw_JqapiBridge_quote($e.$getMessage()))).$append1($rt_s(599))).$toString();
+    return ((((jl_StringBuilder__init_()).$append1($rt_s(623))).$append1(oajw_JqapiBridge_quote($e.$getMessage()))).$append1($rt_s(624))).$toString();
 },
 oajw_JqapiBridge_quote = $value => {
     let $result, $i, $c, $hex;
     oajw_JqapiBridge_$callClinit();
-    $result = jl_StringBuilder__init_0($rt_s(600));
+    $result = jl_StringBuilder__init_0($rt_s(625));
     $i = 0;
     while ($i < jl_String_length($value)) {
         $c = jl_String_charAt($value, $i);
@@ -22424,7 +23314,7 @@ oajw_JqapiBridge_quote = $value => {
                 $result.$append0($c);
             else {
                 $hex = jl_Integer_toHexString($c);
-                (($result.$append1($rt_s(601))).$append21($rt_s(602), 0, 4 - jl_String_length($hex) | 0)).$append1($hex);
+                (($result.$append1($rt_s(626))).$append22($rt_s(627), 0, 4 - jl_String_length($hex) | 0)).$append1($hex);
             }
         } else
             ($result.$append0(92)).$append0($c);
@@ -22454,10 +23344,10 @@ oajw_JqapiBridge_run = $specJson => {
                     $sim = oajqs_LocalSimulator__init_2($circuit);
                     $sim.$execute1();
                     $state = ($sim.$getQuantumRegister()).$getRegisterState();
-                    $sb = jl_StringBuilder__init_0($rt_s(603));
+                    $sb = jl_StringBuilder__init_0($rt_s(628));
                     oajw_JqapiBridge_appendAmplitudes($sb, $state);
                     if ($circuit.$getNumClassicalBits() > 0) {
-                        $sb.$append1($rt_s(604));
+                        $sb.$append1($rt_s(629));
                         $records = $sim.$extractClassicalRecords();
                         $i = 0;
                         while ($i < $records.$size()) {
@@ -22478,18 +23368,18 @@ oajw_JqapiBridge_run = $specJson => {
                     } else if ($$je instanceof jl_IllegalArgumentException) {
                         break a;
                     } else if ($$je instanceof jl_RuntimeException) {
-                        return oajw_JqapiBridge_error($rt_s(605));
+                        return oajw_JqapiBridge_error($rt_s(630));
                     } else {
                         throw $$e;
                     }
                 }
                 return var$10;
             }
-            return oajw_JqapiBridge_error($rt_s(606));
+            return oajw_JqapiBridge_error($rt_s(631));
         }
-        return oajw_JqapiBridge_error($rt_s(596));
+        return oajw_JqapiBridge_error($rt_s(611));
     }
-    return oajw_JqapiBridge_error($rt_s(607));
+    return oajw_JqapiBridge_error($rt_s(632));
 },
 oajw_JqapiBridge_trace = ($specJson, $seed) => {
     let $config, $spec, $frames, var$6, $level, var$8, $gate, var$10, $e, $circuit, $sim, $sb, $operation, $previousLevel, $$je;
@@ -22524,7 +23414,7 @@ oajw_JqapiBridge_trace = ($specJson, $seed) => {
             try {
                 if (Long_le(Long_mul($frames, Long_shl(Long_fromInt(1), oajvs_CircuitSpec_numQubits($spec))), Long_fromInt(65536)))
                     break b;
-                var$6 = oajw_JqapiBridge_error($rt_s(596));
+                var$6 = oajw_JqapiBridge_error($rt_s(611));
             } catch ($$e) {
                 $$je = $rt_wrapException($$e);
                 if ($$je instanceof jl_RuntimeException) {
@@ -22538,15 +23428,15 @@ oajw_JqapiBridge_trace = ($specJson, $seed) => {
         }
         try {
             $circuit = oajv_CircuitSpecs_toCircuit($spec, $config);
-            $sim = oajqs_LocalSimulator__init_3($circuit, oajw_JqapiBridge$trace$lambda$_9_0__init_0(ju_Random__init_1(Long_fromInt($seed))));
-            $sb = jl_StringBuilder__init_0($rt_s(608));
+            $sim = oajqs_LocalSimulator__init_3($circuit, oajw_JqapiBridge$trace$lambda$_13_0__init_0(ju_Random__init_1(Long_fromInt($seed))));
+            $sb = jl_StringBuilder__init_0($rt_s(633));
             oajw_JqapiBridge_appendFrame($sb, $sim, (-1), (-1), null, 1);
             $operation = $rt_createIntArray(1);
             $operation.data[0] = 0;
             $previousLevel = $rt_createIntArray(1);
             $previousLevel.data[0] = (-1);
-            $sim.$execute(oajw_JqapiBridge$trace$lambda$_9_1__init_0($previousLevel, $operation, $spec, $sb, $sim));
-            var$6 = oajw_JqapiBridge_boundedResult(($sb.$append1($rt_s(269))).$toString());
+            $sim.$execute(oajw_JqapiBridge$trace$lambda$_13_1__init_0($previousLevel, $operation, $spec, $sb, $sim));
+            var$6 = oajw_JqapiBridge_boundedResult(($sb.$append1($rt_s(272))).$toString());
         } catch ($$e) {
             $$je = $rt_wrapException($$e);
             if ($$je instanceof jl_RuntimeException) {
@@ -22563,20 +23453,20 @@ oajw_JqapiBridge_trace = ($specJson, $seed) => {
 oajw_JqapiBridge_appendFrame = ($sb, $sim, $level, $gateIndex, $gate, $applied) => {
     let var$7, $records, $i;
     oajw_JqapiBridge_$callClinit();
-    var$7 = ((($sb.$append1($rt_s(609))).$append2($level)).$append1($rt_s(610))).$append2($gateIndex);
-    ((var$7.$append1($rt_s(611))).$append22($applied)).$append1($rt_s(612));
+    var$7 = ((($sb.$append1($rt_s(634))).$append2($level)).$append1($rt_s(635))).$append2($gateIndex);
+    ((var$7.$append1($rt_s(636))).$append23($applied)).$append1($rt_s(637));
     if ($gate === null)
-        $sb.$append1($rt_s(60));
+        $sb.$append1($rt_s(63));
     else {
-        var$7 = (($sb.$append1($rt_s(270))).$append1(jl_Enum_name(oajvs_GateSpec_kind($gate)))).$append1($rt_s(613));
-        ((var$7.$append(oajvs_GateSpec_targets($gate))).$append1($rt_s(272))).$append(oajvs_GateSpec_controls($gate));
+        var$7 = (($sb.$append1($rt_s(273))).$append1(jl_Enum_name(oajvs_GateSpec_kind($gate)))).$append1($rt_s(638));
+        ((var$7.$append(oajvs_GateSpec_targets($gate))).$append1($rt_s(275))).$append(oajvs_GateSpec_controls($gate));
         if (oajvs_GateSpec_classicalTarget($gate) !== null)
-            ($sb.$append1($rt_s(275))).$append(oajvs_GateSpec_classicalTarget($gate));
+            ($sb.$append1($rt_s(278))).$append(oajvs_GateSpec_classicalTarget($gate));
         $sb.$append0(125);
     }
-    $sb.$append1($rt_s(614));
+    $sb.$append1($rt_s(639));
     oajw_JqapiBridge_appendAmplitudes($sb, ($sim.$getQuantumRegister()).$getRegisterState());
-    $sb.$append1($rt_s(604));
+    $sb.$append1($rt_s(629));
     $records = $sim.$extractClassicalRecords();
     $i = 0;
     while ($i < $records.$size()) {
@@ -22585,7 +23475,7 @@ oajw_JqapiBridge_appendFrame = ($sb, $sim, $level, $gateIndex, $gate, $applied) 
         $sb.$append2(oajqc_ClassicalRecord_bit($records.$get0($i)));
         $i = $i + 1 | 0;
     }
-    $sb.$append1($rt_s(269));
+    $sb.$append1($rt_s(272));
 },
 oajw_JqapiBridge_appendAmplitudes = ($sb, $state) => {
     let $i, $c;
@@ -22596,7 +23486,7 @@ oajw_JqapiBridge_appendAmplitudes = ($sb, $state) => {
         if ($i > 0)
             $sb.$append0(44);
         $c = $state.$getEntry($i);
-        (((($sb.$append1($rt_s(289))).$append4(oajm_Complex_getReal($c))).$append1($rt_s(290))).$append4(oajm_Complex_getImaginary($c))).$append0(125);
+        (((($sb.$append1($rt_s(292))).$append4(oajm_Complex_getReal($c))).$append1($rt_s(293))).$append4(oajm_Complex_getImaginary($c))).$append0(125);
         $i = $i + 1 | 0;
     }
     $sb.$append0(93);
@@ -22628,7 +23518,7 @@ oajw_JqapiBridge_sample = ($specJson, $shots) => {
                         }
                         $result = oajqs_CircuitSampler_sample($circuit, $options);
                         $counts = oajqs_SamplingResult_counts($result);
-                        $sb = ((jl_StringBuilder__init_0($rt_s(615))).$append2($shots)).$append1($rt_s(616));
+                        $sb = ((jl_StringBuilder__init_0($rt_s(640))).$append2($shots)).$append1($rt_s(641));
                         $i = 0;
                         while (true) {
                             var$9 = $counts.data;
@@ -22641,7 +23531,7 @@ oajw_JqapiBridge_sample = ($specJson, $shots) => {
                         }
                         $sb.$append0(93);
                         if ($circuit.$getNumClassicalBits() > 0) {
-                            $sb.$append1($rt_s(617));
+                            $sb.$append1($rt_s(642));
                             $classicalCounts = oajqs_SamplingResult_classicalCounts($result);
                             $i = 0;
                             while (true) {
@@ -22665,20 +23555,20 @@ oajw_JqapiBridge_sample = ($specJson, $shots) => {
                         } else if ($$je instanceof jl_IllegalArgumentException) {
                             break a;
                         } else if ($$je instanceof jl_RuntimeException) {
-                            return oajw_JqapiBridge_error($rt_s(605));
+                            return oajw_JqapiBridge_error($rt_s(630));
                         } else {
                             throw $$e;
                         }
                     }
                     return var$14;
                 }
-                return oajw_JqapiBridge_error($rt_s(606));
+                return oajw_JqapiBridge_error($rt_s(631));
             }
-            return oajw_JqapiBridge_error($rt_s(596));
+            return oajw_JqapiBridge_error($rt_s(611));
         }
-        return oajw_JqapiBridge_error($rt_s(607));
+        return oajw_JqapiBridge_error($rt_s(632));
     }
-    return oajw_JqapiBridge_error($rt_s(618));
+    return oajw_JqapiBridge_error($rt_s(643));
 },
 oajw_JqapiBridge_expectation = ($specJson, $observableJson) => {
     let $spec, $circuit, var$5, $e, $observable, $sim, $state, $sb, $i, $term, $$je;
@@ -22690,7 +23580,7 @@ oajw_JqapiBridge_expectation = ($specJson, $observableJson) => {
                 $circuit = oajv_CircuitSpecs_toCircuit($spec, oajw_BrowserBudget_config());
                 if (oajw_JqapiBridge_isUnitary($circuit))
                     break b;
-                var$5 = oajw_JqapiBridge_error($rt_s(619));
+                var$5 = oajw_JqapiBridge_error($rt_s(644));
             } catch ($$e) {
                 $$je = $rt_wrapException($$e);
                 if ($$je instanceof jl_RuntimeException) {
@@ -22709,18 +23599,18 @@ oajw_JqapiBridge_expectation = ($specJson, $observableJson) => {
             $sim = oajqs_LocalSimulator__init_2($circuit);
             $sim.$execute1();
             $state = ($sim.$getQuantumRegister()).$getRegisterState();
-            var$5 = (jl_StringBuilder__init_0($rt_s(620))).$append4(oajo_Expectation_of($state, $observable));
-            $sb = var$5.$append1($rt_s(621));
+            var$5 = (jl_StringBuilder__init_0($rt_s(645))).$append4(oajo_Expectation_of($state, $observable));
+            $sb = var$5.$append1($rt_s(646));
             $i = 0;
             while ($i < (oajo_PauliSum_terms($observable)).$size()) {
                 $term = (oajo_PauliSum_terms($observable)).$get0($i);
                 if ($i > 0)
                     $sb.$append0(44);
-                var$5 = ((($sb.$append1($rt_s(622))).$append4(oajo_PauliSum$Term_coeff($term))).$append1($rt_s(623))).$append(oajo_PauliSum$Term_pauli($term));
-                ((var$5.$append1($rt_s(624))).$append4(oajo_Expectation_of1($state, oajo_PauliSum$Term_pauli($term)))).$append0(125);
+                var$5 = ((($sb.$append1($rt_s(647))).$append4(oajo_PauliSum$Term_coeff($term))).$append1($rt_s(648))).$append(oajo_PauliSum$Term_pauli($term));
+                ((var$5.$append1($rt_s(649))).$append4(oajo_Expectation_of1($state, oajo_PauliSum$Term_pauli($term)))).$append0(125);
                 $i = $i + 1 | 0;
             }
-            var$5 = oajw_JqapiBridge_boundedResult(($sb.$append1($rt_s(269))).$toString());
+            var$5 = oajw_JqapiBridge_boundedResult(($sb.$append1($rt_s(272))).$toString());
         } catch ($$e) {
             $$je = $rt_wrapException($$e);
             if ($$je instanceof jl_RuntimeException) {
@@ -22743,23 +23633,23 @@ oajw_JqapiBridge_sampleExpectation = ($specJson, $observableJson, $shots) => {
                 $spec = oajw_JqapiBridge_parseSpec($specJson);
                 $circuit = oajv_CircuitSpecs_toCircuit($spec, oajw_BrowserBudget_config());
                 $observable = oajw_JqapiBridge_parseObservable($observableJson, $circuit);
-                $terms = (((oajo_PauliSum_terms($observable)).$stream()).$filter(oajw_JqapiBridge$sampleExpectation$lambda$_14_0__init_0())).$count();
+                $terms = (((oajo_PauliSum_terms($observable)).$stream()).$filter(oajw_JqapiBridge$sampleExpectation$lambda$_18_0__init_0())).$count();
                 oajw_BrowserBudget_work($spec, Long_mul(Long_fromInt($shots), $terms), Long_mul(Long_fromInt(2), Long_fromInt(oajvs_CircuitSpec_numQubits($spec))));
                 $result = oajqs_ExpectationSampler_estimate($circuit, $observable, oajqs_SamplingOptions__init_0($shots));
-                var$9 = (jl_StringBuilder__init_0($rt_s(620))).$append4(oajqs_SampledExpectation_value($result));
-                var$9 = (var$9.$append1($rt_s(625))).$append4(oajqs_SampledExpectation_standardError($result));
-                $sb = ((var$9.$append1($rt_s(626))).$append2(oajqs_SampledExpectation_totalShots($result))).$append1($rt_s(621));
+                var$9 = (jl_StringBuilder__init_0($rt_s(645))).$append4(oajqs_SampledExpectation_value($result));
+                var$9 = (var$9.$append1($rt_s(650))).$append4(oajqs_SampledExpectation_standardError($result));
+                $sb = ((var$9.$append1($rt_s(651))).$append2(oajqs_SampledExpectation_totalShots($result))).$append1($rt_s(646));
                 $i = 0;
                 while ($i < (oajqs_SampledExpectation_terms($result)).$size()) {
                     $term = (oajqs_SampledExpectation_terms($result)).$get0($i);
                     if ($i > 0)
                         $sb.$append0(44);
-                    var$9 = ((($sb.$append1($rt_s(622))).$append4(oajqs_SampledExpectation$TermEstimate_coeff($term))).$append1($rt_s(623))).$append(oajqs_SampledExpectation$TermEstimate_pauli($term));
-                    var$9 = (((var$9.$append1($rt_s(627))).$append2(oajqs_SampledExpectation$TermEstimate_shots($term))).$append1($rt_s(628))).$append4(oajqs_SampledExpectation$TermEstimate_mean($term));
-                    ((var$9.$append1($rt_s(629))).$append4(oajqs_SampledExpectation$TermEstimate_variance($term))).$append0(125);
+                    var$9 = ((($sb.$append1($rt_s(647))).$append4(oajqs_SampledExpectation$TermEstimate_coeff($term))).$append1($rt_s(648))).$append(oajqs_SampledExpectation$TermEstimate_pauli($term));
+                    var$9 = (((var$9.$append1($rt_s(652))).$append2(oajqs_SampledExpectation$TermEstimate_shots($term))).$append1($rt_s(653))).$append4(oajqs_SampledExpectation$TermEstimate_mean($term));
+                    ((var$9.$append1($rt_s(654))).$append4(oajqs_SampledExpectation$TermEstimate_variance($term))).$append0(125);
                     $i = $i + 1 | 0;
                 }
-                var$9 = oajw_JqapiBridge_boundedResult(($sb.$append1($rt_s(269))).$toString());
+                var$9 = oajw_JqapiBridge_boundedResult(($sb.$append1($rt_s(272))).$toString());
             } catch ($$e) {
                 $$je = $rt_wrapException($$e);
                 if ($$je instanceof jl_RuntimeException) {
@@ -22773,7 +23663,7 @@ oajw_JqapiBridge_sampleExpectation = ($specJson, $observableJson, $shots) => {
         }
         return oajw_JqapiBridge_errorFor($e);
     }
-    return oajw_JqapiBridge_error($rt_s(618));
+    return oajw_JqapiBridge_error($rt_s(643));
 },
 oajw_JqapiBridge_parseSpec = $specJson => {
     let $spec;
@@ -22873,18 +23763,18 @@ oajw_JqapiBridge_isUnitary = $circuit => {
 oajw_JqapiBridge_errorFor = $e => {
     oajw_JqapiBridge_$callClinit();
     if ($e instanceof oajw_JqapiBridge$InvalidObservableException)
-        return oajw_JqapiBridge_error($rt_s(630));
+        return oajw_JqapiBridge_error($rt_s(655));
     if ($e instanceof oaje_UnsupportedSpecVersionException)
-        return oajw_JqapiBridge_error($rt_s(606));
+        return oajw_JqapiBridge_error($rt_s(631));
     if ($e instanceof oaje_JQApiLimitException)
-        return oajw_JqapiBridge_error($rt_s(596));
+        return oajw_JqapiBridge_error($rt_s(611));
     if (!($e instanceof jl_IllegalArgumentException))
-        return oajw_JqapiBridge_error($rt_s(605));
-    return oajw_JqapiBridge_error($rt_s(607));
+        return oajw_JqapiBridge_error($rt_s(630));
+    return oajw_JqapiBridge_error($rt_s(632));
 },
 oajw_JqapiBridge_error = $code => {
     oajw_JqapiBridge_$callClinit();
-    return ((((jl_StringBuilder__init_()).$append1($rt_s(631))).$append1($code)).$append1($rt_s(632))).$toString();
+    return ((((jl_StringBuilder__init_()).$append1($rt_s(656))).$append1($code)).$append1($rt_s(657))).$toString();
 },
 oajw_JqapiBridge_lambda$sampleExpectation$0 = $term => {
     oajw_JqapiBridge_$callClinit();
@@ -22925,23 +23815,31 @@ oajw_JqapiBridge_exportQasm$exported$2 = var$1 => {
     oajw_JqapiBridge_$callClinit();
     return $rt_ustr(oajw_JqapiBridge_exportQasm($rt_str(var$1)));
 },
-oajw_JqapiBridge_run$exported$3 = var$1 => {
+oajw_JqapiBridge_lint$exported$3 = (var$1, var$2) => {
+    oajw_JqapiBridge_$callClinit();
+    return $rt_ustr(oajw_JqapiBridge_lint($rt_str(var$1), $rt_str(var$2)));
+},
+oajw_JqapiBridge_lintQasm$exported$4 = (var$1, var$2) => {
+    oajw_JqapiBridge_$callClinit();
+    return $rt_ustr(oajw_JqapiBridge_lintQasm($rt_str(var$1), $rt_str(var$2)));
+},
+oajw_JqapiBridge_run$exported$5 = var$1 => {
     oajw_JqapiBridge_$callClinit();
     return $rt_ustr(oajw_JqapiBridge_run($rt_str(var$1)));
 },
-oajw_JqapiBridge_trace$exported$4 = (var$1, var$2) => {
+oajw_JqapiBridge_trace$exported$6 = (var$1, var$2) => {
     oajw_JqapiBridge_$callClinit();
     return $rt_ustr(oajw_JqapiBridge_trace($rt_str(var$1), var$2));
 },
-oajw_JqapiBridge_sample$exported$5 = (var$1, var$2) => {
+oajw_JqapiBridge_sample$exported$7 = (var$1, var$2) => {
     oajw_JqapiBridge_$callClinit();
     return $rt_ustr(oajw_JqapiBridge_sample($rt_str(var$1), var$2));
 },
-oajw_JqapiBridge_expectation$exported$6 = (var$1, var$2) => {
+oajw_JqapiBridge_expectation$exported$8 = (var$1, var$2) => {
     oajw_JqapiBridge_$callClinit();
     return $rt_ustr(oajw_JqapiBridge_expectation($rt_str(var$1), $rt_str(var$2)));
 },
-oajw_JqapiBridge_sampleExpectation$exported$7 = (var$1, var$2, var$3) => {
+oajw_JqapiBridge_sampleExpectation$exported$9 = (var$1, var$2, var$3) => {
     oajw_JqapiBridge_$callClinit();
     return $rt_ustr(oajw_JqapiBridge_sampleExpectation($rt_str(var$1), $rt_str(var$2), var$3));
 },
@@ -22951,15 +23849,15 @@ oajw_JqapiBridge__clinit_ = () => {
 jur_IntArrHash = $rt_classWithoutFields(),
 oaje_UnsupportedSpecVersionException = $rt_classWithoutFields(jl_IllegalArgumentException),
 oaje_UnsupportedSpecVersionException__init_0 = ($this, $version) => {
-    jl_IllegalArgumentException__init_1($this, (((jl_StringBuilder__init_()).$append1($rt_s(633))).$append2($version)).$toString());
+    jl_IllegalArgumentException__init_1($this, (((jl_StringBuilder__init_()).$append1($rt_s(658))).$append2($version)).$toString());
 },
 oaje_UnsupportedSpecVersionException__init_ = var_0 => {
     let var_1 = new oaje_UnsupportedSpecVersionException();
     oaje_UnsupportedSpecVersionException__init_0(var_1, var_0);
     return var_1;
 },
-jur_AbstractCharClass$LazyJavaMirrored = $rt_classWithoutFields(jur_AbstractCharClass$LazyCharClass),
-jur_AbstractCharClass$LazyJavaMirrored__init_ = $this => {
+jur_AbstractCharClass$LazyJavaMirrored = $rt_classWithoutFields(jur_AbstractCharClass$LazyCharClass);
+let jur_AbstractCharClass$LazyJavaMirrored__init_ = $this => {
     jur_AbstractCharClass$LazyCharClass__init_($this);
 },
 jur_AbstractCharClass$LazyJavaMirrored__init_0 = () => {
@@ -23020,13 +23918,216 @@ jusi_SimpleStreamIterator_lambda$fetchIfNeeded$1 = ($this, $e) => {
     $this.$state = 1;
     return 0;
 };
+function oajvl_CircuitLinter() {
+    let a = this; jl_Object.call(a);
+    a.$spec0 = null;
+    a.$levelLocations1 = null;
+    a.$names = null;
+    a.$disabled = null;
+    a.$diagnostics0 = null;
+}
+let oajvl_CircuitLinter__init_0 = ($this, $spec, $levelLocations, $names, $disabled) => {
+    jl_Object__init_($this);
+    $this.$diagnostics0 = ju_ArrayList__init_();
+    $this.$spec0 = ju_Objects_requireNonNull($spec, $rt_s(539));
+    $this.$levelLocations1 = $levelLocations;
+    $this.$names = $names;
+    $this.$disabled = ju_Set_copyOf($disabled);
+},
+oajvl_CircuitLinter__init_ = (var_0, var_1, var_2, var_3) => {
+    let var_4 = new oajvl_CircuitLinter();
+    oajvl_CircuitLinter__init_0(var_4, var_0, var_1, var_2, var_3);
+    return var_4;
+},
+oajvl_CircuitLinter_lint = ($spec, $disabledRules) => {
+    let $names, $q;
+    $names = ju_ArrayList__init_();
+    $q = 0;
+    while ($q < oajvs_CircuitSpec_numQubits($spec)) {
+        $names.$add(((((jl_StringBuilder__init_()).$append1($rt_s(556))).$append2($q)).$append1($rt_s(52))).$toString());
+        $q = $q + 1 | 0;
+    }
+    return oajvl_CircuitLinter_run(oajvl_CircuitLinter__init_($spec, ju_List_of0(), $names, $disabledRules), ju_List_of0());
+},
+oajvl_CircuitLinter_lint0 = ($program, $disabledRules) => {
+    let var$3;
+    var$3 = oajvl_CircuitLinter__init_(oajvo_OpenQasmParser$Program_spec($program), oajvo_OpenQasmParser$Program_levelLocations($program), oajvo_OpenQasmParser$Program_qubitNames($program), $disabledRules);
+    var$3 = oajvl_CircuitLinter_run(var$3, oajvo_OpenQasmParser$Program_barriers($program));
+    return var$3;
+},
+oajvl_CircuitLinter_run = ($this, $barriers) => {
+    let $n, $pendingHadamard, $measuredAt, $used, $anyOperation, $barrier, $level, var$9, var$10, var$11, $q, $gate, $operands, var$15;
+    $n = oajvs_CircuitSpec_numQubits($this.$spec0);
+    $pendingHadamard = $rt_createArray(jl_Integer, $n);
+    $measuredAt = $rt_createArray(jl_Integer, $n);
+    $used = $rt_createBooleanArray($n);
+    $anyOperation = 0;
+    $barrier = 0;
+    $level = 0;
+    while ($level < (oajvs_CircuitSpec_levels($this.$spec0)).$size()) {
+        while ($barrier < $barriers.$size() && oajvo_OpenQasmParser$Barrier_beforeLevel($barriers.$get0($barrier)) == $level) {
+            var$9 = (oajvo_OpenQasmParser$Barrier_qubits($barriers.$get0($barrier))).$iterator();
+            while (var$9.$hasNext()) {
+                var$10 = $used.data;
+                var$11 = $pendingHadamard.data;
+                $q = (var$9.$next()).$intValue();
+                var$11[$q] = null;
+                var$10[$q] = 1;
+                $anyOperation = 1;
+            }
+            $barrier = $barrier + 1 | 0;
+        }
+        var$9 = (oajvs_LevelSpec_gates((oajvs_CircuitSpec_levels($this.$spec0)).$get0($level))).$iterator();
+        while (var$9.$hasNext()) {
+            $gate = var$9.$next();
+            $anyOperation = 1;
+            $operands = ju_ArrayList__init_2(oajvs_GateSpec_controls($gate));
+            $operands.$addAll(oajvs_GateSpec_targets($gate));
+            var$15 = $operands.$iterator();
+            while (var$15.$hasNext()) {
+                var$11 = $used.data;
+                $q = (var$15.$next()).$intValue();
+                var$11[$q] = 1;
+            }
+            var$15 = oajvs_GateSpec_kind($gate);
+            oajvs_GateKind_$callClinit();
+            if (var$15 === oajvs_GateKind_IDENTITY && oajvs_GateSpec_condition($gate) === null)
+                continue;
+            oajvl_CircuitLinter_hadamard($this, $gate, $operands, $level, $pendingHadamard);
+            oajvl_CircuitLinter_reuse($this, $gate, $operands, $level, $measuredAt);
+        }
+        $level = $level + 1 | 0;
+    }
+    while ($barrier < $barriers.$size()) {
+        var$9 = (oajvo_OpenQasmParser$Barrier_qubits($barriers.$get0($barrier))).$iterator();
+        while (var$9.$hasNext()) {
+            var$11 = $used.data;
+            $q = (var$9.$next()).$intValue();
+            var$11[$q] = 1;
+            $anyOperation = 1;
+        }
+        $barrier = $barrier + 1 | 0;
+    }
+    if ($anyOperation)
+        oajvl_CircuitLinter_unused($this, $used);
+    return ju_List_copyOf($this.$diagnostics0);
+},
+oajvl_CircuitLinter_hadamard = ($this, $gate, $operands, $level, $pending) => {
+    let var$5, $plainH, var$7, var$8, $q, var$10, var$11, var$12, var$13, var$14;
+    var$5 = oajvs_GateSpec_kind($gate);
+    oajvs_GateKind_$callClinit();
+    $plainH = var$5 === oajvs_GateKind_H && (oajvs_GateSpec_controls($gate)).$isEmpty() && oajvs_GateSpec_condition($gate) === null ? 1 : 0;
+    if (!$plainH) {
+        var$7 = $operands.$iterator();
+        while (var$7.$hasNext()) {
+            var$8 = $pending.data;
+            $q = (var$7.$next()).$intValue();
+            var$8[$q] = null;
+        }
+        return;
+    }
+    var$7 = (oajvs_GateSpec_targets($gate)).$iterator();
+    while (var$7.$hasNext()) {
+        var$8 = $pending.data;
+        $q = (var$7.$next()).$intValue();
+        if (var$8[$q] === null) {
+            var$8[$q] = jl_Integer_valueOf($level);
+            continue;
+        }
+        oajvl_CircuitLinter$Severity_$callClinit();
+        var$10 = oajvl_CircuitLinter$Severity_WARNING;
+        var$11 = ju_List_of1(var$8[$q], jl_Integer_valueOf($level));
+        var$5 = ju_List_of(jl_Integer_valueOf($q));
+        var$12 = (jl_StringBuilder__init_()).$append1($rt_s(659));
+        var$13 = $this.$names;
+        var$12 = ((var$12.$append1(var$13.$get0($q))).$append1($rt_s(660))).$toString();
+        var$13 = (jl_StringBuilder__init_()).$append1($rt_s(661));
+        var$14 = $this.$names;
+        var$13 = ((var$13.$append1(var$14.$get0($q))).$append1($rt_s(662))).$toString();
+        oajvl_CircuitLinter_report($this, $rt_s(663), var$10, var$11, var$5, var$12, var$13);
+        var$8[$q] = null;
+    }
+},
+oajvl_CircuitLinter_reuse = ($this, $gate, $operands, $level, $measuredAt) => {
+    let var$5, var$6, var$7, $q, var$9, var$10, var$11, var$12;
+    var$5 = oajvs_GateSpec_kind($gate);
+    oajvs_GateKind_$callClinit();
+    if (var$5 !== oajvs_GateKind_RESET && oajvs_GateSpec_kind($gate) !== oajvs_GateKind_MEASUREMENT) {
+        if (oajvs_GateSpec_condition($gate) !== null)
+            return;
+        var$6 = $operands.$iterator();
+        while (var$6.$hasNext()) {
+            var$7 = $measuredAt.data;
+            $q = (var$6.$next()).$intValue();
+            if (var$7[$q] === null)
+                continue;
+            oajvl_CircuitLinter$Severity_$callClinit();
+            var$9 = oajvl_CircuitLinter$Severity_INFO;
+            var$10 = ju_List_of1(var$7[$q], jl_Integer_valueOf($level));
+            var$11 = ju_List_of(jl_Integer_valueOf($q));
+            var$5 = jl_StringBuilder__init_();
+            var$12 = $this.$names;
+            var$12 = ((var$5.$append1(var$12.$get0($q))).$append1($rt_s(664))).$toString();
+            oajvl_CircuitLinter_report($this, $rt_s(665), var$9, var$10, var$11, var$12, $rt_s(666));
+            var$7[$q] = null;
+        }
+        return;
+    }
+    var$5 = (oajvs_GateSpec_targets($gate)).$iterator();
+    while (var$5.$hasNext()) {
+        $q = (var$5.$next()).$intValue();
+        $measuredAt.data[$q] = oajvs_GateSpec_kind($gate) !== oajvs_GateKind_RESET ? jl_Integer_valueOf($level) : null;
+    }
+},
+oajvl_CircuitLinter_unused = ($this, $used) => {
+    let $unused, $q, var$4, var$5, $k, var$7, var$8, var$9, var$10, var$11, var$12;
+    $unused = ju_ArrayList__init_();
+    $q = 0;
+    while (true) {
+        var$4 = $used.data;
+        var$5 = var$4.length;
+        if ($q >= var$5)
+            break;
+        if (!var$4[$q])
+            $unused.$add(jl_Integer_valueOf($q));
+        $q = $q + 1 | 0;
+    }
+    if ($unused.$isEmpty())
+        return;
+    $k = var$5 - $unused.$size() | 0;
+    oajvl_CircuitLinter$Severity_$callClinit();
+    var$7 = oajvl_CircuitLinter$Severity_WARNING;
+    var$8 = ju_List_of0();
+    var$9 = jl_StringBuilder__init_();
+    var$10 = (((var$9.$append2($unused.$size())).$append1($rt_s(667))).$append2(var$5)).$append1($rt_s(668));
+    var$11 = $unused.$stream();
+    var$12 = $this.$names;
+    ju_Objects_requireNonNull0(var$12);
+    var$9 = ((((((((((var$10.$append1((var$11.$map(oajvl_CircuitLinter$unused$lambda$_8_0__init_0(var$12))).$collect(jus_Collectors_joining($rt_s(62))))).$append1($rt_s(669))).$append24(Long_shl(Long_fromInt(1), var$5))).$append1($rt_s(670))).$append24(Long_shl(Long_fromInt(1), $k))).$append1($rt_s(671))).$append2($k)).$append1($rt_s(672))).$append24(Long_shl(Long_fromInt(1), var$5 - $k | 0))).$append1($rt_s(673))).$toString();
+    oajvl_CircuitLinter_report($this, $rt_s(674), var$7, var$8, $unused, var$9, $rt_s(675));
+},
+oajvl_CircuitLinter_report = ($this, $rule, $severity, $levels, $qubits, $message, $suggestion) => {
+    let $locations, var$8, var$9;
+    if (!$this.$disabled.$contains0($rule) && $this.$diagnostics0.$size() < 100) {
+        if ($this.$levelLocations1.$isEmpty())
+            $locations = ju_List_of0();
+        else {
+            var$8 = $levels.$stream();
+            var$9 = $this.$levelLocations1;
+            ju_Objects_requireNonNull0(var$9);
+            $locations = (var$8.$map(oajvl_CircuitLinter$report$lambda$_9_0__init_0(var$9))).$toList();
+        }
+        $this.$diagnostics0.$add(oajvl_CircuitLinter$Diagnostic__init_0($rule, $severity, $levels, $qubits, $locations, $message, $suggestion));
+        return;
+    }
+};
 function oajq_QuantumRegister$_init_$lambda$_3_0() {
     jl_Object.call(this);
-    this.$_030 = null;
+    this.$_033 = null;
 }
 let oajq_QuantumRegister$_init_$lambda$_3_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_030 = var$1;
+    var$0.$_033 = var$1;
 },
 oajq_QuantumRegister$_init_$lambda$_3_0__init_0 = var_0 => {
     let var_1 = new oajq_QuantumRegister$_init_$lambda$_3_0();
@@ -23034,7 +24135,7 @@ oajq_QuantumRegister$_init_$lambda$_3_0__init_0 = var_0 => {
     return var_1;
 },
 oajq_QuantumRegister$_init_$lambda$_3_0_getAsDouble = var$0 => {
-    return var$0.$_030.$nextDouble();
+    return var$0.$_033.$nextDouble();
 },
 jur_AbstractCharClass$LazyJavaISOControl = $rt_classWithoutFields(jur_AbstractCharClass$LazyCharClass),
 jur_AbstractCharClass$LazyJavaISOControl__init_ = $this => {
@@ -23068,7 +24169,7 @@ jl_IllegalStateException__init_0 = var_0 => {
 oajqg_ControlledNot = $rt_classWithoutFields(oajqg_Gate),
 oajqg_ControlledNot__init_ = ($this, $controlQubit, $targetQubit) => {
     oaju_Constants_$callClinit();
-    oajqg_Gate__init_($this, 2, oaju_Constants_CONTROLLED_NOT_MATRIX, $rt_s(473), $rt_wrapArray(jl_Integer, [$controlQubit, $targetQubit]));
+    oajqg_Gate__init_($this, 2, oaju_Constants_CONTROLLED_NOT_MATRIX, $rt_s(488), $rt_wrapArray(jl_Integer, [$controlQubit, $targetQubit]));
 },
 oajqg_ControlledNot__init_0 = (var_0, var_1) => {
     let var_2 = new oajqg_ControlledNot();
@@ -23109,6 +24210,28 @@ jur_HighSurrogateCharSet_matches = ($this, $stringIndex, $testString, $matchResu
     if ($this.$high != $high)
         return (-1);
     return $this.$next6.$matches(var$5, $testString, $matchResult);
+},
+jur_HighSurrogateCharSet_find = ($this, $strIndex, $testString, $matchResult) => {
+    let $testStr, $strLength, var$6;
+    if (!($testString instanceof jl_String))
+        return jur_AbstractSet_find($this, $strIndex, $testString, $matchResult);
+    $testStr = $testString;
+    $strLength = $matchResult.$getRightBound();
+    while (true) {
+        if ($strIndex >= $strLength)
+            return (-1);
+        var$6 = jl_String_indexOf($testStr, $this.$high, $strIndex);
+        if (var$6 < 0)
+            return (-1);
+        $strIndex = var$6 + 1 | 0;
+        if ($strIndex < $strLength && jl_Character_isLowSurrogate(jl_String_charAt($testStr, $strIndex))) {
+            $strIndex = var$6 + 2 | 0;
+            continue;
+        }
+        if ($this.$next6.$matches($strIndex, $testString, $matchResult) >= 0)
+            break;
+    }
+    return var$6;
 },
 jur_HighSurrogateCharSet_findBack = ($this, $strIndex, $lastIndex, $testString, $matchResult) => {
     let $testStr, $strLength, var$7, var$8;
@@ -23224,7 +24347,7 @@ jn_ByteBuffer_allocate = $capacity => {
     if ($capacity < 0) {
         var$2 = new jl_IllegalArgumentException;
         var$3 = jl_StringBuilder__init_();
-        jl_StringBuilder_append1(jl_StringBuilder_append(var$3, $rt_s(634)), $capacity);
+        jl_StringBuilder_append1(jl_StringBuilder_append(var$3, $rt_s(676)), $capacity);
         jl_IllegalArgumentException__init_1(var$2, jl_StringBuilder_toString(var$3));
         $rt_throw(var$2);
     }
@@ -23308,7 +24431,7 @@ jur_SOLSet_hasConsumed = ($this, $matchResult) => {
     return 0;
 },
 jur_SOLSet_getName = $this => {
-    return $rt_s(635);
+    return $rt_s(677);
 };
 function otpp_AsyncCallbackWrapper() {
     jl_Object.call(this);
@@ -23332,6 +24455,46 @@ otpp_AsyncCallbackWrapper_complete = ($this, $result) => {
 otpp_AsyncCallbackWrapper_error = ($this, $e) => {
     $this.$realAsyncCallback.$error0($e);
 };
+function oajw_JqapiBridge$trace$lambda$_13_0() {
+    jl_Object.call(this);
+    this.$_06 = null;
+}
+let oajw_JqapiBridge$trace$lambda$_13_0__init_ = (var$0, var$1) => {
+    jl_Object__init_(var$0);
+    var$0.$_06 = var$1;
+},
+oajw_JqapiBridge$trace$lambda$_13_0__init_0 = var_0 => {
+    let var_1 = new oajw_JqapiBridge$trace$lambda$_13_0();
+    oajw_JqapiBridge$trace$lambda$_13_0__init_(var_1, var_0);
+    return var_1;
+},
+oajw_JqapiBridge$trace$lambda$_13_0_getAsDouble = var$0 => {
+    return var$0.$_06.$nextDouble();
+};
+function oajw_JqapiBridge$trace$lambda$_13_1() {
+    let a = this; jl_Object.call(a);
+    a.$_026 = null;
+    a.$_15 = null;
+    a.$_21 = null;
+    a.$_31 = null;
+    a.$_40 = null;
+}
+let oajw_JqapiBridge$trace$lambda$_13_1__init_ = (var$0, var$1, var$2, var$3, var$4, var$5) => {
+    jl_Object__init_(var$0);
+    var$0.$_026 = var$1;
+    var$0.$_15 = var$2;
+    var$0.$_21 = var$3;
+    var$0.$_31 = var$4;
+    var$0.$_40 = var$5;
+},
+oajw_JqapiBridge$trace$lambda$_13_1__init_0 = (var_0, var_1, var_2, var_3, var_4) => {
+    let var_5 = new oajw_JqapiBridge$trace$lambda$_13_1();
+    oajw_JqapiBridge$trace$lambda$_13_1__init_(var_5, var_0, var_1, var_2, var_3, var_4);
+    return var_5;
+},
+oajw_JqapiBridge$trace$lambda$_13_1_onOperation = (var$0, var$1, var$2, var$3, var$4) => {
+    oajw_JqapiBridge_lambda$trace$0(var$0.$_026, var$0.$_15, var$0.$_21, var$0.$_31, var$0.$_40, var$1, var$2, var$3, var$4);
+};
 function oajo_PauliSum() {
     jl_Record.call(this);
     this.$terms0 = null;
@@ -23341,13 +24504,13 @@ let oajo_PauliSum__init_ = ($this, $terms) => {
     jl_Record__init_($this);
     var$2 = ju_List_copyOf($terms);
     if (var$2.$isEmpty())
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(636)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(678)));
     $n = oajo_PauliString_numQubits(oajo_PauliSum$Term_pauli(var$2.$getFirst()));
     var$4 = var$2.$iterator();
     while (var$4.$hasNext()) {
         $term = var$4.$next();
         if (oajo_PauliString_numQubits(oajo_PauliSum$Term_pauli($term)) != $n)
-            $rt_throw(jl_IllegalArgumentException__init_($rt_s(637)));
+            $rt_throw(jl_IllegalArgumentException__init_($rt_s(679)));
     }
     $this.$terms0 = var$2;
 },
@@ -23360,13 +24523,13 @@ oajo_PauliSum_of0 = $terms => {
     return oajo_PauliSum__init_0($terms);
 },
 oajo_PauliSum_of = $terms => {
-    return oajo_PauliSum__init_0(ju_List_of0($terms));
+    return oajo_PauliSum__init_0(ju_List_of2($terms));
 },
 oajo_PauliSum_numQubits = $this => {
     return oajo_PauliString_numQubits(oajo_PauliSum$Term_pauli($this.$terms0.$getFirst()));
 },
 oajo_PauliSum_toString = $this => {
-    return ((((jl_StringBuilder__init_0($rt_s(638))).$append1($rt_s(639))).$append($this.$terms0)).$append1($rt_s(57))).$toString();
+    return ((((jl_StringBuilder__init_0($rt_s(680))).$append1($rt_s(681))).$append($this.$terms0)).$append1($rt_s(52))).$toString();
 },
 oajo_PauliSum_hashCode = $this => {
     return 31 + ju_Objects_hashCode($this.$terms0) | 0;
@@ -23448,19 +24611,19 @@ jm_RoundingMode_$values = () => {
     return var$1;
 },
 jm_RoundingMode__clinit_ = () => {
-    jm_RoundingMode_UP = jm_RoundingMode__init_($rt_s(640), 0, 0);
-    jm_RoundingMode_DOWN = jm_RoundingMode__init_($rt_s(641), 1, 1);
-    jm_RoundingMode_CEILING = jm_RoundingMode__init_($rt_s(642), 2, 2);
-    jm_RoundingMode_FLOOR = jm_RoundingMode__init_($rt_s(643), 3, 3);
-    jm_RoundingMode_HALF_UP = jm_RoundingMode__init_($rt_s(644), 4, 4);
-    jm_RoundingMode_HALF_DOWN = jm_RoundingMode__init_($rt_s(645), 5, 5);
-    jm_RoundingMode_HALF_EVEN = jm_RoundingMode__init_($rt_s(646), 6, 6);
-    jm_RoundingMode_UNNECESSARY = jm_RoundingMode__init_($rt_s(647), 7, 7);
+    jm_RoundingMode_UP = jm_RoundingMode__init_($rt_s(682), 0, 0);
+    jm_RoundingMode_DOWN = jm_RoundingMode__init_($rt_s(683), 1, 1);
+    jm_RoundingMode_CEILING = jm_RoundingMode__init_($rt_s(684), 2, 2);
+    jm_RoundingMode_FLOOR = jm_RoundingMode__init_($rt_s(685), 3, 3);
+    jm_RoundingMode_HALF_UP = jm_RoundingMode__init_($rt_s(686), 4, 4);
+    jm_RoundingMode_HALF_DOWN = jm_RoundingMode__init_($rt_s(687), 5, 5);
+    jm_RoundingMode_HALF_EVEN = jm_RoundingMode__init_($rt_s(688), 6, 6);
+    jm_RoundingMode_UNNECESSARY = jm_RoundingMode__init_($rt_s(689), 7, 7);
     jm_RoundingMode_$VALUES = jm_RoundingMode_$values();
 };
 function oajq_Circuit() {
     let a = this; jl_Object.call(a);
-    a.$levels1 = null;
+    a.$levels3 = null;
     a.$config1 = null;
     a.$inputSize = 0;
     a.$numClassicalBits1 = 0;
@@ -23472,10 +24635,10 @@ let oajq_Circuit__init_0 = ($this, $inputSize, $numClassicalBits, $config) => {
         $this.$numClassicalBits1 = $numClassicalBits;
         oajq_Circuit_validateInputSize($this, $inputSize);
         $this.$inputSize = $inputSize;
-        $this.$levels1 = ju_ArrayList__init_();
+        $this.$levels3 = ju_ArrayList__init_();
         return;
     }
-    $rt_throw(oaje_JQApiLimitException__init_($rt_s(648)));
+    $rt_throw(oaje_JQApiLimitException__init_($rt_s(690)));
 },
 oajq_Circuit__init_ = (var_0, var_1, var_2) => {
     let var_3 = new oajq_Circuit();
@@ -23487,7 +24650,7 @@ oajq_Circuit_getNumClassicalBits = $this => {
 },
 oajq_Circuit_validateClassicalOperations = $this => {
     let var$1, $level;
-    var$1 = $this.$levels1.$iterator();
+    var$1 = $this.$levels3.$iterator();
     while (var$1.$hasNext()) {
         $level = var$1.$next();
         oajq_Circuit_validateClassicalLevel($this, $level);
@@ -23503,7 +24666,7 @@ oajq_Circuit_validateClassicalLevel = ($this, $level) => {
             $bit = 0;
             while ($bit < $this.$numClassicalBits1) {
                 if ($reads.data[$bit] && $writes.data[$bit])
-                    $rt_throw(jl_IllegalArgumentException__init_($rt_s(443)));
+                    $rt_throw(jl_IllegalArgumentException__init_($rt_s(459)));
                 $bit = $bit + 1 | 0;
             }
             return;
@@ -23515,7 +24678,7 @@ oajq_Circuit_validateClassicalLevel = ($this, $level) => {
                 $bit = ($measurement.$classicalTarget()).$intValue();
                 oajq_Circuit_validateClassicalIndex($this, $bit);
                 if (($measurement.$getIndexes()).$size() != 1)
-                    $rt_throw(jl_IllegalArgumentException__init_($rt_s(649)));
+                    $rt_throw(jl_IllegalArgumentException__init_($rt_s(691)));
                 var$8 = $writes.data;
                 if (var$8[$bit])
                     break;
@@ -23530,12 +24693,12 @@ oajq_Circuit_validateClassicalLevel = ($this, $level) => {
             var$8[$bit] = 1;
         }
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(441)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(457)));
 },
 oajq_Circuit_validateClassicalIndex = ($this, $bit) => {
     if ($bit >= 0 && $bit < $this.$numClassicalBits1)
         return;
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(650)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(692)));
 },
 oajq_Circuit_getInputSize = $this => {
     return $this.$inputSize;
@@ -23545,13 +24708,13 @@ oajq_Circuit_getConfig = $this => {
 },
 oajq_Circuit_validateInputSize = ($this, $inputSize) => {
     if ($inputSize <= 0)
-        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(651))).$append2($inputSize)).$toString()));
+        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(693))).$append2($inputSize)).$toString()));
     if ($inputSize <= oaj_JQAPIConfig_maxQubits($this.$config1))
         return;
-    $rt_throw(oaje_JQApiLimitException__init_(((((((jl_StringBuilder__init_()).$append1($rt_s(652))).$append2($inputSize)).$append1($rt_s(653))).$append2(oaj_JQAPIConfig_maxQubits($this.$config1))).$append1($rt_s(544))).$toString()));
+    $rt_throw(oaje_JQApiLimitException__init_(((((((jl_StringBuilder__init_()).$append1($rt_s(694))).$append2($inputSize)).$append1($rt_s(695))).$append2(oaj_JQAPIConfig_maxQubits($this.$config1))).$append1($rt_s(559))).$toString()));
 },
 oajq_Circuit_getLevels = $this => {
-    return $this.$levels1;
+    return $this.$levels3;
 },
 oajq_Circuit_addLevel = ($this, $levels) => {
     let var$2, var$3, var$4, $level;
@@ -23560,7 +24723,7 @@ oajq_Circuit_addLevel = ($this, $levels) => {
     var$4 = 0;
     while (var$4 < var$3) {
         $level = var$2[var$4];
-        $this.$levels1.$add(oajq_Circuit_initializeLevels($this, $level));
+        $this.$levels3.$add(oajq_Circuit_initializeLevels($this, $level));
         var$4 = var$4 + 1 | 0;
     }
 },
@@ -23569,7 +24732,7 @@ oajq_Circuit_initializeLevels = ($this, $level) => {
     oajq_Circuit_validateClassicalLevel($this, $level);
     $errorGate = (($level.$getGates()).$stream()).$anyMatch(oajq_Circuit$initializeLevels$lambda$_14_0__init_0($this));
     if ($errorGate)
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(654)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(696)));
     $indexes = (((jus_IntStream_range(0, $this.$inputSize)).$filter0(oajq_Circuit$initializeLevels$lambda$_14_1__init_0($level))).$boxed()).$collect(jus_Collectors_toList());
     $indexes.$forEach(oajq_Circuit$initializeLevels$lambda$_14_2__init_0($level));
     return $level;
@@ -23596,11 +24759,11 @@ oajq_Circuit_lambda$initializeLevels$1 = ($this, $index) => {
 };
 function oajq_Circuit$initializeLevels$lambda$_14_2() {
     jl_Object.call(this);
-    this.$_024 = null;
+    this.$_027 = null;
 }
 let oajq_Circuit$initializeLevels$lambda$_14_2__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_024 = var$1;
+    var$0.$_027 = var$1;
 },
 oajq_Circuit$initializeLevels$lambda$_14_2__init_0 = var_0 => {
     let var_1 = new oajq_Circuit$initializeLevels$lambda$_14_2();
@@ -23611,15 +24774,15 @@ oajq_Circuit$initializeLevels$lambda$_14_2_accept0 = (var$0, var$1) => {
     oajq_Circuit$initializeLevels$lambda$_14_2_accept(var$0, var$1);
 },
 oajq_Circuit$initializeLevels$lambda$_14_2_accept = (var$0, var$1) => {
-    oajq_Circuit_lambda$initializeLevels$4(var$0.$_024, var$1);
+    oajq_Circuit_lambda$initializeLevels$4(var$0.$_027, var$1);
 };
 function oajq_Circuit$initializeLevels$lambda$_14_1() {
     jl_Object.call(this);
-    this.$_036 = null;
+    this.$_038 = null;
 }
 let oajq_Circuit$initializeLevels$lambda$_14_1__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_036 = var$1;
+    var$0.$_038 = var$1;
 },
 oajq_Circuit$initializeLevels$lambda$_14_1__init_0 = var_0 => {
     let var_1 = new oajq_Circuit$initializeLevels$lambda$_14_1();
@@ -23627,15 +24790,15 @@ oajq_Circuit$initializeLevels$lambda$_14_1__init_0 = var_0 => {
     return var_1;
 },
 oajq_Circuit$initializeLevels$lambda$_14_1_test = (var$0, var$1) => {
-    return oajq_Circuit_lambda$initializeLevels$2(var$0.$_036, var$1);
+    return oajq_Circuit_lambda$initializeLevels$2(var$0.$_038, var$1);
 };
 function oajqs_ExpectationSampler$execute$lambda$_3_1() {
     jl_Object.call(this);
-    this.$_022 = null;
+    this.$_023 = null;
 }
 let oajqs_ExpectationSampler$execute$lambda$_3_1__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_022 = var$1;
+    var$0.$_023 = var$1;
 },
 oajqs_ExpectationSampler$execute$lambda$_3_1__init_0 = var_0 => {
     let var_1 = new oajqs_ExpectationSampler$execute$lambda$_3_1();
@@ -23646,15 +24809,15 @@ oajqs_ExpectationSampler$execute$lambda$_3_1_get0 = var$0 => {
     return oajqs_ExpectationSampler$execute$lambda$_3_1_get(var$0);
 },
 oajqs_ExpectationSampler$execute$lambda$_3_1_get = var$0 => {
-    return oajqs_ExpectationSampler_lambda$execute$1(var$0.$_022);
+    return oajqs_ExpectationSampler_lambda$execute$1(var$0.$_023);
 };
 function oajq_Circuit$initializeLevels$lambda$_14_0() {
     jl_Object.call(this);
-    this.$_013 = null;
+    this.$_014 = null;
 }
 let oajq_Circuit$initializeLevels$lambda$_14_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_013 = var$1;
+    var$0.$_014 = var$1;
 },
 oajq_Circuit$initializeLevels$lambda$_14_0__init_0 = var_0 => {
     let var_1 = new oajq_Circuit$initializeLevels$lambda$_14_0();
@@ -23665,7 +24828,7 @@ oajq_Circuit$initializeLevels$lambda$_14_0_test0 = (var$0, var$1) => {
     return oajq_Circuit$initializeLevels$lambda$_14_0_test(var$0, var$1);
 },
 oajq_Circuit$initializeLevels$lambda$_14_0_test = (var$0, var$1) => {
-    return oajq_Circuit_lambda$initializeLevels$0(var$0.$_013, var$1);
+    return oajq_Circuit_lambda$initializeLevels$0(var$0.$_014, var$1);
 },
 oajqs_ExpectationSampler$execute$lambda$_3_0 = $rt_classWithoutFields(),
 oajqs_ExpectationSampler$execute$lambda$_3_0__init_ = var$0 => {
@@ -23736,8 +24899,14 @@ function oajvo_OpenQasmParser() {
     a.$config2 = null;
     a.$quantum = null;
     a.$classical = null;
-    a.$levels2 = null;
-    a.$qubits = 0;
+    a.$levels0 = null;
+    a.$levelLocations0 = null;
+    a.$barriers0 = null;
+    a.$qubitNames0 = null;
+    a.$scanned = 0;
+    a.$scannedLine = 0;
+    a.$scannedColumn = 0;
+    a.$qubits2 = 0;
     a.$bits1 = 0;
     a.$cursor = 0;
     a.$tokenStart = 0;
@@ -23755,14 +24924,19 @@ oajvo_OpenQasmParser__init_ = ($this, $source, $config) => {
     jl_Object__init_($this);
     $this.$quantum = ju_HashMap__init_1();
     $this.$classical = ju_HashMap__init_1();
-    $this.$levels2 = ju_ArrayList__init_();
-    $this.$source = ju_Objects_requireNonNull($source, $rt_s(655));
+    $this.$levels0 = ju_ArrayList__init_();
+    $this.$levelLocations0 = ju_ArrayList__init_();
+    $this.$barriers0 = ju_ArrayList__init_();
+    $this.$qubitNames0 = ju_ArrayList__init_();
+    $this.$scannedLine = 1;
+    $this.$scannedColumn = 1;
+    $this.$source = ju_Objects_requireNonNull($source, $rt_s(697));
     $this.$config2 = ju_Objects_requireNonNull($config, $rt_s(8));
     if (jl_String_length($source) <= 1000000) {
         oajvo_OpenQasmParser_next($this);
         return;
     }
-    $rt_throw(oaje_JQApiLimitException__init_($rt_s(656)));
+    $rt_throw(oaje_JQApiLimitException__init_($rt_s(698)));
 },
 oajvo_OpenQasmParser__init_0 = (var_0, var_1) => {
     let var_2 = new oajvo_OpenQasmParser();
@@ -23771,133 +24945,156 @@ oajvo_OpenQasmParser__init_0 = (var_0, var_1) => {
 },
 oajvo_OpenQasmParser_parse = ($source, $config) => {
     oajvo_OpenQasmParser_$callClinit();
+    return oajvo_OpenQasmParser$Program_spec(oajvo_OpenQasmParser_parseProgram($source, $config));
+},
+oajvo_OpenQasmParser_parseProgram = ($source, $config) => {
+    oajvo_OpenQasmParser_$callClinit();
     return oajvo_OpenQasmParser_program(oajvo_OpenQasmParser__init_0($source, $config));
 },
 oajvo_OpenQasmParser_program = $this => {
-    let var$1, var$2;
-    oajvo_OpenQasmParser_expect($this, $rt_s(657));
-    oajvo_OpenQasmParser_expect($this, $rt_s(658));
-    oajvo_OpenQasmParser_expect($this, $rt_s(569));
+    let $at, var$2, var$3, $qubitsInBarrier, $argument;
+    oajvo_OpenQasmParser_expect($this, $rt_s(699));
+    oajvo_OpenQasmParser_expect($this, $rt_s(700));
+    oajvo_OpenQasmParser_expect($this, $rt_s(584));
     a: while (true) {
         if (jl_String_isEmpty($this.$token)) {
-            if (!$this.$qubits)
-                $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(659)));
-            return oajvs_CircuitSpec_of($this.$qubits, $this.$levels2, $this.$bits1);
+            if (!$this.$qubits2)
+                $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(701)));
+            return oajvo_OpenQasmParser$Program__init_0(oajvs_CircuitSpec_of($this.$qubits2, $this.$levels0, $this.$bits1), $this.$levelLocations0, $this.$barriers0, $this.$qubitNames0);
         }
         b: {
-            var$1 = $this.$token;
-            var$2 = (-1);
-            switch (jl_String_hashCode(var$1)) {
+            $at = oajvo_OpenQasmParser_location($this, $this.$tokenStart);
+            var$2 = $this.$token;
+            var$3 = (-1);
+            switch (jl_String_hashCode(var$2)) {
                 case -1010695135:
-                    if (!jl_String_equals(var$1, $rt_s(660)))
+                    if (!jl_String_equals(var$2, $rt_s(702)))
                         break b;
-                    var$2 = 6;
+                    var$3 = 6;
                     break b;
                 case -333143113:
-                    if (!jl_String_equals(var$1, $rt_s(661)))
+                    if (!jl_String_equals(var$2, $rt_s(703)))
                         break b;
-                    var$2 = 3;
+                    var$3 = 3;
                     break b;
                 case 3357:
-                    if (!jl_String_equals(var$1, $rt_s(662)))
+                    if (!jl_String_equals(var$2, $rt_s(704)))
                         break b;
-                    var$2 = 4;
+                    var$3 = 4;
                     break b;
                 case 3062097:
-                    if (!jl_String_equals(var$1, $rt_s(663)))
+                    if (!jl_String_equals(var$2, $rt_s(705)))
                         break b;
-                    var$2 = 2;
+                    var$3 = 2;
                     break b;
                 case 3165387:
-                    if (!jl_String_equals(var$1, $rt_s(306)))
+                    if (!jl_String_equals(var$2, $rt_s(309)))
                         break b;
-                    var$2 = 5;
+                    var$3 = 5;
                     break b;
                 case 3479171:
-                    if (!jl_String_equals(var$1, $rt_s(664)))
+                    if (!jl_String_equals(var$2, $rt_s(706)))
                         break b;
-                    var$2 = 1;
+                    var$3 = 1;
                     break b;
                 case 1942574248:
-                    if (!jl_String_equals(var$1, $rt_s(665)))
+                    if (!jl_String_equals(var$2, $rt_s(707)))
                         break b;
-                    var$2 = 0;
+                    var$3 = 0;
                     break b;
                 default:
             }
         }
         c: {
-            switch (var$2) {
-                case 0:
-                    oajvo_OpenQasmParser_next($this);
-                    oajvo_OpenQasmParser_expect($this, $rt_s(666));
-                    oajvo_OpenQasmParser_expect($this, $rt_s(569));
-                    if ($this.$qelib)
-                        break a;
-                    $this.$qelib = 1;
-                    break c;
-                case 1:
-                case 2:
-                    break;
-                case 3:
-                    oajvo_OpenQasmParser_next($this);
-                    oajvo_OpenQasmParser_arguments($this, $this.$quantum);
-                    oajvo_OpenQasmParser_expect($this, $rt_s(569));
-                    break c;
-                case 4:
-                    oajvo_OpenQasmParser_conditional($this);
-                    break c;
-                case 5:
-                case 6:
-                    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(667)));
-                default:
-                    oajvo_OpenQasmParser_operation($this, null);
-                    break c;
+            d: {
+                switch (var$3) {
+                    case 0:
+                        oajvo_OpenQasmParser_next($this);
+                        oajvo_OpenQasmParser_expect($this, $rt_s(708));
+                        oajvo_OpenQasmParser_expect($this, $rt_s(584));
+                        if ($this.$qelib)
+                            break a;
+                        $this.$qelib = 1;
+                        break c;
+                    case 1:
+                    case 2:
+                        break;
+                    case 3:
+                        break d;
+                    case 4:
+                        oajvo_OpenQasmParser_conditional($this);
+                        break c;
+                    case 5:
+                    case 6:
+                        $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(709)));
+                    default:
+                        oajvo_OpenQasmParser_operation($this, null);
+                        break c;
+                }
+                oajvo_OpenQasmParser_declaration($this);
+                break c;
             }
-            oajvo_OpenQasmParser_declaration($this);
+            oajvo_OpenQasmParser_next($this);
+            $qubitsInBarrier = ju_ArrayList__init_();
+            var$2 = (oajvo_OpenQasmParser_arguments($this, $this.$quantum)).$iterator();
+            while (var$2.$hasNext()) {
+                $argument = var$2.$next();
+                $qubitsInBarrier.$addAll(oajvo_OpenQasmParser$Argument_indexes($argument));
+            }
+            oajvo_OpenQasmParser_expect($this, $rt_s(584));
+            $this.$barriers0.$add(oajvo_OpenQasmParser$Barrier__init_0($this.$levels0.$size(), $qubitsInBarrier, $at));
+        }
+        while ($this.$levelLocations0.$size() < $this.$levels0.$size()) {
+            $this.$levelLocations0.$add($at);
         }
     }
-    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(668)));
+    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(710)));
 },
 oajvo_OpenQasmParser_declaration = $this => {
-    let $isQuantum, $name, $size, $offset;
-    $isQuantum = oajvo_OpenQasmParser_take($this, $rt_s(664));
+    let $isQuantum, $name, $size, $offset, $i;
+    $isQuantum = oajvo_OpenQasmParser_take($this, $rt_s(706));
     if (!$isQuantum)
-        oajvo_OpenQasmParser_expect($this, $rt_s(663));
+        oajvo_OpenQasmParser_expect($this, $rt_s(705));
     $name = oajvo_OpenQasmParser_identifier($this);
     if (!oajvo_OpenQasmParser_RESERVED.$contains0($name) && !$this.$quantum.$containsKey($name) && !$this.$classical.$containsKey($name)) {
-        oajvo_OpenQasmParser_expect($this, $rt_s(376));
+        oajvo_OpenQasmParser_expect($this, $rt_s(383));
         $size = oajvo_OpenQasmParser_integer($this);
-        oajvo_OpenQasmParser_expect($this, $rt_s(57));
-        oajvo_OpenQasmParser_expect($this, $rt_s(569));
-        $offset = !$isQuantum ? $this.$bits1 : $this.$qubits;
+        oajvo_OpenQasmParser_expect($this, $rt_s(52));
+        oajvo_OpenQasmParser_expect($this, $rt_s(584));
+        $offset = !$isQuantum ? $this.$bits1 : $this.$qubits2;
         if ($size >= 1 && $size <= (oaj_JQAPIConfig_maxQubits($this.$config2) - $offset | 0)) {
             (!$isQuantum ? $this.$classical : $this.$quantum).$put($name, oajvo_OpenQasmParser$Register__init_0($offset, $size));
             if (!$isQuantum)
                 $this.$bits1 = $this.$bits1 + $size | 0;
-            else
-                $this.$qubits = $this.$qubits + $size | 0;
+            else {
+                $i = 0;
+                while ($i < $size) {
+                    $this.$qubitNames0.$add((((((jl_StringBuilder__init_()).$append1($name)).$append1($rt_s(383))).$append2($i)).$append1($rt_s(52))).$toString());
+                    $i = $i + 1 | 0;
+                }
+                $this.$qubits2 = $this.$qubits2 + $size | 0;
+            }
             return;
         }
-        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(669))).$append2($size)).$toString()));
+        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(711))).$append2($size)).$toString()));
     }
-    $rt_throw(oajvo_OpenQasmParser_error($this, (((jl_StringBuilder__init_()).$append1($rt_s(670))).$append1($name)).$toString()));
+    $rt_throw(oajvo_OpenQasmParser_error($this, (((jl_StringBuilder__init_()).$append1($rt_s(712))).$append1($name)).$toString()));
 },
 oajvo_OpenQasmParser_conditional = $this => {
     let $name, $register, $expected;
-    oajvo_OpenQasmParser_expect($this, $rt_s(662));
-    oajvo_OpenQasmParser_expect($this, $rt_s(543));
+    oajvo_OpenQasmParser_expect($this, $rt_s(704));
+    oajvo_OpenQasmParser_expect($this, $rt_s(558));
     $name = oajvo_OpenQasmParser_identifier($this);
     $register = $this.$classical.$get($name);
     if ($register === null)
-        $rt_throw(oajvo_OpenQasmParser_error($this, (((jl_StringBuilder__init_()).$append1($rt_s(671))).$append1($name)).$toString()));
+        $rt_throw(oajvo_OpenQasmParser_error($this, (((jl_StringBuilder__init_()).$append1($rt_s(713))).$append1($name)).$toString()));
     if (oajvo_OpenQasmParser$Register_size($register) != 1)
-        $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(672)));
-    oajvo_OpenQasmParser_expect($this, $rt_s(533));
+        $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(714)));
+    oajvo_OpenQasmParser_expect($this, $rt_s(548));
     $expected = oajvo_OpenQasmParser_integer($this);
     if ($expected > 1)
-        $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(673)));
-    oajvo_OpenQasmParser_expect($this, $rt_s(544));
+        $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(715)));
+    oajvo_OpenQasmParser_expect($this, $rt_s(559));
     oajvo_OpenQasmParser_operation($this, oajqc_Condition__init_(oajvo_OpenQasmParser$Register_offset($register), $expected));
 },
 oajvo_OpenQasmParser_operation = ($this, $condition) => {
@@ -23918,29 +25115,29 @@ oajvo_OpenQasmParser_operation = ($this, $condition) => {
         }
         $rt_throw(oajvo_OpenQasmParser_error($this, $ex.$getMessage()));
     }
-    if (!$this.$qelib && !(ju_Set_of0($rt_s(674), $rt_s(675), $rt_s(676), $rt_s(677))).$contains0($name))
-        $rt_throw(oajvo_OpenQasmParser_error($this, ((((jl_StringBuilder__init_()).$append1($rt_s(678))).$append1($name)).$append1($rt_s(679))).$toString()));
+    if (!$this.$qelib && !(ju_Set_of0($rt_s(716), $rt_s(717), $rt_s(718), $rt_s(719))).$contains0($name))
+        $rt_throw(oajvo_OpenQasmParser_error($this, ((((jl_StringBuilder__init_()).$append1($rt_s(720))).$append1($name)).$append1($rt_s(721))).$toString()));
     if ($condition !== null) {
         var$5 = oajvo_OpenQasmGates$Mapping_kind($mapping);
         oajvs_GateKind_$callClinit();
         if (!(var$5 !== oajvs_GateKind_MEASUREMENT && oajvo_OpenQasmGates$Mapping_kind($mapping) !== oajvs_GateKind_RESET))
-            $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(680)));
+            $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(722)));
     }
     $values = ju_ArrayList__init_();
-    if (oajvo_OpenQasmParser_take($this, $rt_s(543))) {
+    if (oajvo_OpenQasmParser_take($this, $rt_s(558))) {
         b: {
-            if (!jl_String_equals($this.$token, $rt_s(544))) {
+            if (!jl_String_equals($this.$token, $rt_s(559))) {
                 while ($values.$size() != 3) {
                     $values.$add(jl_Double_valueOf(oajvo_OpenQasmParser_expression($this, 0, 0)));
-                    if (oajvo_OpenQasmParser_take($this, $rt_s(535)))
+                    if (oajvo_OpenQasmParser_take($this, $rt_s(550)))
                         continue;
                     else
                         break b;
                 }
-                $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(681)));
+                $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(723)));
             }
         }
-        oajvo_OpenQasmParser_expect($this, $rt_s(544));
+        oajvo_OpenQasmParser_expect($this, $rt_s(559));
     }
     c: {
         try {
@@ -23958,17 +25155,17 @@ oajvo_OpenQasmParser_operation = ($this, $condition) => {
     }
     $arguments = oajvo_OpenQasmParser_arguments($this, $this.$quantum);
     if ($arguments.$size() != (oajvo_OpenQasmGates$Mapping_controls($mapping) + oajvo_OpenQasmGates$Mapping_targets($mapping) | 0))
-        $rt_throw(oajvo_OpenQasmParser_error($this, (((jl_StringBuilder__init_()).$append1($rt_s(682))).$append1($name)).$toString()));
+        $rt_throw(oajvo_OpenQasmParser_error($this, (((jl_StringBuilder__init_()).$append1($rt_s(724))).$append1($name)).$toString()));
     $destination = null;
     var$5 = oajvo_OpenQasmGates$Mapping_kind($mapping);
     oajvs_GateKind_$callClinit();
     if (var$5 === oajvs_GateKind_MEASUREMENT) {
-        oajvo_OpenQasmParser_expect($this, $rt_s(683));
+        oajvo_OpenQasmParser_expect($this, $rt_s(725));
         $destination = oajvo_OpenQasmParser_argument($this, $this.$classical);
         if (!((oajvo_OpenQasmParser$Argument_indexes($arguments.$getFirst())).$size() == (oajvo_OpenQasmParser$Argument_indexes($destination)).$size() && oajvo_OpenQasmParser$Argument_wholeRegister($arguments.$getFirst()) == oajvo_OpenQasmParser$Argument_wholeRegister($destination)))
-            $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(684)));
+            $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(726)));
     }
-    oajvo_OpenQasmParser_expect($this, $rt_s(569));
+    oajvo_OpenQasmParser_expect($this, $rt_s(584));
     $width = 0;
     var$5 = $arguments.$iterator();
     while (true) {
@@ -23983,16 +25180,16 @@ oajvo_OpenQasmParser_operation = ($this, $condition) => {
                     $operands.$add((oajvo_OpenQasmParser$Argument_indexes($argument)).$get0(!oajvo_OpenQasmParser$Argument_wholeRegister($argument) ? 0 : $i));
                 }
                 if ((ju_HashSet__init_1($operands)).$size() != $operands.$size())
-                    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(685)));
-                if ($this.$levels2.$size() >= 10000)
-                    $rt_throw(oaje_JQApiLimitException__init_($rt_s(531)));
+                    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(727)));
+                if ($this.$levels0.$size() >= 10000)
+                    $rt_throw(oaje_JQApiLimitException__init_($rt_s(546)));
                 $gate = new oajvs_GateSpec;
                 var$5 = oajvo_OpenQasmGates$Mapping_kind($mapping);
                 var$14 = $operands.$subList(oajvo_OpenQasmGates$Mapping_controls($mapping), $operands.$size());
                 var$17 = $operands.$subList(0, oajvo_OpenQasmGates$Mapping_controls($mapping));
                 var$18 = null;
                 oajvs_GateSpec__init_($gate, var$5, var$14, var$17, $params, var$18, $destination === null ? null : (oajvo_OpenQasmParser$Argument_indexes($destination)).$get0($i), $condition);
-                $this.$levels2.$add(oajvs_LevelSpec__init_0(ju_List_of($gate)));
+                $this.$levels0.$add(oajvs_LevelSpec__init_0(ju_List_of($gate)));
                 $i = $i + 1 | 0;
             }
             return;
@@ -24005,16 +25202,16 @@ oajvo_OpenQasmParser_operation = ($this, $condition) => {
             $width = $size;
         }
     }
-    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(686)));
+    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(728)));
 },
 oajvo_OpenQasmParser_arguments = ($this, $registers) => {
     let $result;
     $result = ju_ArrayList__init_();
     while (true) {
         if ($result.$size() >= 30)
-            $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(687)));
+            $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(729)));
         $result.$add(oajvo_OpenQasmParser_argument($this, $registers));
-        if (oajvo_OpenQasmParser_take($this, $rt_s(535)))
+        if (oajvo_OpenQasmParser_take($this, $rt_s(550)))
             continue;
         else
             break;
@@ -24026,8 +25223,8 @@ oajvo_OpenQasmParser_argument = ($this, $registers) => {
     $name = oajvo_OpenQasmParser_identifier($this);
     $register = $registers.$get($name);
     if ($register === null)
-        $rt_throw(oajvo_OpenQasmParser_error($this, (((jl_StringBuilder__init_()).$append1($rt_s(688))).$append1($name)).$toString()));
-    if (!oajvo_OpenQasmParser_take($this, $rt_s(376))) {
+        $rt_throw(oajvo_OpenQasmParser_error($this, (((jl_StringBuilder__init_()).$append1($rt_s(730))).$append1($name)).$toString()));
+    if (!oajvo_OpenQasmParser_take($this, $rt_s(383))) {
         $indexes = ju_ArrayList__init_();
         $i = 0;
         while ($i < oajvo_OpenQasmParser$Register_size($register)) {
@@ -24037,23 +25234,23 @@ oajvo_OpenQasmParser_argument = ($this, $registers) => {
         return oajvo_OpenQasmParser$Argument__init_($indexes, 1);
     }
     $index = oajvo_OpenQasmParser_integer($this);
-    oajvo_OpenQasmParser_expect($this, $rt_s(57));
+    oajvo_OpenQasmParser_expect($this, $rt_s(52));
     if ($index < oajvo_OpenQasmParser$Register_size($register))
         return oajvo_OpenQasmParser$Argument__init_(ju_List_of(jl_Integer_valueOf(oajvo_OpenQasmParser$Register_offset($register) + $index | 0)), 0);
-    $rt_throw(oajvo_OpenQasmParser_error($this, (((((jl_StringBuilder__init_()).$append1($rt_s(689))).$append1($name)).$append1($rt_s(26))).$append2($index)).$toString()));
+    $rt_throw(oajvo_OpenQasmParser_error($this, (((((jl_StringBuilder__init_()).$append1($rt_s(731))).$append1($name)).$append1($rt_s(26))).$append2($index)).$toString()));
 },
 oajvo_OpenQasmParser_expression = ($this, $minimumPrecedence, $depth) => {
     let $value, $function, $argument, var$6, $operator, $precedence, $right, $$je;
     if ($depth >= 64)
-        $rt_throw(oaje_JQApiLimitException__init_($rt_s(690)));
-    if (oajvo_OpenQasmParser_take($this, $rt_s(691)))
+        $rt_throw(oaje_JQApiLimitException__init_($rt_s(732)));
+    if (oajvo_OpenQasmParser_take($this, $rt_s(733)))
         $value =  -oajvo_OpenQasmParser_expression($this, 3, $depth + 1 | 0);
-    else if (oajvo_OpenQasmParser_take($this, $rt_s(543))) {
+    else if (oajvo_OpenQasmParser_take($this, $rt_s(558))) {
         $value = oajvo_OpenQasmParser_expression($this, 0, $depth + 1 | 0);
-        oajvo_OpenQasmParser_expect($this, $rt_s(544));
-    } else if (oajvo_OpenQasmParser_take($this, $rt_s(692)))
+        oajvo_OpenQasmParser_expect($this, $rt_s(559));
+    } else if (oajvo_OpenQasmParser_take($this, $rt_s(734)))
         $value = 3.141592653589793;
-    else if (!(ju_Set_of2($rt_s(693), $rt_s(694), $rt_s(695), $rt_s(696), $rt_s(697), $rt_s(698))).$contains0($this.$token)) {
+    else if (!(ju_Set_of2($rt_s(735), $rt_s(736), $rt_s(737), $rt_s(738), $rt_s(739), $rt_s(740))).$contains0($this.$token)) {
         a: {
             try {
                 b: {
@@ -24063,14 +25260,14 @@ oajvo_OpenQasmParser_expression = ($this, $minimumPrecedence, $depth) => {
                         if (jl_String_charAt($this.$token, 0) == 46)
                             break b;
                     }
-                    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(699)));
+                    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(741)));
                 }
                 $value = jl_Double_parseDouble($this.$token);
                 break a;
             } catch ($$e) {
                 $$je = $rt_wrapException($$e);
                 if ($$je instanceof jl_NumberFormatException) {
-                    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(700)));
+                    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(742)));
                 } else {
                     throw $$e;
                 }
@@ -24081,33 +25278,33 @@ oajvo_OpenQasmParser_expression = ($this, $minimumPrecedence, $depth) => {
         c: {
             $function = $this.$token;
             oajvo_OpenQasmParser_next($this);
-            oajvo_OpenQasmParser_expect($this, $rt_s(543));
+            oajvo_OpenQasmParser_expect($this, $rt_s(558));
             $argument = oajvo_OpenQasmParser_expression($this, 0, $depth + 1 | 0);
-            oajvo_OpenQasmParser_expect($this, $rt_s(544));
+            oajvo_OpenQasmParser_expect($this, $rt_s(559));
             var$6 = (-1);
             switch (jl_String_hashCode($function)) {
                 case 3458:
-                    if (!jl_String_equals($function, $rt_s(697)))
+                    if (!jl_String_equals($function, $rt_s(739)))
                         break c;
                     var$6 = 4;
                     break c;
                 case 98695:
-                    if (!jl_String_equals($function, $rt_s(694)))
+                    if (!jl_String_equals($function, $rt_s(736)))
                         break c;
                     var$6 = 1;
                     break c;
                 case 100893:
-                    if (!jl_String_equals($function, $rt_s(696)))
+                    if (!jl_String_equals($function, $rt_s(738)))
                         break c;
                     var$6 = 3;
                     break c;
                 case 113880:
-                    if (!jl_String_equals($function, $rt_s(693)))
+                    if (!jl_String_equals($function, $rt_s(735)))
                         break c;
                     var$6 = 0;
                     break c;
                 case 114593:
-                    if (!jl_String_equals($function, $rt_s(695)))
+                    if (!jl_String_equals($function, $rt_s(737)))
                         break c;
                     var$6 = 2;
                     break c;
@@ -24143,27 +25340,27 @@ oajvo_OpenQasmParser_expression = ($this, $minimumPrecedence, $depth) => {
             var$6 = (-1);
             switch (jl_String_hashCode($operator)) {
                 case 42:
-                    if (!jl_String_equals($operator, $rt_s(701)))
+                    if (!jl_String_equals($operator, $rt_s(743)))
                         break e;
                     var$6 = 2;
                     break e;
                 case 43:
-                    if (!jl_String_equals($operator, $rt_s(702)))
+                    if (!jl_String_equals($operator, $rt_s(744)))
                         break e;
                     var$6 = 0;
                     break e;
                 case 45:
-                    if (!jl_String_equals($operator, $rt_s(691)))
+                    if (!jl_String_equals($operator, $rt_s(733)))
                         break e;
                     var$6 = 1;
                     break e;
                 case 47:
-                    if (!jl_String_equals($operator, $rt_s(460)))
+                    if (!jl_String_equals($operator, $rt_s(475)))
                         break e;
                     var$6 = 3;
                     break e;
                 case 94:
-                    if (!jl_String_equals($operator, $rt_s(520)))
+                    if (!jl_String_equals($operator, $rt_s(535)))
                         break e;
                     var$6 = 4;
                     break e;
@@ -24191,29 +25388,29 @@ oajvo_OpenQasmParser_expression = ($this, $minimumPrecedence, $depth) => {
         if ($precedence < $minimumPrecedence)
             break;
         oajvo_OpenQasmParser_next($this);
-        if (!jl_String_equals($operator, $rt_s(520)))
+        if (!jl_String_equals($operator, $rt_s(535)))
             $precedence = $precedence + 1 | 0;
         g: {
             $right = oajvo_OpenQasmParser_expression($this, $precedence, $depth + 1 | 0);
             var$6 = (-1);
             switch (jl_String_hashCode($operator)) {
                 case 42:
-                    if (!jl_String_equals($operator, $rt_s(701)))
+                    if (!jl_String_equals($operator, $rt_s(743)))
                         break g;
                     var$6 = 2;
                     break g;
                 case 43:
-                    if (!jl_String_equals($operator, $rt_s(702)))
+                    if (!jl_String_equals($operator, $rt_s(744)))
                         break g;
                     var$6 = 0;
                     break g;
                 case 45:
-                    if (!jl_String_equals($operator, $rt_s(691)))
+                    if (!jl_String_equals($operator, $rt_s(733)))
                         break g;
                     var$6 = 1;
                     break g;
                 case 47:
-                    if (!jl_String_equals($operator, $rt_s(460)))
+                    if (!jl_String_equals($operator, $rt_s(475)))
                         break g;
                     var$6 = 3;
                     break g;
@@ -24245,20 +25442,20 @@ oajvo_OpenQasmParser_expression = ($this, $minimumPrecedence, $depth) => {
     }
     if (isFinite($value) ? 1 : 0)
         return $value;
-    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(703)));
+    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(745)));
 },
 oajvo_OpenQasmParser_identifier = $this => {
     let $result;
-    if (!jl_String_matches($this.$token, $rt_s(704)))
-        $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(705)));
+    if (!jl_String_matches($this.$token, $rt_s(746)))
+        $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(747)));
     $result = $this.$token;
     oajvo_OpenQasmParser_next($this);
     return $result;
 },
 oajvo_OpenQasmParser_integer = $this => {
     let $result, $$je;
-    if (!jl_String_matches($this.$token, $rt_s(706)))
-        $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(707)));
+    if (!jl_String_matches($this.$token, $rt_s(748)))
+        $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(749)));
     a: {
         try {
             $result = jl_Integer_parseInt0($this.$token);
@@ -24273,7 +25470,7 @@ oajvo_OpenQasmParser_integer = $this => {
         }
         return $result;
     }
-    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(708)));
+    $rt_throw(oajvo_OpenQasmParser_error($this, $rt_s(750)));
 },
 oajvo_OpenQasmParser_take = ($this, $expected) => {
     if (!jl_String_equals($this.$token, $expected))
@@ -24284,7 +25481,7 @@ oajvo_OpenQasmParser_take = ($this, $expected) => {
 oajvo_OpenQasmParser_expect = ($this, $expected) => {
     if (oajvo_OpenQasmParser_take($this, $expected))
         return;
-    $rt_throw(oajvo_OpenQasmParser_error($this, ((((((jl_StringBuilder__init_()).$append1($rt_s(709))).$append1($expected)).$append1($rt_s(710))).$append1($this.$token)).$append1($rt_s(422))).$toString()));
+    $rt_throw(oajvo_OpenQasmParser_error($this, ((((((jl_StringBuilder__init_()).$append1($rt_s(751))).$append1($expected)).$append1($rt_s(752))).$append1($this.$token)).$append1($rt_s(438))).$toString()));
 },
 oajvo_OpenQasmParser_next = $this => {
     let $matcher;
@@ -24293,7 +25490,7 @@ oajvo_OpenQasmParser_next = $this => {
             $this.$cursor = $this.$cursor + 1 | 0;
             continue;
         }
-        if (!jl_String_startsWith($this.$source, $rt_s(711), $this.$cursor))
+        if (!jl_String_startsWith($this.$source, $rt_s(753), $this.$cursor))
             break;
         while (true) {
             if ($this.$cursor >= jl_String_length($this.$source))
@@ -24307,17 +25504,29 @@ oajvo_OpenQasmParser_next = $this => {
     }
     $this.$tokenStart = $this.$cursor;
     if ($this.$cursor == jl_String_length($this.$source)) {
-        $this.$token = $rt_s(69);
+        $this.$token = $rt_s(72);
         return;
     }
     oajvo_OpenQasmParser_$callClinit();
     $matcher = jur_Matcher_region(jur_Pattern_matcher(oajvo_OpenQasmParser_TOKEN, $this.$source), $this.$cursor, jl_String_length($this.$source));
     if (!jur_Matcher_lookingAt0($matcher))
-        $rt_throw(oajvo_OpenQasmParser_error($this, ((((jl_StringBuilder__init_()).$append1($rt_s(712))).$append0(jl_String_charAt($this.$source, $this.$cursor))).$append1($rt_s(422))).$toString()));
+        $rt_throw(oajvo_OpenQasmParser_error($this, ((((jl_StringBuilder__init_()).$append1($rt_s(754))).$append0(jl_String_charAt($this.$source, $this.$cursor))).$append1($rt_s(438))).$toString()));
     if ((jur_Matcher_end($matcher) - $this.$cursor | 0) > 256)
-        $rt_throw(oaje_JQApiLimitException__init_($rt_s(713)));
+        $rt_throw(oaje_JQApiLimitException__init_($rt_s(755)));
     $this.$token = jur_Matcher_group0($matcher);
     $this.$cursor = jur_Matcher_end($matcher);
+},
+oajvo_OpenQasmParser_location = ($this, $offset) => {
+    while ($this.$scanned < $offset) {
+        if (jl_String_charAt($this.$source, $this.$scanned) != 10)
+            $this.$scannedColumn = $this.$scannedColumn + 1 | 0;
+        else {
+            $this.$scannedLine = $this.$scannedLine + 1 | 0;
+            $this.$scannedColumn = 1;
+        }
+        $this.$scanned = $this.$scanned + 1 | 0;
+    }
+    return oajvo_OpenQasmParser$Location__init_0($this.$scannedLine, $this.$scannedColumn);
 },
 oajvo_OpenQasmParser_error = ($this, $message) => {
     let $line, $column, $i;
@@ -24333,11 +25542,11 @@ oajvo_OpenQasmParser_error = ($this, $message) => {
         }
         $i = $i + 1 | 0;
     }
-    return jl_IllegalArgumentException__init_((((((((jl_StringBuilder__init_()).$append1($rt_s(714))).$append2($line)).$append1($rt_s(715))).$append2($column)).$append1($rt_s(26))).$append1($message)).$toString());
+    return jl_IllegalArgumentException__init_((((((((jl_StringBuilder__init_()).$append1($rt_s(756))).$append2($line)).$append1($rt_s(757))).$append2($column)).$append1($rt_s(26))).$append1($message)).$toString());
 },
 oajvo_OpenQasmParser__clinit_ = () => {
-    oajvo_OpenQasmParser_TOKEN = jur_Pattern_compile($rt_s(716));
-    oajvo_OpenQasmParser_RESERVED = ju_Set_of1($rt_wrapArray(jl_String, [$rt_s(664), $rt_s(663), $rt_s(665), $rt_s(662), $rt_s(661), $rt_s(306), $rt_s(660), $rt_s(676), $rt_s(677), $rt_s(692), $rt_s(693), $rt_s(694), $rt_s(695), $rt_s(696), $rt_s(697), $rt_s(698)]));
+    oajvo_OpenQasmParser_TOKEN = jur_Pattern_compile($rt_s(758));
+    oajvo_OpenQasmParser_RESERVED = ju_Set_of1($rt_wrapArray(jl_String, [$rt_s(706), $rt_s(705), $rt_s(707), $rt_s(704), $rt_s(703), $rt_s(309), $rt_s(702), $rt_s(718), $rt_s(719), $rt_s(734), $rt_s(735), $rt_s(736), $rt_s(737), $rt_s(738), $rt_s(739), $rt_s(740)]));
 };
 function jusi_FilteringIntStreamImpl() {
     jusi_WrappingIntStreamImpl.call(this);
@@ -24356,8 +25565,8 @@ jusi_FilteringIntStreamImpl_wrap = ($this, $consumer) => {
     return jusi_FilteringIntStreamImpl$wrap$lambda$_1_0__init_0($this, $consumer);
 },
 jusi_FilteringIntStreamImpl_lambda$wrap$0 = ($this, $consumer, $t) => {
-    if ($this.$filter1.$test5($t))
-        return $consumer.$test5($t);
+    if ($this.$filter1.$test6($t))
+        return $consumer.$test6($t);
     return 1;
 },
 jur_AbstractCharClass$LazyJavaIdentifierIgnorable = $rt_classWithoutFields(jur_AbstractCharClass$LazyCharClass),
@@ -24406,10 +25615,10 @@ oajo_Pauli_$values = () => {
     return var$1;
 },
 oajo_Pauli__clinit_ = () => {
-    oajo_Pauli_I = oajo_Pauli__init_($rt_s(470), 0);
-    oajo_Pauli_X = oajo_Pauli__init_($rt_s(466), 1);
-    oajo_Pauli_Y = oajo_Pauli__init_($rt_s(467), 2);
-    oajo_Pauli_Z = oajo_Pauli__init_($rt_s(468), 3);
+    oajo_Pauli_I = oajo_Pauli__init_($rt_s(485), 0);
+    oajo_Pauli_X = oajo_Pauli__init_($rt_s(481), 1);
+    oajo_Pauli_Y = oajo_Pauli__init_($rt_s(482), 2);
+    oajo_Pauli_Z = oajo_Pauli__init_($rt_s(483), 3);
     oajo_Pauli_$VALUES = oajo_Pauli_$values();
 };
 function jusi_MappingStreamImpl() {
@@ -24429,7 +25638,7 @@ jusi_MappingStreamImpl_wrap = ($this, $consumer) => {
     return jusi_MappingStreamImpl$wrap$lambda$_1_0__init_0($this, $consumer);
 },
 jusi_MappingStreamImpl_lambda$wrap$0 = ($this, $consumer, $t) => {
-    return $consumer.$test($this.$mapper.$apply1($t));
+    return $consumer.$test($this.$mapper.$apply3($t));
 };
 function jur_UMultiLineEOLSet() {
     jur_AbstractSet.call(this);
@@ -24463,15 +25672,15 @@ jur_UMultiLineEOLSet_hasConsumed = ($this, $matchResult) => {
     return $res;
 },
 jur_UMultiLineEOLSet_getName = $this => {
-    return $rt_s(717);
+    return $rt_s(759);
 };
 function oajq_CircuitLevel$verify$lambda$_5_1() {
     jl_Object.call(this);
-    this.$_015 = null;
+    this.$_016 = null;
 }
 let oajq_CircuitLevel$verify$lambda$_5_1__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_015 = var$1;
+    var$0.$_016 = var$1;
 },
 oajq_CircuitLevel$verify$lambda$_5_1__init_0 = var_0 => {
     let var_1 = new oajq_CircuitLevel$verify$lambda$_5_1();
@@ -24482,7 +25691,7 @@ oajq_CircuitLevel$verify$lambda$_5_1_test0 = (var$0, var$1) => {
     return oajq_CircuitLevel$verify$lambda$_5_1_test(var$0, var$1);
 },
 oajq_CircuitLevel$verify$lambda$_5_1_test = (var$0, var$1) => {
-    return var$0.$_015.$contains0(var$1);
+    return var$0.$_016.$contains0(var$1);
 },
 ju_LinkedHashMapIterator$KeyIterator = $rt_classWithoutFields(ju_LinkedHashMapIterator),
 ju_LinkedHashMapIterator$KeyIterator__init_ = ($this, $map, $reversed) => {
@@ -24879,7 +26088,7 @@ jur_EOLSet_hasConsumed = ($this, $matchResult) => {
     return $res;
 },
 jur_EOLSet_getName = $this => {
-    return $rt_s(394);
+    return $rt_s(408);
 },
 otr_StringInfo = $rt_classWithoutFields(otrr_ReflectionInfo),
 oajvo_OpenQasmGates = $rt_classWithoutFields(),
@@ -24895,27 +26104,27 @@ oajvo_OpenQasmGates_named = $name => {
         var$2 = (-1);
         switch (jl_String_hashCode($name)) {
             case 85:
-                if (!jl_String_equals($name, $rt_s(674)))
+                if (!jl_String_equals($name, $rt_s(716)))
                     break a;
                 var$2 = 0;
                 break a;
             case 2165:
-                if (!jl_String_equals($name, $rt_s(675)))
+                if (!jl_String_equals($name, $rt_s(717)))
                     break a;
                 var$2 = 2;
                 break a;
             case 3677:
-                if (!jl_String_equals($name, $rt_s(718)))
+                if (!jl_String_equals($name, $rt_s(760)))
                     break a;
                 var$2 = 1;
                 break a;
             case 113718:
-                if (!jl_String_equals($name, $rt_s(719)))
+                if (!jl_String_equals($name, $rt_s(761)))
                     break a;
                 var$2 = 3;
                 break a;
             case 114679:
-                if (!jl_String_equals($name, $rt_s(720)))
+                if (!jl_String_equals($name, $rt_s(762)))
                     break a;
                 var$2 = 4;
                 break a;
@@ -24928,17 +26137,17 @@ oajvo_OpenQasmGates_named = $name => {
             case 1:
                 break;
             case 2:
-                $canonical = $rt_s(721);
+                $canonical = $rt_s(763);
                 break b;
             case 3:
             case 4:
-                $canonical = $rt_s(722);
+                $canonical = $rt_s(764);
                 break b;
             default:
                 $canonical = $name;
                 break b;
         }
-        $canonical = $rt_s(723);
+        $canonical = $rt_s(765);
     }
     var$4 = ((oajvo_OpenQasmGates_MAPPINGS.$stream()).$filter(oajvo_OpenQasmGates$named$lambda$_1_0__init_0($canonical))).$findFirst();
     var$5 = oajvo_OpenQasmGates$named$lambda$_1_1__init_0($name);
@@ -24960,17 +26169,17 @@ oajvo_OpenQasmGates_parameters = ($name, $mapping, $values) => {
         var$4 = (-1);
         switch (jl_String_hashCode($name)) {
             case 3677:
-                if (!jl_String_equals($name, $rt_s(718)))
+                if (!jl_String_equals($name, $rt_s(760)))
                     break a;
                 var$4 = 0;
                 break a;
             case 113718:
-                if (!jl_String_equals($name, $rt_s(719)))
+                if (!jl_String_equals($name, $rt_s(761)))
                     break a;
                 var$4 = 1;
                 break a;
             case 114679:
-                if (!jl_String_equals($name, $rt_s(720)))
+                if (!jl_String_equals($name, $rt_s(762)))
                     break a;
                 var$4 = 2;
                 break a;
@@ -24992,22 +26201,22 @@ oajvo_OpenQasmGates_parameters = ($name, $mapping, $values) => {
         $count = 2;
     }
     if ($values.$size() != $count)
-        $rt_throw(jl_IllegalArgumentException__init_((((((jl_StringBuilder__init_()).$append1($name)).$append1($rt_s(724))).$append2($count)).$append1($rt_s(725))).$toString()));
+        $rt_throw(jl_IllegalArgumentException__init_((((((jl_StringBuilder__init_()).$append1($name)).$append1($rt_s(766))).$append2($count)).$append1($rt_s(767))).$toString()));
     c: {
         var$4 = (-1);
         switch (jl_String_hashCode($name)) {
             case 3677:
-                if (!jl_String_equals($name, $rt_s(718)))
+                if (!jl_String_equals($name, $rt_s(760)))
                     break c;
                 var$4 = 0;
                 break c;
             case 113718:
-                if (!jl_String_equals($name, $rt_s(719)))
+                if (!jl_String_equals($name, $rt_s(761)))
                     break c;
                 var$4 = 1;
                 break c;
             case 114679:
-                if (!jl_String_equals($name, $rt_s(720)))
+                if (!jl_String_equals($name, $rt_s(762)))
                     break c;
                 var$4 = 2;
                 break c;
@@ -25017,28 +26226,28 @@ oajvo_OpenQasmGates_parameters = ($name, $mapping, $values) => {
     d: {
         switch (var$4) {
             case 0:
-                var$6 = ju_Map_of1($rt_s(461), jl_Double_valueOf(1.5707963267948966), $rt_s(462), $values.$get0(0), $rt_s(463), $values.$get0(1));
+                var$6 = ju_Map_of1($rt_s(476), jl_Double_valueOf(1.5707963267948966), $rt_s(477), $values.$get0(0), $rt_s(478), $values.$get0(1));
                 break d;
             case 1:
                 break;
             case 2:
-                var$6 = ju_Map_of0($rt_s(461), jl_Double_valueOf((-0.7853981633974483)));
+                var$6 = ju_Map_of0($rt_s(476), jl_Double_valueOf((-0.7853981633974483)));
                 break d;
             default:
                 switch ($count) {
                     case 0:
                         break;
                     case 1:
-                        var$6 = ju_Map_of0($rt_s(461), $values.$getFirst());
+                        var$6 = ju_Map_of0($rt_s(476), $values.$getFirst());
                         break d;
                     default:
-                        var$6 = ju_Map_of1($rt_s(461), $values.$get0(0), $rt_s(462), $values.$get0(1), $rt_s(463), $values.$get0(2));
+                        var$6 = ju_Map_of1($rt_s(476), $values.$get0(0), $rt_s(477), $values.$get0(1), $rt_s(478), $values.$get0(2));
                         break d;
                 }
                 var$6 = ju_Map_of();
                 break d;
         }
-        var$6 = ju_Map_of0($rt_s(461), jl_Double_valueOf((-1.5707963267948966)));
+        var$6 = ju_Map_of0($rt_s(476), jl_Double_valueOf((-1.5707963267948966)));
     }
     return var$6;
 },
@@ -25055,12 +26264,12 @@ oajvo_OpenQasmGates_validate = ($gate, $qubits) => {
             } else if ((oajvs_GateSpec_targets($gate)).$size() == oajvo_OpenQasmGates$Mapping_targets($mapping))
                 break a;
         }
-        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(726))).$append(oajvs_GateSpec_kind($gate))).$toString()));
+        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(768))).$append(oajvs_GateSpec_kind($gate))).$toString()));
     }
     if (oajvs_GateSpec_matrix($gate) === null && ((oajvs_GateSpec_params($gate)).$keySet()).$equals(ju_HashSet__init_1(oajvo_OpenQasmGates$Mapping_parameters($mapping)))) {
         if ((((oajvs_GateSpec_params($gate)).$values1()).$stream()).$anyMatch(oajvo_OpenQasmGates$validate$lambda$_4_0__init_0()))
-            $rt_throw(jl_IllegalArgumentException__init_($rt_s(727)));
-        $seen = ju_HashSet__init_0();
+            $rt_throw(jl_IllegalArgumentException__init_($rt_s(769)));
+        $seen = ju_HashSet__init_();
         var$6 = $rt_wrapArray(ju_List, [oajvs_GateSpec_controls($gate), oajvs_GateSpec_targets($gate)]);
         var$7 = (ju_Arrays_asList(var$6)).$iterator();
         b: while (true) {
@@ -25068,7 +26277,7 @@ oajvo_OpenQasmGates_validate = ($gate, $qubits) => {
                 var$7 = oajvs_GateSpec_kind($gate);
                 oajvs_GateKind_$callClinit();
                 if (var$7 === oajvs_GateKind_MEASUREMENT && oajvs_GateSpec_classicalTarget($gate) === null)
-                    $rt_throw(jl_IllegalArgumentException__init_($rt_s(728)));
+                    $rt_throw(jl_IllegalArgumentException__init_($rt_s(770)));
                 return;
             }
             $operands = var$7.$next();
@@ -25083,9 +26292,9 @@ oajvo_OpenQasmGates_validate = ($gate, $qubits) => {
                     break b;
             }
         }
-        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(729))).$append2($index)).$toString()));
+        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(771))).$append2($index)).$toString()));
     }
-    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(730))).$append(oajvs_GateSpec_kind($gate))).$toString()));
+    $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(772))).$append(oajvs_GateSpec_kind($gate))).$toString()));
 },
 oajvo_OpenQasmGates_lambda$validate$0 = $value => {
     oajvo_OpenQasmGates_$callClinit();
@@ -25093,7 +26302,7 @@ oajvo_OpenQasmGates_lambda$validate$0 = $value => {
 },
 oajvo_OpenQasmGates_lambda$forKind$1 = $kind => {
     oajvo_OpenQasmGates_$callClinit();
-    return jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(731))).$append($kind)).$toString());
+    return jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(773))).$append($kind)).$toString());
 },
 oajvo_OpenQasmGates_lambda$forKind$0 = ($kind, $mapping) => {
     oajvo_OpenQasmGates_$callClinit();
@@ -25101,7 +26310,7 @@ oajvo_OpenQasmGates_lambda$forKind$0 = ($kind, $mapping) => {
 },
 oajvo_OpenQasmGates_lambda$named$1 = $name => {
     oajvo_OpenQasmGates_$callClinit();
-    return jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(732))).$append1($name)).$toString());
+    return jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(774))).$append1($name)).$toString());
 },
 oajvo_OpenQasmGates_lambda$named$0 = ($canonical, $mapping) => {
     oajvo_OpenQasmGates_$callClinit();
@@ -25113,53 +26322,53 @@ oajvo_OpenQasmGates__clinit_ = () => {
     var$2 = var$1.data;
     var$3 = new oajvo_OpenQasmGates$Mapping;
     oajvs_GateKind_$callClinit();
-    oajvo_OpenQasmGates$Mapping__init_0(var$3, $rt_s(733), oajvs_GateKind_H, 0, 1, $rt_createArray(jl_String, 0));
+    oajvo_OpenQasmGates$Mapping__init_0(var$3, $rt_s(775), oajvs_GateKind_H, 0, 1, $rt_createArray(jl_String, 0));
     var$2[0] = var$3;
-    var$2[1] = oajvo_OpenQasmGates$Mapping__init_($rt_s(326), oajvs_GateKind_X, 0, 1, $rt_createArray(jl_String, 0));
-    var$2[2] = oajvo_OpenQasmGates$Mapping__init_($rt_s(734), oajvs_GateKind_Y, 0, 1, $rt_createArray(jl_String, 0));
-    var$2[3] = oajvo_OpenQasmGates$Mapping__init_($rt_s(735), oajvs_GateKind_Z, 0, 1, $rt_createArray(jl_String, 0));
-    var$2[4] = oajvo_OpenQasmGates$Mapping__init_($rt_s(101), oajvs_GateKind_S, 0, 1, $rt_createArray(jl_String, 0));
-    var$2[5] = oajvo_OpenQasmGates$Mapping__init_($rt_s(736), oajvs_GateKind_T, 0, 1, $rt_createArray(jl_String, 0));
-    var$2[6] = oajvo_OpenQasmGates$Mapping__init_($rt_s(737), oajvs_GateKind_IDENTITY, 0, 1, $rt_createArray(jl_String, 0));
-    var$2[7] = oajvo_OpenQasmGates$Mapping__init_($rt_s(721), oajvs_GateKind_CNOT, 1, 1, $rt_createArray(jl_String, 0));
-    var$2[8] = oajvo_OpenQasmGates$Mapping__init_($rt_s(738), oajvs_GateKind_CY, 1, 1, $rt_createArray(jl_String, 0));
-    var$2[9] = oajvo_OpenQasmGates$Mapping__init_($rt_s(739), oajvs_GateKind_CZ, 1, 1, $rt_createArray(jl_String, 0));
-    var$2[10] = oajvo_OpenQasmGates$Mapping__init_($rt_s(740), oajvs_GateKind_SWAP, 0, 2, $rt_createArray(jl_String, 0));
-    var$2[11] = oajvo_OpenQasmGates$Mapping__init_($rt_s(741), oajvs_GateKind_CSWAP, 1, 2, $rt_createArray(jl_String, 0));
-    var$2[12] = oajvo_OpenQasmGates$Mapping__init_($rt_s(742), oajvs_GateKind_TOFFOLI, 2, 1, $rt_createArray(jl_String, 0));
+    var$2[1] = oajvo_OpenQasmGates$Mapping__init_($rt_s(329), oajvs_GateKind_X, 0, 1, $rt_createArray(jl_String, 0));
+    var$2[2] = oajvo_OpenQasmGates$Mapping__init_($rt_s(776), oajvs_GateKind_Y, 0, 1, $rt_createArray(jl_String, 0));
+    var$2[3] = oajvo_OpenQasmGates$Mapping__init_($rt_s(777), oajvs_GateKind_Z, 0, 1, $rt_createArray(jl_String, 0));
+    var$2[4] = oajvo_OpenQasmGates$Mapping__init_($rt_s(104), oajvs_GateKind_S, 0, 1, $rt_createArray(jl_String, 0));
+    var$2[5] = oajvo_OpenQasmGates$Mapping__init_($rt_s(778), oajvs_GateKind_T, 0, 1, $rt_createArray(jl_String, 0));
+    var$2[6] = oajvo_OpenQasmGates$Mapping__init_($rt_s(779), oajvs_GateKind_IDENTITY, 0, 1, $rt_createArray(jl_String, 0));
+    var$2[7] = oajvo_OpenQasmGates$Mapping__init_($rt_s(763), oajvs_GateKind_CNOT, 1, 1, $rt_createArray(jl_String, 0));
+    var$2[8] = oajvo_OpenQasmGates$Mapping__init_($rt_s(780), oajvs_GateKind_CY, 1, 1, $rt_createArray(jl_String, 0));
+    var$2[9] = oajvo_OpenQasmGates$Mapping__init_($rt_s(781), oajvs_GateKind_CZ, 1, 1, $rt_createArray(jl_String, 0));
+    var$2[10] = oajvo_OpenQasmGates$Mapping__init_($rt_s(782), oajvs_GateKind_SWAP, 0, 2, $rt_createArray(jl_String, 0));
+    var$2[11] = oajvo_OpenQasmGates$Mapping__init_($rt_s(783), oajvs_GateKind_CSWAP, 1, 2, $rt_createArray(jl_String, 0));
+    var$2[12] = oajvo_OpenQasmGates$Mapping__init_($rt_s(784), oajvs_GateKind_TOFFOLI, 2, 1, $rt_createArray(jl_String, 0));
     var$4 = new oajvo_OpenQasmGates$Mapping;
     var$5 = oajvs_GateKind_RX;
     var$6 = $rt_createArray(jl_String, 1);
-    var$6.data[0] = $rt_s(461);
-    oajvo_OpenQasmGates$Mapping__init_0(var$4, $rt_s(743), var$5, 0, 1, var$6);
+    var$6.data[0] = $rt_s(476);
+    oajvo_OpenQasmGates$Mapping__init_0(var$4, $rt_s(785), var$5, 0, 1, var$6);
     var$2[13] = var$4;
     var$3 = new oajvo_OpenQasmGates$Mapping;
     var$7 = oajvs_GateKind_RY;
     var$6 = $rt_createArray(jl_String, 1);
-    var$6.data[0] = $rt_s(461);
-    oajvo_OpenQasmGates$Mapping__init_0(var$3, $rt_s(744), var$7, 0, 1, var$6);
+    var$6.data[0] = $rt_s(476);
+    oajvo_OpenQasmGates$Mapping__init_0(var$3, $rt_s(786), var$7, 0, 1, var$6);
     var$2[14] = var$3;
     var$3 = new oajvo_OpenQasmGates$Mapping;
     var$7 = oajvs_GateKind_RZ;
     var$6 = $rt_createArray(jl_String, 1);
-    var$6.data[0] = $rt_s(461);
-    oajvo_OpenQasmGates$Mapping__init_0(var$3, $rt_s(745), var$7, 0, 1, var$6);
+    var$6.data[0] = $rt_s(476);
+    oajvo_OpenQasmGates$Mapping__init_0(var$3, $rt_s(787), var$7, 0, 1, var$6);
     var$2[15] = var$3;
     var$3 = new oajvo_OpenQasmGates$Mapping;
     var$7 = oajvs_GateKind_PHASE;
     var$6 = $rt_createArray(jl_String, 1);
-    var$6.data[0] = $rt_s(461);
-    oajvo_OpenQasmGates$Mapping__init_0(var$3, $rt_s(722), var$7, 0, 1, var$6);
+    var$6.data[0] = $rt_s(476);
+    oajvo_OpenQasmGates$Mapping__init_0(var$3, $rt_s(764), var$7, 0, 1, var$6);
     var$2[16] = var$3;
-    var$2[17] = oajvo_OpenQasmGates$Mapping__init_($rt_s(723), oajvs_GateKind_U3, 0, 1, $rt_wrapArray(jl_String, [$rt_s(461), $rt_s(462), $rt_s(463)]));
-    var$2[18] = oajvo_OpenQasmGates$Mapping__init_($rt_s(676), oajvs_GateKind_MEASUREMENT, 0, 1, $rt_createArray(jl_String, 0));
-    var$2[19] = oajvo_OpenQasmGates$Mapping__init_($rt_s(677), oajvs_GateKind_RESET, 0, 1, $rt_createArray(jl_String, 0));
-    oajvo_OpenQasmGates_MAPPINGS = ju_List_of0(var$1);
+    var$2[17] = oajvo_OpenQasmGates$Mapping__init_($rt_s(765), oajvs_GateKind_U3, 0, 1, $rt_wrapArray(jl_String, [$rt_s(476), $rt_s(477), $rt_s(478)]));
+    var$2[18] = oajvo_OpenQasmGates$Mapping__init_($rt_s(718), oajvs_GateKind_MEASUREMENT, 0, 1, $rt_createArray(jl_String, 0));
+    var$2[19] = oajvo_OpenQasmGates$Mapping__init_($rt_s(719), oajvs_GateKind_RESET, 0, 1, $rt_createArray(jl_String, 0));
+    oajvo_OpenQasmGates_MAPPINGS = ju_List_of2(var$1);
 },
 oajqg_Swap = $rt_classWithoutFields(oajqg_Gate),
 oajqg_Swap__init_ = ($this, $firstQubit, $secondQubit) => {
     oaju_Constants_$callClinit();
-    oajqg_Gate__init_($this, 2, oaju_Constants_SWAP_MATRIX, $rt_s(474), $rt_wrapArray(jl_Integer, [$firstQubit, $secondQubit]));
+    oajqg_Gate__init_($this, 2, oaju_Constants_SWAP_MATRIX, $rt_s(489), $rt_wrapArray(jl_Integer, [$firstQubit, $secondQubit]));
 },
 oajqg_Swap__init_0 = (var_0, var_1) => {
     let var_2 = new oajqg_Swap();
@@ -25296,7 +26505,7 @@ jur_Lexer_movePointer = $this => {
                         $this.$lookAhead0 = var$2;
                         switch ($this.$lookAhead0) {
                             case -1:
-                                $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+                                $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
                             case 0:
                             case 1:
                             case 2:
@@ -25409,7 +26618,7 @@ jur_Lexer_movePointer = $this => {
                             case 111:
                             case 113:
                             case 121:
-                                $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+                                $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
                             case 68:
                             case 83:
                             case 87:
@@ -25441,7 +26650,7 @@ jur_Lexer_movePointer = $this => {
                                 break b;
                             case 99:
                                 if ($this.$index >= ($this.$pattern0.data.length - 2 | 0))
-                                    $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+                                    $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
                                 $this.$lookAhead0 = $this.$pattern0.data[jur_Lexer_nextIndex($this)] & 31;
                                 break b;
                             case 101:
@@ -25481,7 +26690,7 @@ jur_Lexer_movePointer = $this => {
                     } catch ($$e) {
                         $$je = $rt_wrapException($$e);
                         if ($$je instanceof ju_MissingResourceException) {
-                            $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+                            $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
                         } else {
                             throw $$e;
                         }
@@ -25548,7 +26757,7 @@ jur_Lexer_movePointer = $this => {
                                                     break d;
                                                 case 62:
                                                     if ($nameBuilder === null)
-                                                        $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+                                                        $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
                                                     $this.$groupName = $nameBuilder.$toString();
                                                     jur_Lexer_nextIndex($this);
                                                     $nameBuilder = null;
@@ -25582,7 +26791,7 @@ jur_Lexer_movePointer = $this => {
                                         if ($nonCap > 57)
                                             break a;
                                         if ($nameBuilder === null) {
-                                            var$8 = jur_PatternSyntaxException__init_($rt_s(746), $this.$toString(), $this.$index);
+                                            var$8 = jur_PatternSyntaxException__init_($rt_s(788), $this.$toString(), $this.$index);
                                             $rt_throw(var$8);
                                         }
                                         $nameBuilder.$append0($nonCap);
@@ -25664,7 +26873,7 @@ jur_Lexer_movePointer = $this => {
         }
         return;
     }
-    $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+    $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
 },
 jur_Lexer_parseCharClassName = $this => {
     let $sb, var$2, var$3, $ch, $res;
@@ -25673,7 +26882,7 @@ jur_Lexer_parseCharClassName = $this => {
         if ($this.$pattern0.data[$this.$index] != 123) {
             var$2 = jl_String__init_0($this.$pattern0, jur_Lexer_nextIndex($this), 1);
             var$3 = jl_StringBuilder__init_();
-            jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(747)), var$2);
+            jl_StringBuilder_append(jl_StringBuilder_append(var$3, $rt_s(789)), var$2);
             return jl_StringBuilder_toString(var$3);
         }
         jur_Lexer_nextIndex($this);
@@ -25687,22 +26896,22 @@ jur_Lexer_parseCharClassName = $this => {
             }
         }
         if ($ch != 125)
-            $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+            $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
     }
     if (!$sb.$length())
-        $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+        $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
     $res = $sb.$toString();
     if (jl_String_length($res) == 1) {
         var$2 = jl_StringBuilder__init_();
-        jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(747)), $res);
+        jl_StringBuilder_append(jl_StringBuilder_append(var$2, $rt_s(789)), $res);
         return jl_StringBuilder_toString(var$2);
     }
     b: {
         c: {
             if (jl_String_length($res) > 3) {
-                if (jl_String_startsWith0($res, $rt_s(747)))
+                if (jl_String_startsWith0($res, $rt_s(789)))
                     break c;
-                if (jl_String_startsWith0($res, $rt_s(748)))
+                if (jl_String_startsWith0($res, $rt_s(790)))
                     break c;
             }
             break b;
@@ -25738,10 +26947,10 @@ jur_Lexer_processQuantifier = ($this, $ch) => {
                 }
             $sb.$append0($ch & 65535);
         }
-        $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+        $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
     }
     if ($ch != 125)
-        $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+        $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
     if ($sb.$length() > 0)
         b: {
             try {
@@ -25753,16 +26962,16 @@ jur_Lexer_processQuantifier = ($this, $ch) => {
             } catch ($$e) {
                 $$je = $rt_wrapException($$e);
                 if ($$je instanceof jl_NumberFormatException) {
-                    $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+                    $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
                 } else {
                     throw $$e;
                 }
             }
         }
     else if ($min < 0)
-        $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+        $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
     if (($min | $max | ($max - $min | 0)) < 0)
-        $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+        $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
     $mod = $this.$index >= $this.$pattern0.data.length ? 42 : $this.$pattern0.data[$this.$index];
     c: {
         switch ($mod) {
@@ -25832,7 +27041,7 @@ jur_Lexer_readHex = ($this, $max) => {
             }
             return var$5;
         }
-    $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+    $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
 },
 jur_Lexer_readOctals = $this => {
     let $max, $i, $length, $res, var$5;
@@ -25863,7 +27072,7 @@ jur_Lexer_readOctals = $this => {
             }
             return $res;
     }
-    $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+    $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
 },
 jur_Lexer_readFlags = $this => {
     let $pos, $res, $ch;
@@ -25871,7 +27080,7 @@ jur_Lexer_readFlags = $this => {
     $res = $this.$flags0;
     a: while (true) {
         if ($this.$index >= $this.$pattern0.data.length)
-            $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+            $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
         b: {
             c: {
                 $ch = $this.$pattern0.data[$this.$index];
@@ -25881,7 +27090,7 @@ jur_Lexer_readFlags = $this => {
                         return $res | 256;
                     case 45:
                         if (!$pos)
-                            $rt_throw(jur_PatternSyntaxException__init_($rt_s(69), $this.$toString(), $this.$index));
+                            $rt_throw(jur_PatternSyntaxException__init_($rt_s(72), $this.$toString(), $this.$index));
                         $pos = 0;
                         break b;
                     case 58:
@@ -25995,21 +27204,6 @@ jur_Lexer_nextCodePoint = $this => {
 jur_Lexer_getIndex = $this => {
     return $this.$curToc;
 },
-oajw_JqapiBridge$sampleExpectation$lambda$_14_0 = $rt_classWithoutFields(),
-oajw_JqapiBridge$sampleExpectation$lambda$_14_0__init_ = var$0 => {
-    jl_Object__init_(var$0);
-},
-oajw_JqapiBridge$sampleExpectation$lambda$_14_0__init_0 = () => {
-    let var_0 = new oajw_JqapiBridge$sampleExpectation$lambda$_14_0();
-    oajw_JqapiBridge$sampleExpectation$lambda$_14_0__init_(var_0);
-    return var_0;
-},
-oajw_JqapiBridge$sampleExpectation$lambda$_14_0_test0 = (var$0, var$1) => {
-    return oajw_JqapiBridge$sampleExpectation$lambda$_14_0_test(var$0, var$1);
-},
-oajw_JqapiBridge$sampleExpectation$lambda$_14_0_test = (var$0, var$1) => {
-    return oajw_JqapiBridge_lambda$sampleExpectation$0(var$1);
-},
 jur_AbstractCharClass$LazySpecialsBlock = $rt_classWithoutFields(jur_AbstractCharClass$LazyCharClass),
 jur_AbstractCharClass$LazySpecialsBlock__init_ = $this => {
     jur_AbstractCharClass$LazyCharClass__init_($this);
@@ -26022,8 +27216,8 @@ jur_AbstractCharClass$LazySpecialsBlock__init_0 = () => {
 jur_AbstractCharClass$LazySpecialsBlock_computeValue = $this => {
     return ((jur_CharClass__init_()).$add1(65279, 65279)).$add1(65520, 65533);
 },
-jur_AbstractCharClass$LazyNonSpace = $rt_classWithoutFields(jur_AbstractCharClass$LazySpace);
-let jur_AbstractCharClass$LazyNonSpace__init_ = $this => {
+jur_AbstractCharClass$LazyNonSpace = $rt_classWithoutFields(jur_AbstractCharClass$LazySpace),
+jur_AbstractCharClass$LazyNonSpace__init_ = $this => {
     jur_AbstractCharClass$LazySpace__init_($this);
 },
 jur_AbstractCharClass$LazyNonSpace__init_0 = () => {
@@ -26039,11 +27233,11 @@ jur_AbstractCharClass$LazyNonSpace_computeValue = $this => {
 };
 function jusi_SimpleStreamIterator$fetchIfNeeded$lambda$_4_0() {
     jl_Object.call(this);
-    this.$_027 = null;
+    this.$_030 = null;
 }
 let jusi_SimpleStreamIterator$fetchIfNeeded$lambda$_4_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_027 = var$1;
+    var$0.$_030 = var$1;
 },
 jusi_SimpleStreamIterator$fetchIfNeeded$lambda$_4_0__init_0 = var_0 => {
     let var_1 = new jusi_SimpleStreamIterator$fetchIfNeeded$lambda$_4_0();
@@ -26051,16 +27245,16 @@ jusi_SimpleStreamIterator$fetchIfNeeded$lambda$_4_0__init_0 = var_0 => {
     return var_1;
 },
 jusi_SimpleStreamIterator$fetchIfNeeded$lambda$_4_0_test = (var$0, var$1) => {
-    return jusi_SimpleStreamIterator_lambda$fetchIfNeeded$1(var$0.$_027, var$1);
+    return jusi_SimpleStreamIterator_lambda$fetchIfNeeded$1(var$0.$_030, var$1);
 };
 function jusi_RangeIntStream() {
     let a = this; jusi_SimpleIntStreamImpl.call(a);
-    a.$start0 = 0;
+    a.$start1 = 0;
     a.$end2 = 0;
 }
 let jusi_RangeIntStream__init_ = ($this, $start, $end) => {
     jusi_SimpleIntStreamImpl__init_($this);
-    $this.$start0 = $start;
+    $this.$start1 = $start;
     $this.$end2 = $end;
 },
 jusi_RangeIntStream__init_0 = (var_0, var_1) => {
@@ -26070,10 +27264,10 @@ jusi_RangeIntStream__init_0 = (var_0, var_1) => {
 },
 jusi_RangeIntStream_next = ($this, $consumer) => {
     let var$2;
-    while ($this.$start0 < $this.$end2) {
-        var$2 = $this.$start0;
-        $this.$start0 = var$2 + 1 | 0;
-        if ($consumer.$test5(var$2))
+    while ($this.$start1 < $this.$end2) {
+        var$2 = $this.$start1;
+        $this.$start1 = var$2 + 1 | 0;
+        if ($consumer.$test6(var$2))
             continue;
         else
             return 1;
@@ -26086,15 +27280,15 @@ oajqs_ExpectationSampler_estimate = ($circuit, $observable, $options) => {
 },
 oajqs_ExpectationSampler_execute = ($circuit, $observable, $options, $initialState) => {
     let $n, $shots, $measured, $budget, $visitsPerPass, var$10, $stream, $shared, $estimates, $value, $standardError, $totalShots, $k, $term, $estimate, $basis, $passes;
-    ju_Objects_requireNonNull($circuit, $rt_s(499));
+    ju_Objects_requireNonNull($circuit, $rt_s(514));
     ju_Objects_requireNonNull($observable, $rt_s(10));
-    ju_Objects_requireNonNull($options, $rt_s(500));
+    ju_Objects_requireNonNull($options, $rt_s(515));
     $n = $circuit.$getInputSize();
     if (oajo_PauliSum_numQubits($observable) != $n)
-        $rt_throw(jl_IllegalArgumentException__init_(((((jl_StringBuilder__init_()).$append1($rt_s(749))).$append2($n)).$append1($rt_s(34))).$toString()));
+        $rt_throw(jl_IllegalArgumentException__init_(((((jl_StringBuilder__init_()).$append1($rt_s(791))).$append2($n)).$append1($rt_s(34))).$toString()));
     $shots = oajqs_SamplingOptions_shots($options);
     if ($shots < 2)
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(750)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(792)));
     if ($initialState !== null)
         oajqs_LocalSimulator__init_(new oajqs_LocalSimulator, $circuit, $initialState, oajqs_ExpectationSampler$execute$lambda$_3_0__init_0());
     $measured = ju_ArrayList__init_();
@@ -26121,7 +27315,7 @@ oajqs_ExpectationSampler_execute = ($circuit, $observable, $options, $initialSta
             }
             if ((isFinite($value) ? 1 : 0) && (isFinite($standardError) ? 1 : 0))
                 return oajqs_SampledExpectation__init_0($value, $standardError, $totalShots, $estimates);
-            $rt_throw(oaje_JQApiLimitException__init_($rt_s(751)));
+            $rt_throw(oaje_JQApiLimitException__init_($rt_s(793)));
         }
         $term = var$10.$next();
         if (oajqs_ExpectationSampler_isIdentity(oajo_PauliSum$Term_pauli($term))) {
@@ -26135,7 +27329,7 @@ oajqs_ExpectationSampler_execute = ($circuit, $observable, $options, $initialSta
         $budget = Long_sub($budget, Long_mul($visitsPerPass, $passes));
         $measured.$add($basis);
     }
-    $rt_throw(oaje_JQApiLimitException__init_($rt_s(752)));
+    $rt_throw(oaje_JQApiLimitException__init_($rt_s(794)));
 },
 oajqs_ExpectationSampler_sampleTerm = ($term, $basis, $shared, $initialState) => {
     let $options, $result, $counts, $signed, $outcome, var$10, $shots, $mean;
@@ -26220,7 +27414,7 @@ oajqs_ExpectationSampler_lambda$execute$0 = () => {
 oajqg_PauliZ = $rt_classWithoutFields(oajqg_Gate),
 oajqg_PauliZ__init_ = ($this, $indexes) => {
     oaju_Constants_$callClinit();
-    oajqg_Gate__init_($this, 1, oaju_Constants_PAULI_Z_MATRIX, $rt_s(468), $indexes);
+    oajqg_Gate__init_($this, 1, oaju_Constants_PAULI_Z_MATRIX, $rt_s(483), $indexes);
 },
 oajqg_PauliZ__init_0 = var_0 => {
     let var_1 = new oajqg_PauliZ();
@@ -26229,11 +27423,11 @@ oajqg_PauliZ__init_0 = var_0 => {
 };
 function jusi_BoxedIntStream$next$lambda$_1_0() {
     jl_Object.call(this);
-    this.$_023 = null;
+    this.$_024 = null;
 }
 let jusi_BoxedIntStream$next$lambda$_1_0__init_ = (var$0, var$1) => {
     jl_Object__init_(var$0);
-    var$0.$_023 = var$1;
+    var$0.$_024 = var$1;
 },
 jusi_BoxedIntStream$next$lambda$_1_0__init_0 = var_0 => {
     let var_1 = new jusi_BoxedIntStream$next$lambda$_1_0();
@@ -26241,12 +27435,12 @@ jusi_BoxedIntStream$next$lambda$_1_0__init_0 = var_0 => {
     return var_1;
 },
 jusi_BoxedIntStream$next$lambda$_1_0_test = (var$0, var$1) => {
-    return var$0.$_023.$test(jl_Integer_valueOf(var$1));
+    return var$0.$_024.$test(jl_Integer_valueOf(var$1));
 },
 oajqg_PauliX = $rt_classWithoutFields(oajqg_Gate),
 oajqg_PauliX__init_ = ($this, $indexes) => {
     oaju_Constants_$callClinit();
-    oajqg_Gate__init_($this, 1, oaju_Constants_PAULI_X_MATRIX, $rt_s(466), $indexes);
+    oajqg_Gate__init_($this, 1, oaju_Constants_PAULI_X_MATRIX, $rt_s(481), $indexes);
 },
 oajqg_PauliX__init_0 = var_0 => {
     let var_1 = new oajqg_PauliX();
@@ -26256,7 +27450,7 @@ oajqg_PauliX__init_0 = var_0 => {
 oajqg_PauliY = $rt_classWithoutFields(oajqg_Gate),
 oajqg_PauliY__init_ = ($this, $indexes) => {
     oaju_Constants_$callClinit();
-    oajqg_Gate__init_($this, 1, oaju_Constants_PAULI_Y_MATRIX, $rt_s(467), $indexes);
+    oajqg_Gate__init_($this, 1, oaju_Constants_PAULI_Y_MATRIX, $rt_s(482), $indexes);
 },
 oajqg_PauliY__init_0 = var_0 => {
     let var_1 = new oajqg_PauliY();
@@ -26266,7 +27460,7 @@ oajqg_PauliY__init_0 = var_0 => {
 oajqg_PauliS = $rt_classWithoutFields(oajqg_Gate),
 oajqg_PauliS__init_ = ($this, $indexes) => {
     oaju_Constants_$callClinit();
-    oajqg_Gate__init_($this, 1, oaju_Constants_PAULI_S_MATRIX, $rt_s(102), $indexes);
+    oajqg_Gate__init_($this, 1, oaju_Constants_PAULI_S_MATRIX, $rt_s(105), $indexes);
 },
 oajqg_PauliS__init_0 = var_0 => {
     let var_1 = new oajqg_PauliS();
@@ -26276,7 +27470,7 @@ oajqg_PauliS__init_0 = var_0 => {
 oajqg_PauliT = $rt_classWithoutFields(oajqg_Gate),
 oajqg_PauliT__init_ = ($this, $indexes) => {
     oaju_Constants_$callClinit();
-    oajqg_Gate__init_($this, 1, oaju_Constants_PAULI_T_MATRIX, $rt_s(469), $indexes);
+    oajqg_Gate__init_($this, 1, oaju_Constants_PAULI_T_MATRIX, $rt_s(484), $indexes);
 },
 oajqg_PauliT__init_0 = var_0 => {
     let var_1 = new oajqg_PauliT();
@@ -26313,7 +27507,7 @@ oajq_QuantumRegister__init_ = ($this, $size, $config, $random) => {
     oajq_QuantumRegister_$callClinit();
     jl_Object__init_($this);
     oajq_QuantumRegister_validateSize($size, oaj_JQAPIConfig_maxQubits($config));
-    $this.$random0 = ju_Objects_requireNonNull($random, $rt_s(753));
+    $this.$random0 = ju_Objects_requireNonNull($random, $rt_s(795));
     $this.$result = $rt_createArray(oajq_Qubit, $size);
     $this.$input0 = $rt_createArray(oajq_Qubit, $size);
     $this.$size1 = $size;
@@ -26330,14 +27524,14 @@ oajq_QuantumRegister__init_1 = ($this, $size, $config, $initialState, $random) =
     oajq_QuantumRegister_$callClinit();
     jl_Object__init_($this);
     oajq_QuantumRegister_validateSize($size, oaj_JQAPIConfig_maxQubits($config));
-    ju_Objects_requireNonNull($initialState, $rt_s(498));
-    $this.$random0 = ju_Objects_requireNonNull($random, $rt_s(753));
+    ju_Objects_requireNonNull($initialState, $rt_s(513));
+    $this.$random0 = ju_Objects_requireNonNull($random, $rt_s(795));
     if ($initialState.$getDimension() != 1 << $size)
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(754)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(796)));
     $norm = 0.0;
     $i = 0;
     while ($i < $initialState.$getDimension()) {
-        $amplitude = ju_Objects_requireNonNull($initialState.$getEntry($i), $rt_s(755));
+        $amplitude = ju_Objects_requireNonNull($initialState.$getEntry($i), $rt_s(797));
         $norm = $norm + oajm_Complex_getReal($amplitude) * oajm_Complex_getReal($amplitude) + oajm_Complex_getImaginary($amplitude) * oajm_Complex_getImaginary($amplitude);
         $i = $i + 1 | 0;
     }
@@ -26349,7 +27543,7 @@ oajq_QuantumRegister__init_1 = ($this, $size, $config, $initialState, $random) =
         $this.$registerState = oajq_QuantumRegister_toInterleaved($initialState);
         return;
     }
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(756)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(798)));
 },
 oajq_QuantumRegister__init_2 = (var_0, var_1, var_2, var_3) => {
     let var_4 = new oajq_QuantumRegister();
@@ -26361,15 +27555,15 @@ oajq_QuantumRegister_nextRandom = $this => {
     $value = $this.$random0.$getAsDouble();
     if ((isFinite($value) ? 1 : 0) && !($value < 0.0) && !($value >= 1.0))
         return $value;
-    $rt_throw(jl_IllegalArgumentException__init_($rt_s(757)));
+    $rt_throw(jl_IllegalArgumentException__init_($rt_s(799)));
 },
 oajq_QuantumRegister_validateSize = ($size, $maxQubits) => {
     oajq_QuantumRegister_$callClinit();
     if ($size <= 0)
-        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(758))).$append2($size)).$toString()));
+        $rt_throw(oaje_JQApiLimitException__init_((((jl_StringBuilder__init_()).$append1($rt_s(800))).$append2($size)).$toString()));
     if ($size <= $maxQubits)
         return;
-    $rt_throw(oaje_JQApiLimitException__init_(((((((jl_StringBuilder__init_()).$append1($rt_s(759))).$append2($size)).$append1($rt_s(653))).$append2($maxQubits)).$append1($rt_s(544))).$toString()));
+    $rt_throw(oaje_JQApiLimitException__init_(((((((jl_StringBuilder__init_()).$append1($rt_s(801))).$append2($size)).$append1($rt_s(695))).$append2($maxQubits)).$append1($rt_s(559))).$toString()));
 },
 oajq_QuantumRegister_getRegisterState = $this => {
     return oajq_QuantumRegister_toComplexVector($this);
@@ -26391,11 +27585,11 @@ oajq_QuantumRegister_applyOperator = ($this, $operator, $targetQubits) => {
 },
 oajq_QuantumRegister_applyOperator0 = ($this, $operator, $targetQubits, $parallel) => {
     let $k, $targetMask, var$6, $localDimension, $dimension, $offsets, $t, $offset, $j, var$13, $opRe, $opIm, $opNonZero, $r, $c, $entry, $flat, var$21, var$22, var$23, $base, var$25, $target, $bit;
-    ju_Objects_requireNonNull($operator, $rt_s(760));
-    ju_Objects_requireNonNull($targetQubits, $rt_s(761));
+    ju_Objects_requireNonNull($operator, $rt_s(802));
+    ju_Objects_requireNonNull($targetQubits, $rt_s(803));
     $k = $targetQubits.$size();
     if ($k > $this.$size1)
-        $rt_throw(jl_IllegalArgumentException__init_($rt_s(762)));
+        $rt_throw(jl_IllegalArgumentException__init_($rt_s(804)));
     $targetMask = 0;
     var$6 = $targetQubits.$iterator();
     a: {
@@ -26456,12 +27650,12 @@ oajq_QuantumRegister_applyOperator0 = ($this, $operator, $targetQubits, $paralle
                     return;
                 }
                 var$25 = new jl_IllegalArgumentException;
-                var$6 = (((jl_StringBuilder__init_()).$append1($rt_s(763))).$append2($operator.$getRowDimension())).$append1($rt_s(326));
-                jl_IllegalArgumentException__init_1(var$25, ((((var$6.$append2($operator.$getColumnDimension())).$append1($rt_s(764))).$append2($k)).$append1($rt_s(765))).$toString());
+                var$6 = (((jl_StringBuilder__init_()).$append1($rt_s(805))).$append2($operator.$getRowDimension())).$append1($rt_s(329));
+                jl_IllegalArgumentException__init_1(var$25, ((((var$6.$append2($operator.$getColumnDimension())).$append1($rt_s(806))).$append2($k)).$append1($rt_s(807))).$toString());
                 $rt_throw(var$25);
             }
             $target = var$6.$next();
-            ju_Objects_requireNonNull($target, $rt_s(766));
+            ju_Objects_requireNonNull($target, $rt_s(808));
             if ($target.$intValue() < 0)
                 break a;
             if ($target.$intValue() >= $this.$size1)
@@ -26471,9 +27665,9 @@ oajq_QuantumRegister_applyOperator0 = ($this, $operator, $targetQubits, $paralle
                 break;
             $targetMask = $targetMask | $bit;
         }
-        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(767))).$append($target)).$toString()));
+        $rt_throw(jl_IllegalArgumentException__init_((((jl_StringBuilder__init_()).$append1($rt_s(809))).$append($target)).$toString()));
     }
-    $rt_throw(oaje_JQApiLimitException__init_((((((jl_StringBuilder__init_()).$append1($rt_s(768))).$append2($this.$size1)).$append1($rt_s(19))).$append($target)).$toString()));
+    $rt_throw(oaje_JQApiLimitException__init_((((((jl_StringBuilder__init_()).$append1($rt_s(810))).$append2($this.$size1)).$append1($rt_s(19))).$append($target)).$toString()));
 },
 oajq_QuantumRegister_applyOperatorGroup = ($this, $base, $localDimension, $offsets, $opRe, $opIm, $opNonZero) => {
     let $localRe, $localIm, $t, var$10, var$11, $amplitudeIndex, var$13, var$14, $r, $sumRe, $sumIm, $c, $flat, var$20;
@@ -26549,7 +27743,7 @@ oajq_QuantumRegister_reset = ($this, $qubitIndex) => {
         }
         return;
     }
-    $rt_throw(oaje_JQApiLimitException__init_(((((((jl_StringBuilder__init_()).$append1($rt_s(769))).$append2($qubitIndex)).$append1($rt_s(770))).$append2($this.$size1)).$append1($rt_s(544))).$toString()));
+    $rt_throw(oaje_JQApiLimitException__init_(((((((jl_StringBuilder__init_()).$append1($rt_s(811))).$append2($qubitIndex)).$append1($rt_s(812))).$append2($this.$size1)).$append1($rt_s(559))).$toString()));
 },
 oajq_QuantumRegister_resetQubitAtIndexes = ($this, $indexes) => {
     ju_Objects_requireNonNull0($indexes);
@@ -26624,7 +27818,7 @@ oajq_QuantumRegister_updateRegisterStateAfterQubitCollapsed = ($this, $qubitPos,
         $i = $i + 1 | 0;
     }
     if ($branchProbability === 0.0)
-        $rt_throw(jl_IllegalStateException__init_0(((((jl_StringBuilder__init_()).$append1($rt_s(771))).$append2($qubitPos)).$append1($rt_s(772))).$toString()));
+        $rt_throw(jl_IllegalStateException__init_0(((((jl_StringBuilder__init_()).$append1($rt_s(813))).$append2($qubitPos)).$append1($rt_s(814))).$toString()));
     $norm = jl_Math_sqrt($branchProbability);
     $i = 0;
     while ($i < $dimension) {
@@ -26688,7 +27882,7 @@ oajq_QuantumRegister_toComplexVector = $this => {
 oajq_QuantumRegister_lambda$resetQubitAtIndexes$0 = ($this, $index) => {
     if ($index !== null && $index.$intValue() >= 0 && $index.$intValue() < $this.$size1)
         return;
-    $rt_throw(oaje_JQApiLimitException__init_(((((((jl_StringBuilder__init_()).$append1($rt_s(769))).$append($index)).$append1($rt_s(770))).$append2($this.$size1)).$append1($rt_s(544))).$toString()));
+    $rt_throw(oaje_JQApiLimitException__init_(((((((jl_StringBuilder__init_()).$append1($rt_s(811))).$append($index)).$append1($rt_s(812))).$append2($this.$size1)).$append1($rt_s(559))).$toString()));
 },
 oajq_QuantumRegister_lambda$measureQubitAtIndexes$1 = ($this, $index) => {
     let $collapsedValue, var$3, var$4, var$5;
@@ -26702,7 +27896,7 @@ oajq_QuantumRegister_lambda$measureQubitAtIndexes$1 = ($this, $index) => {
 oajq_QuantumRegister_lambda$measureQubitAtIndexes$0 = ($this, $index) => {
     if ($index !== null && $index.$intValue() >= 0 && $index.$intValue() < $this.$size1)
         return;
-    $rt_throw(oaje_JQApiLimitException__init_(((((((jl_StringBuilder__init_()).$append1($rt_s(773))).$append($index)).$append1($rt_s(770))).$append2($this.$size1)).$append1($rt_s(544))).$toString()));
+    $rt_throw(oaje_JQApiLimitException__init_(((((((jl_StringBuilder__init_()).$append1($rt_s(815))).$append($index)).$append1($rt_s(812))).$append2($this.$size1)).$append1($rt_s(559))).$toString()));
 },
 oajq_QuantumRegister_lambda$applyOperator$0 = ($this, $fLocalDimension, $fOffsets, $fOpRe, $fOpIm, $fOpNonZero, $base) => {
     oajq_QuantumRegister_applyOperatorGroup($this, $base, $fLocalDimension, $fOffsets, $fOpRe, $fOpIm, $fOpNonZero);
@@ -26744,6 +27938,10 @@ ju_Collections_emptyIterator = () => {
     ju_Collections_$callClinit();
     return ju_Collections_EMPTY_ITERATOR;
 },
+ju_Collections_emptyList = () => {
+    ju_Collections_$callClinit();
+    return ju_Collections_EMPTY_LIST;
+},
 ju_Collections_emptySet = () => {
     ju_Collections_$callClinit();
     return ju_Collections_EMPTY_SET;
@@ -26777,41 +27975,43 @@ ju_Collections__clinit_ = () => {
     ju_Collections_EMPTY_LIST_ITERATOR = ju_Collections$5__init_0();
     ju_Collections_reverseOrder = ju_Collections$_clinit_$lambda$_59_0__init_0();
 };
-$rt_packages([-1, "java", 0, "security", 0, "util", 2, "regex", 2, "stream", 4, "impl", 0, "math", 0, "lang", -1, "org", 8, "aitan", 9, "jqapi", 10, "visualization", 11, "openqasm", 11, "spec", 10, "wasm", 10, "observable", 10, "quantum", 16, "gates", 16, "simulator", 16, "classical", 10, "math", 8, "teavm", 21, "classlib", 22, "impl", 23, "unicode"
+$rt_packages([-1, "java", 0, "security", 0, "util", 2, "regex", 2, "stream", 4, "impl", 0, "math", 0, "lang", -1, "org", 8, "aitan", 9, "jqapi", 10, "visualization", 11, "lint", 11, "openqasm", 11, "spec", 10, "wasm", 10, "observable", 10, "quantum", 17, "gates", 17, "simulator", 17, "classical", 10, "math", 8, "teavm", 22, "classlib", 23, "impl", 24, "unicode"
 ]);
 $rt_metadata([jl_Object, "Object", 7, 0, [], 1, 0, 0, ["$isEmptyMonitor", $rt_wrapFunction0(jl_Object_isEmptyMonitor), "$getClass", $rt_wrapFunction0(jl_Object_getClass), "$hashCode2", $rt_wrapFunction0(jl_Object_hashCode), "$equals", $rt_wrapFunction1(jl_Object_equals), "$toString", $rt_wrapFunction0(jl_Object_toString), "$identity", $rt_wrapFunction0(jl_Object_identity), "$clone0", $rt_wrapFunction0(jl_Object_clone)],
 oajqg_Gate, 0, jl_Object, [], 1025, 0, 0, ["$_init_3", $rt_wrapFunction4(oajqg_Gate__init_), "$getMatrix", $rt_wrapFunction0(oajqg_Gate_getMatrix), "$getIndexes", $rt_wrapFunction0(oajqg_Gate_getIndexes), "$getType2", $rt_wrapFunction0(oajqg_Gate_getType), "$getNumberQubits", $rt_wrapFunction0(oajqg_Gate_getNumberQubits)],
-oajqg_MultiControlled, "MultiControlled", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_117", $rt_wrapFunction3(oajqg_MultiControlled__init_)],
+oajqg_MultiControlled, "MultiControlled", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_117", $rt_wrapFunction3(oajqg_MultiControlled__init_)],
 jur_AbstractCharClass$LazyCharClass, 0, jl_Object, [], 1024, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyCharClass__init_), "$getValue0", $rt_wrapFunction1(jur_AbstractCharClass$LazyCharClass_getValue)],
 jur_AbstractCharClass$LazyBlank, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyBlank__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyBlank_computeValue)],
 jur_AbstractCharClass$LazyCntrl, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyCntrl__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyCntrl_computeValue)],
 ju_Iterator, 0, jl_Object, [], 1537, 0, 0, 0,
-ju_AbstractMap$Values$1, 0, jl_Object, [ju_Iterator], 0, 0, 0, ["$_init_161", $rt_wrapFunction2(ju_AbstractMap$Values$1__init_), "$hasNext", $rt_wrapFunction0(ju_AbstractMap$Values$1_hasNext), "$next", $rt_wrapFunction0(ju_AbstractMap$Values$1_next)],
+ju_AbstractMap$Values$1, 0, jl_Object, [ju_Iterator], 0, 0, 0, ["$_init_165", $rt_wrapFunction2(ju_AbstractMap$Values$1__init_), "$hasNext", $rt_wrapFunction0(ju_AbstractMap$Values$1_hasNext), "$next", $rt_wrapFunction0(ju_AbstractMap$Values$1_next)],
 ju_Enumeration, 0, jl_Object, [], 1537, 0, 0, 0,
 jnci_BufferedEncoder$Controller, 0, jl_Object, [], 1, 0, 0, ["$_init_81", $rt_wrapFunction2(jnci_BufferedEncoder$Controller__init_), "$hasMoreInput", $rt_wrapFunction0(jnci_BufferedEncoder$Controller_hasMoreInput), "$hasMoreOutput", $rt_wrapFunction1(jnci_BufferedEncoder$Controller_hasMoreOutput), "$setInPosition", $rt_wrapFunction1(jnci_BufferedEncoder$Controller_setInPosition), "$setOutPosition", $rt_wrapFunction1(jnci_BufferedEncoder$Controller_setOutPosition)],
 oajo_PauliSumJson, 0, jl_Object, [], 17, 0, () => oajo_PauliSumJson_$callClinit(), 0,
-oajqg_Rz, "Rz", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_113", $rt_wrapFunction2(oajqg_Rz__init_)],
+oajqg_Rz, "Rz", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_113", $rt_wrapFunction2(oajqg_Rz__init_)],
 ji_Serializable, 0, jl_Object, [], 1537, 0, 0, 0,
 jl_Number, 0, jl_Object, [ji_Serializable], 1025, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_Number__init_)],
 jl_Comparable, 0, jl_Object, [], 1537, 0, 0, 0,
 jl_Integer, "Integer", 7, jl_Number, [jl_Comparable], 1, 0, () => jl_Integer_$callClinit(), ["$_init_4", $rt_wrapFunction1(jl_Integer__init_), "$intValue", $rt_wrapFunction0(jl_Integer_intValue), "$toString", $rt_wrapFunction0(jl_Integer_toString1), "$hashCode2", $rt_wrapFunction0(jl_Integer_hashCode0), "$equals", $rt_wrapFunction1(jl_Integer_equals), "$compareTo", $rt_wrapFunction1(jl_Integer_compareTo), "$compareTo1", $rt_wrapFunction1(jl_Integer_compareTo0)],
-oajqg_Ry, "Ry", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_113", $rt_wrapFunction2(oajqg_Ry__init_)],
-oajqg_Rx, "Rx", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_113", $rt_wrapFunction2(oajqg_Rx__init_)],
+oajqg_Ry, "Ry", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_113", $rt_wrapFunction2(oajqg_Ry__init_)],
+oajqg_Rx, "Rx", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_113", $rt_wrapFunction2(oajqg_Rx__init_)],
+juf_Function, 0, jl_Object, [], 1537, 0, 0, 0,
+oajvl_CircuitLinter$unused$lambda$_8_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_13", $rt_wrapFunction1(oajvl_CircuitLinter$unused$lambda$_8_0__init_), "$apply3", $rt_wrapFunction1(oajvl_CircuitLinter$unused$lambda$_8_0_apply0), "$apply", $rt_wrapFunction1(oajvl_CircuitLinter$unused$lambda$_8_0_apply)],
 jl_AbstractStringBuilder$Constants, 0, jl_Object, [], 0, 0, () => jl_AbstractStringBuilder$Constants_$callClinit(), 0,
-jur_AbstractSet, 0, jl_Object, [], 1024, 0, () => jur_AbstractSet_$callClinit(), ["$_init_0", $rt_wrapFunction0(jur_AbstractSet__init_), "$_init_20", $rt_wrapFunction1(jur_AbstractSet__init_0), "$findBack", $rt_wrapFunction4(jur_AbstractSet_findBack), "$setType", $rt_wrapFunction1(jur_AbstractSet_setType), "$getType", $rt_wrapFunction0(jur_AbstractSet_getType), "$getQualifiedName", $rt_wrapFunction0(jur_AbstractSet_getQualifiedName), "$toString", $rt_wrapFunction0(jur_AbstractSet_toString), "$getNext", $rt_wrapFunction0(jur_AbstractSet_getNext),
-"$setNext", $rt_wrapFunction1(jur_AbstractSet_setNext), "$first", $rt_wrapFunction1(jur_AbstractSet_first), "$processBackRefReplacement", $rt_wrapFunction0(jur_AbstractSet_processBackRefReplacement), "$processSecondPass", $rt_wrapFunction0(jur_AbstractSet_processSecondPass)],
+jur_AbstractSet, 0, jl_Object, [], 1024, 0, () => jur_AbstractSet_$callClinit(), ["$_init_0", $rt_wrapFunction0(jur_AbstractSet__init_), "$_init_20", $rt_wrapFunction1(jur_AbstractSet__init_0), "$find", $rt_wrapFunction3(jur_AbstractSet_find), "$findBack", $rt_wrapFunction4(jur_AbstractSet_findBack), "$setType", $rt_wrapFunction1(jur_AbstractSet_setType), "$getType", $rt_wrapFunction0(jur_AbstractSet_getType), "$getQualifiedName", $rt_wrapFunction0(jur_AbstractSet_getQualifiedName), "$toString", $rt_wrapFunction0(jur_AbstractSet_toString),
+"$getNext", $rt_wrapFunction0(jur_AbstractSet_getNext), "$setNext", $rt_wrapFunction1(jur_AbstractSet_setNext), "$first", $rt_wrapFunction1(jur_AbstractSet_first), "$processBackRefReplacement", $rt_wrapFunction0(jur_AbstractSet_processBackRefReplacement), "$processSecondPass", $rt_wrapFunction0(jur_AbstractSet_processSecondPass)],
 jur_JointSet, "JointSet", 3, jur_AbstractSet, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_JointSet__init_), "$_init_44", $rt_wrapFunction2(jur_JointSet__init_0), "$matches", $rt_wrapFunction3(jur_JointSet_matches), "$setNext", $rt_wrapFunction1(jur_JointSet_setNext), "$getName", $rt_wrapFunction0(jur_JointSet_getName), "$first", $rt_wrapFunction1(jur_JointSet_first), "$hasConsumed", $rt_wrapFunction1(jur_JointSet_hasConsumed), "$processSecondPass", $rt_wrapFunction0(jur_JointSet_processSecondPass)],
-jur_SingleSet, "SingleSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_16", $rt_wrapFunction2(jur_SingleSet__init_), "$matches", $rt_wrapFunction3(jur_SingleSet_matches), "$findBack", $rt_wrapFunction4(jur_SingleSet_findBack), "$first", $rt_wrapFunction1(jur_SingleSet_first), "$processBackRefReplacement", $rt_wrapFunction0(jur_SingleSet_processBackRefReplacement), "$processSecondPass", $rt_wrapFunction0(jur_SingleSet_processSecondPass)],
+jur_SingleSet, "SingleSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_16", $rt_wrapFunction2(jur_SingleSet__init_), "$matches", $rt_wrapFunction3(jur_SingleSet_matches), "$find", $rt_wrapFunction3(jur_SingleSet_find), "$findBack", $rt_wrapFunction4(jur_SingleSet_findBack), "$first", $rt_wrapFunction1(jur_SingleSet_first), "$processBackRefReplacement", $rt_wrapFunction0(jur_SingleSet_processBackRefReplacement), "$processSecondPass", $rt_wrapFunction0(jur_SingleSet_processSecondPass)],
 jm_BigDecimal$1, 0, jl_Object, [], 32768, 0, () => jm_BigDecimal$1_$callClinit(), 0,
 jl_Record, 0, jl_Object, [], 1025, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_Record__init_)],
-oajo_PauliString, "PauliString", 15, jl_Record, [], 17, 0, 0, ["$_init_7", $rt_wrapFunction3(oajo_PauliString__init_), "$get1", $rt_wrapFunction1(oajo_PauliString_get), "$yCount", $rt_wrapFunction0(oajo_PauliString_yCount), "$toString", $rt_wrapFunction0(oajo_PauliString_toString), "$hashCode2", $rt_wrapFunction0(oajo_PauliString_hashCode), "$equals", $rt_wrapFunction1(oajo_PauliString_equals), "$numQubits", $rt_wrapFunction0(oajo_PauliString_numQubits), "$xMask", $rt_wrapFunction0(oajo_PauliString_xMask), "$zMask",
+oajo_PauliString, "PauliString", 16, jl_Record, [], 17, 0, 0, ["$_init_7", $rt_wrapFunction3(oajo_PauliString__init_), "$get1", $rt_wrapFunction1(oajo_PauliString_get), "$yCount", $rt_wrapFunction0(oajo_PauliString_yCount), "$toString", $rt_wrapFunction0(oajo_PauliString_toString), "$hashCode2", $rt_wrapFunction0(oajo_PauliString_hashCode), "$equals", $rt_wrapFunction1(oajo_PauliString_equals), "$numQubits", $rt_wrapFunction0(oajo_PauliString_numQubits), "$xMask", $rt_wrapFunction0(oajo_PauliString_xMask), "$zMask",
 $rt_wrapFunction0(oajo_PauliString_zMask)],
 juf_Supplier, 0, jl_Object, [], 1537, 0, 0, 0,
 jus_Collectors$toList$lambda$_2_0, 0, jl_Object, [juf_Supplier], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jus_Collectors$toList$lambda$_2_0__init_), "$get5", $rt_wrapFunction0(jus_Collectors$toList$lambda$_2_0_get0), "$get2", $rt_wrapFunction0(jus_Collectors$toList$lambda$_2_0_get)],
 jl_Runnable, 0, jl_Object, [], 1537, 0, 0, 0,
 jl_Thread, 0, jl_Object, [jl_Runnable], 1, 0, () => jl_Thread_$callClinit(), ["$_init_", $rt_wrapFunction1(jl_Thread__init_0), "$_init_8", $rt_wrapFunction2(jl_Thread__init_)],
 jur_AbstractCharClass$LazyAlpha, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyAlpha__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyAlpha_computeValue)],
-oajqs_SampledExpectation, 0, jl_Record, [], 17, 0, 0, ["$_init_167", $rt_wrapFunction4(oajqs_SampledExpectation__init_), "$value", $rt_wrapFunction0(oajqs_SampledExpectation_value), "$standardError", $rt_wrapFunction0(oajqs_SampledExpectation_standardError), "$totalShots", $rt_wrapFunction0(oajqs_SampledExpectation_totalShots), "$terms", $rt_wrapFunction0(oajqs_SampledExpectation_terms)],
+oajqs_SampledExpectation, 0, jl_Record, [], 17, 0, 0, ["$_init_171", $rt_wrapFunction4(oajqs_SampledExpectation__init_), "$value", $rt_wrapFunction0(oajqs_SampledExpectation_value), "$standardError", $rt_wrapFunction0(oajqs_SampledExpectation_standardError), "$totalShots", $rt_wrapFunction0(oajqs_SampledExpectation_totalShots), "$terms", $rt_wrapFunction0(oajqs_SampledExpectation_terms)],
 jus_Collector, 0, jl_Object, [], 1537, 0, 0, 0,
 jl_AutoCloseable, 0, jl_Object, [], 1537, 0, 0, 0,
 jus_BaseStream, 0, jl_Object, [jl_AutoCloseable], 1537, 0, 0, 0,
@@ -26821,17 +28021,17 @@ jl_Throwable, 0, jl_Object, [], 1, 0, 0, ["$fillInStackTrace", $rt_wrapFunction0
 jl_Exception, 0, jl_Throwable, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_Exception__init_), "$_init_15", $rt_wrapFunction2(jl_Exception__init_1), "$_init_", $rt_wrapFunction1(jl_Exception__init_0)],
 jl_RuntimeException, 0, jl_Exception, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_RuntimeException__init_), "$_init_15", $rt_wrapFunction2(jl_RuntimeException__init_1), "$_init_", $rt_wrapFunction1(jl_RuntimeException__init_0)],
 jnc_BufferOverflowException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jnc_BufferOverflowException__init_)],
-jur_BackReferencedSingleSet, "BackReferencedSingleSet", 3, jur_SingleSet, [], 0, 0, 0, ["$_init_6", $rt_wrapFunction1(jur_BackReferencedSingleSet__init_), "$findBack", $rt_wrapFunction4(jur_BackReferencedSingleSet_findBack), "$processBackRefReplacement", $rt_wrapFunction0(jur_BackReferencedSingleSet_processBackRefReplacement)],
+jur_BackReferencedSingleSet, "BackReferencedSingleSet", 3, jur_SingleSet, [], 0, 0, 0, ["$_init_6", $rt_wrapFunction1(jur_BackReferencedSingleSet__init_), "$find", $rt_wrapFunction3(jur_BackReferencedSingleSet_find), "$findBack", $rt_wrapFunction4(jur_BackReferencedSingleSet_findBack), "$processBackRefReplacement", $rt_wrapFunction0(jur_BackReferencedSingleSet_processBackRefReplacement)],
 jur_AbstractCharClass$LazyWord, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyWord__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyWord_computeValue)],
 jur_AbstractCharClass$LazyNonWord, 0, jur_AbstractCharClass$LazyWord, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyNonWord__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyNonWord_computeValue)],
 oajq_Qubit, 0, jl_Object, [], 1025, 0, 0, ["$_init_19", $rt_wrapFunction1(oajq_Qubit__init_), "$getValue1", $rt_wrapFunction0(oajq_Qubit_getValue), "$equals", $rt_wrapFunction1(oajq_Qubit_equals)],
 oajq_QubitZero, 0, oajq_Qubit, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajq_QubitZero__init_0)],
 jur_LeafSet, 0, jur_AbstractSet, [], 1024, 0, 0, ["$_init_20", $rt_wrapFunction1(jur_LeafSet__init_0), "$_init_0", $rt_wrapFunction0(jur_LeafSet__init_), "$matches", $rt_wrapFunction3(jur_LeafSet_matches), "$charCount", $rt_wrapFunction0(jur_LeafSet_charCount), "$hasConsumed", $rt_wrapFunction1(jur_LeafSet_hasConsumed)],
 jur_CISequenceSet, "CISequenceSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_88", $rt_wrapFunction1(jur_CISequenceSet__init_), "$accepts", $rt_wrapFunction2(jur_CISequenceSet_accepts), "$getName", $rt_wrapFunction0(jur_CISequenceSet_getName)],
-jl_CharSequence, 0, jl_Object, [], 1537, 0, 0, 0,
-ju_Map, 0, jl_Object, [], 1537, 0, 0, 0,
-ju_SequencedMap, 0, jl_Object, [ju_Map], 1537, 0, 0, 0]);
-$rt_metadata([jl_IndexOutOfBoundsException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_IndexOutOfBoundsException__init_0), "$_init_", $rt_wrapFunction1(jl_IndexOutOfBoundsException__init_1)],
+jl_CharSequence, 0, jl_Object, [], 1537, 0, 0, 0]);
+$rt_metadata([ju_Map, 0, jl_Object, [], 1537, 0, 0, 0,
+ju_SequencedMap, 0, jl_Object, [ju_Map], 1537, 0, 0, 0,
+jl_IndexOutOfBoundsException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_IndexOutOfBoundsException__init_0), "$_init_", $rt_wrapFunction1(jl_IndexOutOfBoundsException__init_1)],
 jl_StringIndexOutOfBoundsException, 0, jl_IndexOutOfBoundsException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_StringIndexOutOfBoundsException__init_0)],
 ju_MissingResourceException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_36", $rt_wrapFunction3(ju_MissingResourceException__init_)],
 jur_CIBackReferenceSet, "CIBackReferenceSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_10", $rt_wrapFunction2(jur_CIBackReferenceSet__init_), "$matches", $rt_wrapFunction3(jur_CIBackReferenceSet_matches), "$setNext", $rt_wrapFunction1(jur_CIBackReferenceSet_setNext), "$getString", $rt_wrapFunction1(jur_CIBackReferenceSet_getString), "$getName", $rt_wrapFunction0(jur_CIBackReferenceSet_getName), "$hasConsumed", $rt_wrapFunction1(jur_CIBackReferenceSet_hasConsumed)],
@@ -26839,19 +28039,20 @@ jur_UCIBackReferenceSet, "UCIBackReferenceSet", 3, jur_CIBackReferenceSet, [], 0
 jn_ByteOrder, 0, jl_Object, [], 17, 0, () => jn_ByteOrder_$callClinit(), 0,
 jur_AbstractCharClass$LazyCategory, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_37", $rt_wrapFunction2(jur_AbstractCharClass$LazyCategory__init_0), "$_init_38", $rt_wrapFunction3(jur_AbstractCharClass$LazyCategory__init_1), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyCategory_computeValue)],
 jur_QuantifierSet, 0, jur_AbstractSet, [], 1024, 0, 0, ["$_init_24", $rt_wrapFunction3(jur_QuantifierSet__init_), "$getInnerSet", $rt_wrapFunction0(jur_QuantifierSet_getInnerSet), "$first", $rt_wrapFunction1(jur_QuantifierSet_first), "$hasConsumed", $rt_wrapFunction1(jur_QuantifierSet_hasConsumed), "$processSecondPass", $rt_wrapFunction0(jur_QuantifierSet_processSecondPass)],
-jur_DotAllQuantifierSet, "DotAllQuantifierSet", 3, jur_QuantifierSet, [], 0, 0, 0, ["$_init_24", $rt_wrapFunction3(jur_DotAllQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_DotAllQuantifierSet_matches), "$getName", $rt_wrapFunction0(jur_DotAllQuantifierSet_getName)],
-oajqg_GenericGate, "GenericGate", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_117", $rt_wrapFunction3(oajqg_GenericGate__init_)],
+jur_DotAllQuantifierSet, "DotAllQuantifierSet", 3, jur_QuantifierSet, [], 0, 0, 0, ["$_init_24", $rt_wrapFunction3(jur_DotAllQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_DotAllQuantifierSet_matches), "$find", $rt_wrapFunction3(jur_DotAllQuantifierSet_find), "$getName", $rt_wrapFunction0(jur_DotAllQuantifierSet_getName)],
+oajqg_GenericGate, "GenericGate", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_117", $rt_wrapFunction3(oajqg_GenericGate__init_)],
 ju_Comparator, 0, jl_Object, [], 1537, 0, 0, 0,
 jl_String$_clinit_$lambda$_118_0, 0, jl_Object, [ju_Comparator], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_String$_clinit_$lambda$_118_0__init_)],
 jur_FSet, "FSet", 3, jur_AbstractSet, [], 0, 0, () => jur_FSet_$callClinit(), ["$_init_4", $rt_wrapFunction1(jur_FSet__init_), "$matches", $rt_wrapFunction3(jur_FSet_matches), "$getGroupIndex", $rt_wrapFunction0(jur_FSet_getGroupIndex), "$getName", $rt_wrapFunction0(jur_FSet_getName), "$hasConsumed", $rt_wrapFunction1(jur_FSet_hasConsumed)],
 jur_BehindFSet, "BehindFSet", 3, jur_FSet, [], 0, 0, 0, ["$_init_4", $rt_wrapFunction1(jur_BehindFSet__init_), "$matches", $rt_wrapFunction3(jur_BehindFSet_matches), "$getName", $rt_wrapFunction0(jur_BehindFSet_getName)],
 jur_RandomGenerator, 0, jl_Object, [], 1537, 0, 0, ["$nextBytes", $rt_wrapFunction1(jur_RandomGenerator_nextBytes)],
+oajvo_OpenQasmParser$Location, "OpenQasmParser$Location", 13, jl_Record, [], 17, 0, 0, ["$_init_10", $rt_wrapFunction2(oajvo_OpenQasmParser$Location__init_), "$toString", $rt_wrapFunction0(oajvo_OpenQasmParser$Location_toString), "$hashCode2", $rt_wrapFunction0(oajvo_OpenQasmParser$Location_hashCode), "$equals", $rt_wrapFunction1(oajvo_OpenQasmParser$Location_equals), "$line", $rt_wrapFunction0(oajvo_OpenQasmParser$Location_line), "$column", $rt_wrapFunction0(oajvo_OpenQasmParser$Location_column)],
 otrfm_AbstractInMemoryVirtualFile, 0, jl_Object, [], 1025, 0, 0, ["$_init_", $rt_wrapFunction1(otrfm_AbstractInMemoryVirtualFile__init_)],
 jur_LowHighSurrogateRangeSet, "LowHighSurrogateRangeSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_96", $rt_wrapFunction1(jur_LowHighSurrogateRangeSet__init_), "$setNext", $rt_wrapFunction1(jur_LowHighSurrogateRangeSet_setNext), "$matches", $rt_wrapFunction3(jur_LowHighSurrogateRangeSet_matches), "$getName", $rt_wrapFunction0(jur_LowHighSurrogateRangeSet_getName)],
 oajqs_LocalSimulator$OperationListener, 0, jl_Object, [], 1537, 0, 0, 0,
 jur_GroupQuantifierSet, "GroupQuantifierSet", 3, jur_QuantifierSet, [], 0, 0, 0, ["$_init_24", $rt_wrapFunction3(jur_GroupQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_GroupQuantifierSet_matches), "$getName", $rt_wrapFunction0(jur_GroupQuantifierSet_getName)],
 jur_ReluctantGroupQuantifierSet, "ReluctantGroupQuantifierSet", 3, jur_GroupQuantifierSet, [], 0, 0, 0, ["$_init_24", $rt_wrapFunction3(jur_ReluctantGroupQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_ReluctantGroupQuantifierSet_matches)],
-oajo_PauliSum$Term, "PauliSum$Term", 15, jl_Record, [], 17, 0, 0, ["$_init_5", $rt_wrapFunction2(oajo_PauliSum$Term__init_0), "$toString", $rt_wrapFunction0(oajo_PauliSum$Term_toString), "$hashCode2", $rt_wrapFunction0(oajo_PauliSum$Term_hashCode), "$equals", $rt_wrapFunction1(oajo_PauliSum$Term_equals), "$coeff", $rt_wrapFunction0(oajo_PauliSum$Term_coeff), "$pauli", $rt_wrapFunction0(oajo_PauliSum$Term_pauli)],
+oajo_PauliSum$Term, "PauliSum$Term", 16, jl_Record, [], 17, 0, 0, ["$_init_5", $rt_wrapFunction2(oajo_PauliSum$Term__init_0), "$toString", $rt_wrapFunction0(oajo_PauliSum$Term_toString), "$hashCode2", $rt_wrapFunction0(oajo_PauliSum$Term_hashCode), "$equals", $rt_wrapFunction1(oajo_PauliSum$Term_equals), "$coeff", $rt_wrapFunction0(oajo_PauliSum$Term_coeff), "$pauli", $rt_wrapFunction0(oajo_PauliSum$Term_pauli)],
 jl_ClassCastException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_ClassCastException__init_)],
 jl_Error, 0, jl_Throwable, [], 1, 0, 0, ["$_init_15", $rt_wrapFunction2(jl_Error__init_0), "$_init_25", $rt_wrapFunction1(jl_Error__init_)],
 jnc_CoderMalfunctionError, 0, jl_Error, [], 1, 0, 0, ["$_init_25", $rt_wrapFunction1(jnc_CoderMalfunctionError__init_)],
@@ -26865,15 +28066,16 @@ ju_LinkedHashMap, "LinkedHashMap", 2, ju_HashMap, [ju_SequencedMap], 1, 0, 0, ["
 juf_Predicate, 0, jl_Object, [], 1537, 0, 0, 0,
 jusi_FlatMappingStreamImpl$next$lambda$_1_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_107", $rt_wrapFunction1(jusi_FlatMappingStreamImpl$next$lambda$_1_0__init_), "$test", $rt_wrapFunction1(jusi_FlatMappingStreamImpl$next$lambda$_1_0_test)],
 jur_PosPlusGroupQuantifierSet, "PosPlusGroupQuantifierSet", 3, jur_GroupQuantifierSet, [], 0, 0, 0, ["$_init_24", $rt_wrapFunction3(jur_PosPlusGroupQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_PosPlusGroupQuantifierSet_matches)],
-jl_AbstractStringBuilder, 0, jl_Object, [ji_Serializable, jl_CharSequence], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_AbstractStringBuilder__init_0), "$_init_4", $rt_wrapFunction1(jl_AbstractStringBuilder__init_), "$_init_", $rt_wrapFunction1(jl_AbstractStringBuilder__init_1), "$_init_31", $rt_wrapFunction1(jl_AbstractStringBuilder__init_2), "$append15", $rt_wrapFunction1(jl_AbstractStringBuilder_append5), "$append16", $rt_wrapFunction1(jl_AbstractStringBuilder_append6), "$insert0", $rt_wrapFunction2(jl_AbstractStringBuilder_insert6),
-"$append17", $rt_wrapFunction1(jl_AbstractStringBuilder_append2), "$append3", $rt_wrapFunction2(jl_AbstractStringBuilder_append9), "$insert1", $rt_wrapFunction3(jl_AbstractStringBuilder_insert7), "$append18", $rt_wrapFunction1(jl_AbstractStringBuilder_append4), "$insert2", $rt_wrapFunction2(jl_AbstractStringBuilder_insert2), "$append7", $rt_wrapFunction1(jl_AbstractStringBuilder_append), "$insert3", $rt_wrapFunction2(jl_AbstractStringBuilder_insert0), "$insert", $rt_wrapFunction2(jl_AbstractStringBuilder_insert3),
-"$append20", $rt_wrapFunction1(jl_AbstractStringBuilder_append7), "$insert4", $rt_wrapFunction2(jl_AbstractStringBuilder_insert1), "$ensureCapacity", $rt_wrapFunction1(jl_AbstractStringBuilder_ensureCapacity), "$toString", $rt_wrapFunction0(jl_AbstractStringBuilder_toString), "$length", $rt_wrapFunction0(jl_AbstractStringBuilder_length), "$charAt", $rt_wrapFunction1(jl_AbstractStringBuilder_charAt), "$append5", $rt_wrapFunction3(jl_AbstractStringBuilder_append3), "$insert5", $rt_wrapFunction4(jl_AbstractStringBuilder_insert4),
-"$append19", $rt_wrapFunction1(jl_AbstractStringBuilder_append8), "$insert10", $rt_wrapFunction2(jl_AbstractStringBuilder_insert5), "$append6", $rt_wrapFunction3(jl_AbstractStringBuilder_append1), "$insert6", $rt_wrapFunction4(jl_AbstractStringBuilder_insert), "$append8", $rt_wrapFunction1(jl_AbstractStringBuilder_append0), "$deleteCharAt0", $rt_wrapFunction1(jl_AbstractStringBuilder_deleteCharAt), "$delete", $rt_wrapFunction2(jl_AbstractStringBuilder_delete)],
+jl_AbstractStringBuilder, 0, jl_Object, [ji_Serializable, jl_CharSequence], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_AbstractStringBuilder__init_0), "$_init_4", $rt_wrapFunction1(jl_AbstractStringBuilder__init_), "$_init_", $rt_wrapFunction1(jl_AbstractStringBuilder__init_1), "$_init_31", $rt_wrapFunction1(jl_AbstractStringBuilder__init_2), "$append15", $rt_wrapFunction1(jl_AbstractStringBuilder_append5), "$append16", $rt_wrapFunction1(jl_AbstractStringBuilder_append6), "$insert0", $rt_wrapFunction2(jl_AbstractStringBuilder_insert7),
+"$append17", $rt_wrapFunction1(jl_AbstractStringBuilder_append2), "$append3", $rt_wrapFunction2(jl_AbstractStringBuilder_append10), "$insert1", $rt_wrapFunction3(jl_AbstractStringBuilder_insert8), "$append18", $rt_wrapFunction1(jl_AbstractStringBuilder_append8), "$insert2", $rt_wrapFunction2(jl_AbstractStringBuilder_insert4), "$insert3", $rt_wrapFunction3(jl_AbstractStringBuilder_insert9), "$append19", $rt_wrapFunction1(jl_AbstractStringBuilder_append4), "$insert4", $rt_wrapFunction2(jl_AbstractStringBuilder_insert2),
+"$append7", $rt_wrapFunction1(jl_AbstractStringBuilder_append), "$insert5", $rt_wrapFunction2(jl_AbstractStringBuilder_insert0), "$insert", $rt_wrapFunction2(jl_AbstractStringBuilder_insert3), "$append21", $rt_wrapFunction1(jl_AbstractStringBuilder_append7), "$insert6", $rt_wrapFunction2(jl_AbstractStringBuilder_insert1), "$ensureCapacity", $rt_wrapFunction1(jl_AbstractStringBuilder_ensureCapacity), "$toString", $rt_wrapFunction0(jl_AbstractStringBuilder_toString), "$length", $rt_wrapFunction0(jl_AbstractStringBuilder_length),
+"$charAt", $rt_wrapFunction1(jl_AbstractStringBuilder_charAt), "$append5", $rt_wrapFunction3(jl_AbstractStringBuilder_append3), "$insert7", $rt_wrapFunction4(jl_AbstractStringBuilder_insert5), "$append20", $rt_wrapFunction1(jl_AbstractStringBuilder_append9), "$insert12", $rt_wrapFunction2(jl_AbstractStringBuilder_insert6), "$append6", $rt_wrapFunction3(jl_AbstractStringBuilder_append1), "$insert8", $rt_wrapFunction4(jl_AbstractStringBuilder_insert), "$append8", $rt_wrapFunction1(jl_AbstractStringBuilder_append0),
+"$deleteCharAt0", $rt_wrapFunction1(jl_AbstractStringBuilder_deleteCharAt), "$delete", $rt_wrapFunction2(jl_AbstractStringBuilder_delete)],
 jl_Appendable, 0, jl_Object, [], 1537, 0, 0, 0,
-jl_StringBuffer, 0, jl_AbstractStringBuilder, [jl_Appendable], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_StringBuffer__init_), "$append13", $rt_wrapFunction1(jl_StringBuffer_append1), "$append9", $rt_wrapFunction3(jl_StringBuffer_append2), "$append14", $rt_wrapFunction1(jl_StringBuffer_append0), "$insert7", $rt_wrapFunction4(jl_StringBuffer_insert0), "$insert8", $rt_wrapFunction2(jl_StringBuffer_insert2), "$insert6", $rt_wrapFunction4(jl_StringBuffer_insert), "$append6", $rt_wrapFunction3(jl_StringBuffer_append),
-"$charAt", $rt_wrapFunction1(jl_StringBuffer_charAt), "$length", $rt_wrapFunction0(jl_StringBuffer_length), "$toString", $rt_wrapFunction0(jl_StringBuffer_toString), "$ensureCapacity", $rt_wrapFunction1(jl_StringBuffer_ensureCapacity), "$insert3", $rt_wrapFunction2(jl_StringBuffer_insert1)],
+jl_StringBuffer, 0, jl_AbstractStringBuilder, [jl_Appendable], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_StringBuffer__init_), "$append13", $rt_wrapFunction1(jl_StringBuffer_append1), "$append9", $rt_wrapFunction3(jl_StringBuffer_append2), "$append14", $rt_wrapFunction1(jl_StringBuffer_append0), "$insert9", $rt_wrapFunction4(jl_StringBuffer_insert0), "$insert10", $rt_wrapFunction2(jl_StringBuffer_insert2), "$insert8", $rt_wrapFunction4(jl_StringBuffer_insert), "$append6", $rt_wrapFunction3(jl_StringBuffer_append),
+"$charAt", $rt_wrapFunction1(jl_StringBuffer_charAt), "$length", $rt_wrapFunction0(jl_StringBuffer_length), "$toString", $rt_wrapFunction0(jl_StringBuffer_toString), "$ensureCapacity", $rt_wrapFunction1(jl_StringBuffer_ensureCapacity), "$insert5", $rt_wrapFunction2(jl_StringBuffer_insert1)],
 jn_Buffer, 0, jl_Object, [], 1025, 0, 0, ["$_init_0", $rt_wrapFunction0(jn_Buffer__init_), "$capacity", $rt_wrapFunction0(jn_Buffer_capacity), "$position1", $rt_wrapFunction0(jn_Buffer_position), "$position", $rt_wrapFunction1(jn_Buffer_position0), "$limit", $rt_wrapFunction0(jn_Buffer_limit), "$flip0", $rt_wrapFunction0(jn_Buffer_flip), "$remaining", $rt_wrapFunction0(jn_Buffer_remaining), "$hasRemaining", $rt_wrapFunction0(jn_Buffer_hasRemaining)],
-oajm_ComplexMatrix, "ComplexMatrix", 20, jl_Object, [], 1, 0, 0, ["$getEntry0", $rt_wrapFunction2(oajm_ComplexMatrix_getEntry), "$getRowDimension", $rt_wrapFunction0(oajm_ComplexMatrix_getRowDimension), "$getColumnDimension", $rt_wrapFunction0(oajm_ComplexMatrix_getColumnDimension), "$getData", $rt_wrapFunction0(oajm_ComplexMatrix_getData), "$equals", $rt_wrapFunction1(oajm_ComplexMatrix_equals), "$hashCode2", $rt_wrapFunction0(oajm_ComplexMatrix_hashCode), "$toString", $rt_wrapFunction0(oajm_ComplexMatrix_toString)],
+oajm_ComplexMatrix, "ComplexMatrix", 21, jl_Object, [], 1, 0, 0, ["$getEntry0", $rt_wrapFunction2(oajm_ComplexMatrix_getEntry), "$getRowDimension", $rt_wrapFunction0(oajm_ComplexMatrix_getRowDimension), "$getColumnDimension", $rt_wrapFunction0(oajm_ComplexMatrix_getColumnDimension), "$getData", $rt_wrapFunction0(oajm_ComplexMatrix_getData), "$equals", $rt_wrapFunction1(oajm_ComplexMatrix_equals), "$hashCode2", $rt_wrapFunction0(oajm_ComplexMatrix_hashCode), "$toString", $rt_wrapFunction0(oajm_ComplexMatrix_toString)],
 jur_SpecialToken, 0, jl_Object, [], 1024, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_SpecialToken__init_)],
 jur_AbstractCharClass, 0, jur_SpecialToken, [], 1024, 0, () => jur_AbstractCharClass_$callClinit(), ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass__init_), "$getBits", $rt_wrapFunction0(jur_AbstractCharClass_getBits), "$getLowHighSurrogates", $rt_wrapFunction0(jur_AbstractCharClass_getLowHighSurrogates), "$hasLowHighSurrogates", $rt_wrapFunction0(jur_AbstractCharClass_hasLowHighSurrogates), "$mayContainSupplCodepoints", $rt_wrapFunction0(jur_AbstractCharClass_mayContainSupplCodepoints), "$getInstance",
 $rt_wrapFunction0(jur_AbstractCharClass_getInstance), "$getSurrogates", $rt_wrapFunction0(jur_AbstractCharClass_getSurrogates), "$getWithoutSurrogates", $rt_wrapFunction0(jur_AbstractCharClass_getWithoutSurrogates), "$hasUCI", $rt_wrapFunction0(jur_AbstractCharClass_hasUCI), "$setNegative", $rt_wrapFunction1(jur_AbstractCharClass_setNegative), "$isNegative", $rt_wrapFunction0(jur_AbstractCharClass_isNegative)],
@@ -26885,11 +28087,11 @@ jur_AbstractCharClass$LazyDigit, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 
 jur_AbstractCharClass$LazyJavaLetter, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaLetter__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaLetter_computeValue)],
 jur_DecomposedCharSet, "DecomposedCharSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_42", $rt_wrapFunction2(jur_DecomposedCharSet__init_), "$setNext", $rt_wrapFunction1(jur_DecomposedCharSet_setNext), "$matches", $rt_wrapFunction3(jur_DecomposedCharSet_matches), "$getName", $rt_wrapFunction0(jur_DecomposedCharSet_getName), "$codePointAt", $rt_wrapFunction3(jur_DecomposedCharSet_codePointAt), "$first", $rt_wrapFunction1(jur_DecomposedCharSet_first), "$hasConsumed", $rt_wrapFunction1(jur_DecomposedCharSet_hasConsumed)],
 jur_CIDecomposedCharSet, "CIDecomposedCharSet", 3, jur_DecomposedCharSet, [], 0, 0, 0, ["$_init_42", $rt_wrapFunction2(jur_CIDecomposedCharSet__init_)],
-juf_IntPredicate, 0, jl_Object, [], 1537, 0, 0, 0,
-jusi_SimpleIntStreamImpl$toArray$lambda$_16_0, 0, jl_Object, [juf_IntPredicate], 1, 0, 0, ["$_init_13", $rt_wrapFunction1(jusi_SimpleIntStreamImpl$toArray$lambda$_16_0__init_), "$test5", $rt_wrapFunction1(jusi_SimpleIntStreamImpl$toArray$lambda$_16_0_test)],
+juf_IntPredicate, 0, jl_Object, [], 1537, 0, 0, 0]);
+$rt_metadata([jusi_SimpleIntStreamImpl$toArray$lambda$_16_0, 0, jl_Object, [juf_IntPredicate], 1, 0, 0, ["$_init_13", $rt_wrapFunction1(jusi_SimpleIntStreamImpl$toArray$lambda$_16_0__init_), "$test6", $rt_wrapFunction1(jusi_SimpleIntStreamImpl$toArray$lambda$_16_0_test)],
 jur_AheadFSet, "AheadFSet", 3, jur_FSet, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AheadFSet__init_), "$matches", $rt_wrapFunction3(jur_AheadFSet_matches), "$getName", $rt_wrapFunction0(jur_AheadFSet_getName)],
-jl_Enum, "Enum", 7, jl_Object, [jl_Comparable, ji_Serializable], 1025, 0, 0, ["$_init_43", $rt_wrapFunction2(jl_Enum__init_), "$name", $rt_wrapFunction0(jl_Enum_name), "$ordinal", $rt_wrapFunction0(jl_Enum_ordinal), "$toString", $rt_wrapFunction0(jl_Enum_toString), "$equals", $rt_wrapFunction1(jl_Enum_equals), "$hashCode2", $rt_wrapFunction0(jl_Enum_hashCode), "$getDeclaringClass", $rt_wrapFunction0(jl_Enum_getDeclaringClass), "$compareTo0", $rt_wrapFunction1(jl_Enum_compareTo), "$compareTo1", $rt_wrapFunction1(jl_Enum_compareTo0)]]);
-$rt_metadata([jus_Collector$Characteristics, "Collector$Characteristics", 4, jl_Enum, [], 65553, 0, () => jus_Collector$Characteristics_$callClinit(), 0,
+jl_Enum, "Enum", 7, jl_Object, [jl_Comparable, ji_Serializable], 1025, 0, 0, ["$_init_43", $rt_wrapFunction2(jl_Enum__init_), "$name", $rt_wrapFunction0(jl_Enum_name), "$ordinal", $rt_wrapFunction0(jl_Enum_ordinal), "$toString", $rt_wrapFunction0(jl_Enum_toString), "$equals", $rt_wrapFunction1(jl_Enum_equals), "$hashCode2", $rt_wrapFunction0(jl_Enum_hashCode), "$getDeclaringClass", $rt_wrapFunction0(jl_Enum_getDeclaringClass), "$compareTo0", $rt_wrapFunction1(jl_Enum_compareTo), "$compareTo1", $rt_wrapFunction1(jl_Enum_compareTo0)],
+jus_Collector$Characteristics, "Collector$Characteristics", 4, jl_Enum, [], 65553, 0, () => jus_Collector$Characteristics_$callClinit(), 0,
 jur_NonCapJointSet, "NonCapJointSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_44", $rt_wrapFunction2(jur_NonCapJointSet__init_), "$matches", $rt_wrapFunction3(jur_NonCapJointSet_matches), "$getName", $rt_wrapFunction0(jur_NonCapJointSet_getName), "$hasConsumed", $rt_wrapFunction1(jur_NonCapJointSet_hasConsumed)],
 jur_AtomicJointSet, "AtomicJointSet", 3, jur_NonCapJointSet, [], 0, 0, 0, ["$_init_44", $rt_wrapFunction2(jur_AtomicJointSet__init_), "$matches", $rt_wrapFunction3(jur_AtomicJointSet_matches), "$setNext", $rt_wrapFunction1(jur_AtomicJointSet_setNext), "$getName", $rt_wrapFunction0(jur_AtomicJointSet_getName)],
 jur_PositiveLookAhead, "PositiveLookAhead", 3, jur_AtomicJointSet, [], 0, 0, 0, ["$_init_44", $rt_wrapFunction2(jur_PositiveLookAhead__init_), "$matches", $rt_wrapFunction3(jur_PositiveLookAhead_matches), "$hasConsumed", $rt_wrapFunction1(jur_PositiveLookAhead_hasConsumed), "$getName", $rt_wrapFunction0(jur_PositiveLookAhead_getName)],
@@ -26913,54 +28115,57 @@ juf_Consumer, 0, jl_Object, [], 1537, 0, 0, 0,
 jusi_StreamOverSpliterator$AdapterAction, 0, jl_Object, [juf_Consumer], 0, 0, 0, ["$_init_76", $rt_wrapFunction1(jusi_StreamOverSpliterator$AdapterAction__init_), "$accept0", $rt_wrapFunction1(jusi_StreamOverSpliterator$AdapterAction_accept)],
 oajqs_QuantumSimulator, 0, jl_Object, [], 1537, 0, 0, 0,
 otcit_DoubleAnalyzer$Result, 0, jl_Object, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(otcit_DoubleAnalyzer$Result__init_)],
-oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0, 0, jl_Object, [juf_Consumer], 1, 0, 0, ["$_init_170", $rt_wrapFunction1(oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0__init_), "$accept0", $rt_wrapFunction1(oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0_accept0), "$accept", $rt_wrapFunction1(oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0_accept)],
-oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1, 0, jl_Object, [juf_Consumer], 1, 0, 0, ["$_init_170", $rt_wrapFunction1(oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1__init_), "$accept0", $rt_wrapFunction1(oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1_accept0), "$accept", $rt_wrapFunction1(oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1_accept)],
-jusi_FilteringIntStreamImpl$wrap$lambda$_1_0, 0, jl_Object, [juf_IntPredicate], 1, 0, 0, ["$_init_158", $rt_wrapFunction2(jusi_FilteringIntStreamImpl$wrap$lambda$_1_0__init_), "$test5", $rt_wrapFunction1(jusi_FilteringIntStreamImpl$wrap$lambda$_1_0_test)],
+oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0, 0, jl_Object, [juf_Consumer], 1, 0, 0, ["$_init_174", $rt_wrapFunction1(oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0__init_), "$accept0", $rt_wrapFunction1(oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0_accept0), "$accept", $rt_wrapFunction1(oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_0_accept)],
+oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1, 0, jl_Object, [juf_Consumer], 1, 0, 0, ["$_init_174", $rt_wrapFunction1(oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1__init_), "$accept0", $rt_wrapFunction1(oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1_accept0), "$accept", $rt_wrapFunction1(oajq_QuantumRegister$measureQubitAtIndexes$lambda$_23_1_accept)],
+jusi_FilteringIntStreamImpl$wrap$lambda$_1_0, 0, jl_Object, [juf_IntPredicate], 1, 0, 0, ["$_init_162", $rt_wrapFunction2(jusi_FilteringIntStreamImpl$wrap$lambda$_1_0__init_), "$test6", $rt_wrapFunction1(jusi_FilteringIntStreamImpl$wrap$lambda$_1_0_test)],
 oajo_Expectation, 0, jl_Object, [], 17, 0, 0, 0,
 jur_AbstractCharClass$LazyJavaDigit, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaDigit__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaDigit_computeValue)],
 oajq_Circuit$lambda$initializeLevels$0$lambda$_18_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_146", $rt_wrapFunction1(oajq_Circuit$lambda$initializeLevels$0$lambda$_18_0__init_), "$test", $rt_wrapFunction1(oajq_Circuit$lambda$initializeLevels$0$lambda$_18_0_test0), "$test0", $rt_wrapFunction1(oajq_Circuit$lambda$initializeLevels$0$lambda$_18_0_test)],
 oajq_Circuit$lambda$initializeLevels$2$lambda$_16_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_4", $rt_wrapFunction1(oajq_Circuit$lambda$initializeLevels$2$lambda$_16_0__init_), "$test", $rt_wrapFunction1(oajq_Circuit$lambda$initializeLevels$2$lambda$_16_0_test0), "$test1", $rt_wrapFunction1(oajq_Circuit$lambda$initializeLevels$2$lambda$_16_0_test)],
 jl_Iterable, 0, jl_Object, [], 1537, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach)],
 ju_Collection, 0, jl_Object, [jl_Iterable], 1537, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream)],
-ju_AbstractCollection, 0, jl_Object, [ju_Collection], 1025, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_0", $rt_wrapFunction0(ju_AbstractCollection__init_), "$isEmpty", $rt_wrapFunction0(ju_AbstractCollection_isEmpty), "$contains0", $rt_wrapFunction1(ju_AbstractCollection_contains), "$toArray", $rt_wrapFunction1(ju_AbstractCollection_toArray), "$addAll", $rt_wrapFunction1(ju_AbstractCollection_addAll),
-"$toString", $rt_wrapFunction0(ju_AbstractCollection_toString)],
+ju_AbstractCollection, 0, jl_Object, [ju_Collection], 1025, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_0", $rt_wrapFunction0(ju_AbstractCollection__init_), "$isEmpty", $rt_wrapFunction0(ju_AbstractCollection_isEmpty), "$contains0", $rt_wrapFunction1(ju_AbstractCollection_contains), "$toArray0", $rt_wrapFunction0(ju_AbstractCollection_toArray0), "$toArray", $rt_wrapFunction1(ju_AbstractCollection_toArray),
+"$addAll", $rt_wrapFunction1(ju_AbstractCollection_addAll), "$toString", $rt_wrapFunction0(ju_AbstractCollection_toString)],
 otci_IntegerUtil, 0, jl_Object, [], 17, 0, 0, 0,
 jur_LeafQuantifierSet, "LeafQuantifierSet", 3, jur_QuantifierSet, [], 0, 0, 0, ["$_init_53", $rt_wrapFunction3(jur_LeafQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_LeafQuantifierSet_matches), "$getName", $rt_wrapFunction0(jur_LeafQuantifierSet_getName)],
 jur_AltQuantifierSet, "AltQuantifierSet", 3, jur_LeafQuantifierSet, [], 0, 0, 0, ["$_init_53", $rt_wrapFunction3(jur_AltQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_AltQuantifierSet_matches), "$setNext", $rt_wrapFunction1(jur_AltQuantifierSet_setNext)],
 jur_PossessiveAltQuantifierSet, "PossessiveAltQuantifierSet", 3, jur_AltQuantifierSet, [], 0, 0, 0, ["$_init_53", $rt_wrapFunction3(jur_PossessiveAltQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_PossessiveAltQuantifierSet_matches)],
+oajvo_OpenQasmParser$Barrier, "OpenQasmParser$Barrier", 13, jl_Record, [], 17, 0, 0, ["$_init_160", $rt_wrapFunction3(oajvo_OpenQasmParser$Barrier__init_), "$toString", $rt_wrapFunction0(oajvo_OpenQasmParser$Barrier_toString), "$hashCode2", $rt_wrapFunction0(oajvo_OpenQasmParser$Barrier_hashCode), "$equals", $rt_wrapFunction1(oajvo_OpenQasmParser$Barrier_equals), "$beforeLevel", $rt_wrapFunction0(oajvo_OpenQasmParser$Barrier_beforeLevel), "$qubits", $rt_wrapFunction0(oajvo_OpenQasmParser$Barrier_qubits)],
 otji_JS, 0, jl_Object, [], 17, 0, 0, 0,
 jur_AbstractCharClass$LazyJavaUnicodeIdentifierStart$1, "AbstractCharClass$LazyJavaUnicodeIdentifierStart$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_101", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaUnicodeIdentifierStart$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaUnicodeIdentifierStart$1_contains)],
 jnc_Charset, 0, jl_Object, [jl_Comparable], 1025, 0, 0, ["$_init_54", $rt_wrapFunction2(jnc_Charset__init_), "$encode", $rt_wrapFunction1(jnc_Charset_encode)],
 jnci_UTF16Charset, 0, jnc_Charset, [], 1, 0, 0, ["$_init_69", $rt_wrapFunction3(jnci_UTF16Charset__init_0)],
+oajvl_CircuitLinter$report$lambda$_9_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_13", $rt_wrapFunction1(oajvl_CircuitLinter$report$lambda$_9_0__init_), "$apply3", $rt_wrapFunction1(oajvl_CircuitLinter$report$lambda$_9_0_apply0), "$apply0", $rt_wrapFunction1(oajvl_CircuitLinter$report$lambda$_9_0_apply)],
 oajq_OperatorExecutor, 0, jl_Object, [], 1537, 0, 0, 0,
 oajq_SequentialOperatorExecutor, 0, jl_Object, [oajq_OperatorExecutor], 17, 0, 0, ["$_init_0", $rt_wrapFunction0(oajq_SequentialOperatorExecutor__init_), "$applyGroups", $rt_wrapFunction3(oajq_SequentialOperatorExecutor_applyGroups)],
 otciu_UnicodeHelper, 0, jl_Object, [], 17, 0, 0, 0,
-jus_Collectors, 0, jl_Object, [], 17, 0, 0, 0,
-otp_PlatformRunnable, 0, jl_Object, [], 1537, 0, 0, 0,
+jus_Collectors, 0, jl_Object, [], 17, 0, 0, 0]);
+$rt_metadata([otp_PlatformRunnable, 0, jl_Object, [], 1537, 0, 0, 0,
 jl_Object$monitorEnterWait$lambda$_6_0, "Object$monitorEnterWait$lambda$_6_0", 7, jl_Object, [otp_PlatformRunnable], 1, 0, 0, ["$_init_1", $rt_wrapFunction4(jl_Object$monitorEnterWait$lambda$_6_0__init_), "$run", $rt_wrapFunction0(jl_Object$monitorEnterWait$lambda$_6_0_run)],
 ju_TreeMap$EntryIterator, 0, jl_Object, [ju_Iterator], 0, 0, 0, ["$_init_137", function(var_1, var_2, var_3, var_4, var_5, var_6) { ju_TreeMap$EntryIterator__init_(this, var_1, var_2, var_3, var_4, var_5, var_6); }, "$hasNext", $rt_wrapFunction0(ju_TreeMap$EntryIterator_hasNext), "$next1", $rt_wrapFunction0(ju_TreeMap$EntryIterator_next), "$next", $rt_wrapFunction0(ju_TreeMap$EntryIterator_next0)],
 ju_Objects, 0, jl_Object, [], 17, 0, 0, 0,
-jur_AbstractCharClass$LazyAlnum, 0, jur_AbstractCharClass$LazyAlpha, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyAlnum__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyAlnum_computeValue)]]);
-$rt_metadata([jur_AbstractCharClass$LazyGraph, 0, jur_AbstractCharClass$LazyAlnum, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyGraph__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyGraph_computeValue)],
+jur_AbstractCharClass$LazyAlnum, 0, jur_AbstractCharClass$LazyAlpha, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyAlnum__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyAlnum_computeValue)],
+jur_AbstractCharClass$LazyGraph, 0, jur_AbstractCharClass$LazyAlnum, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyGraph__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyGraph_computeValue)],
 jur_AbstractCharClass$LazyPrint, 0, jur_AbstractCharClass$LazyGraph, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyPrint__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyPrint_computeValue)],
 jur_AbstractCharClass$LazyJavaSpaceChar, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaSpaceChar__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaSpaceChar_computeValue)],
 jur_PositiveLookBehind, "PositiveLookBehind", 3, jur_AtomicJointSet, [], 0, 0, 0, ["$_init_44", $rt_wrapFunction2(jur_PositiveLookBehind__init_), "$matches", $rt_wrapFunction3(jur_PositiveLookBehind_matches), "$hasConsumed", $rt_wrapFunction1(jur_PositiveLookBehind_hasConsumed), "$getName", $rt_wrapFunction0(jur_PositiveLookBehind_getName)],
 jnc_CharsetEncoder, 0, jl_Object, [], 1025, 0, 0, ["$_init_59", $rt_wrapFunction4(jnc_CharsetEncoder__init_0), "$_init_80", $rt_wrapFunction3(jnc_CharsetEncoder__init_), "$onMalformedInput", $rt_wrapFunction1(jnc_CharsetEncoder_onMalformedInput), "$implOnMalformedInput", $rt_wrapFunction1(jnc_CharsetEncoder_implOnMalformedInput), "$onUnmappableCharacter", $rt_wrapFunction1(jnc_CharsetEncoder_onUnmappableCharacter), "$implOnUnmappableCharacter", $rt_wrapFunction1(jnc_CharsetEncoder_implOnUnmappableCharacter),
 "$encode0", $rt_wrapFunction3(jnc_CharsetEncoder_encode), "$encode", $rt_wrapFunction1(jnc_CharsetEncoder_encode0), "$flush", $rt_wrapFunction1(jnc_CharsetEncoder_flush), "$implFlush", $rt_wrapFunction1(jnc_CharsetEncoder_implFlush), "$reset", $rt_wrapFunction0(jnc_CharsetEncoder_reset), "$implReset", $rt_wrapFunction0(jnc_CharsetEncoder_implReset)],
 ju_Comparator$NaturalOrder, 0, jl_Object, [ju_Comparator], 1, 0, () => ju_Comparator$NaturalOrder_$callClinit(), ["$_init_0", $rt_wrapFunction0(ju_Comparator$NaturalOrder__init_), "$compare0", $rt_wrapFunction2(ju_Comparator$NaturalOrder_compare)],
-jur_SequenceSet, "SequenceSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_88", $rt_wrapFunction1(jur_SequenceSet__init_), "$accepts", $rt_wrapFunction2(jur_SequenceSet_accepts), "$findBack", $rt_wrapFunction4(jur_SequenceSet_findBack), "$getName", $rt_wrapFunction0(jur_SequenceSet_getName), "$first", $rt_wrapFunction1(jur_SequenceSet_first), "$lastIndexOf", $rt_wrapFunction3(jur_SequenceSet_lastIndexOf), "$startsWith", $rt_wrapFunction2(jur_SequenceSet_startsWith)],
+jur_SequenceSet, "SequenceSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_88", $rt_wrapFunction1(jur_SequenceSet__init_), "$accepts", $rt_wrapFunction2(jur_SequenceSet_accepts), "$find", $rt_wrapFunction3(jur_SequenceSet_find), "$findBack", $rt_wrapFunction4(jur_SequenceSet_findBack), "$getName", $rt_wrapFunction0(jur_SequenceSet_getName), "$first", $rt_wrapFunction1(jur_SequenceSet_first), "$indexOf", $rt_wrapFunction3(jur_SequenceSet_indexOf), "$lastIndexOf", $rt_wrapFunction3(jur_SequenceSet_lastIndexOf), "$startsWith",
+$rt_wrapFunction2(jur_SequenceSet_startsWith)],
 jnci_AsciiCharset, 0, jnc_Charset, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jnci_AsciiCharset__init_)],
 jl_ArrayStoreException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_ArrayStoreException__init_0)],
 ju_SequencedCollection, 0, jl_Object, [ju_Collection], 1537, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream)],
 jur_AltGroupQuantifierSet, "AltGroupQuantifierSet", 3, jur_GroupQuantifierSet, [], 0, 0, 0, ["$_init_24", $rt_wrapFunction3(jur_AltGroupQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_AltGroupQuantifierSet_matches), "$setNext", $rt_wrapFunction1(jur_AltGroupQuantifierSet_setNext)],
 jur_MatchResult, 0, jl_Object, [], 1537, 0, 0, 0,
 jur_MatchResultImpl, 0, jl_Object, [jur_MatchResult], 0, 0, 0, ["$_init_141", function(var_1, var_2, var_3, var_4, var_5, var_6, var_7) { jur_MatchResultImpl__init_(this, var_1, var_2, var_3, var_4, var_5, var_6, var_7); }, "$setConsumed", $rt_wrapFunction2(jur_MatchResultImpl_setConsumed), "$getConsumed", $rt_wrapFunction1(jur_MatchResultImpl_getConsumed), "$end0", $rt_wrapFunction0(jur_MatchResultImpl_end), "$end", $rt_wrapFunction1(jur_MatchResultImpl_end0), "$setStart", $rt_wrapFunction2(jur_MatchResultImpl_setStart),
-"$setEnd", $rt_wrapFunction2(jur_MatchResultImpl_setEnd), "$getStart", $rt_wrapFunction1(jur_MatchResultImpl_getStart), "$getEnd", $rt_wrapFunction1(jur_MatchResultImpl_getEnd), "$group", $rt_wrapFunction1(jur_MatchResultImpl_group), "$getGroupNoCheck", $rt_wrapFunction1(jur_MatchResultImpl_getGroupNoCheck), "$start", $rt_wrapFunction1(jur_MatchResultImpl_start), "$finalizeMatch", $rt_wrapFunction0(jur_MatchResultImpl_finalizeMatch), "$getEnterCounter", $rt_wrapFunction1(jur_MatchResultImpl_getEnterCounter),
-"$setEnterCounter", $rt_wrapFunction2(jur_MatchResultImpl_setEnterCounter), "$setValid", $rt_wrapFunction0(jur_MatchResultImpl_setValid), "$reset0", $rt_wrapFunction3(jur_MatchResultImpl_reset0), "$reset2", $rt_wrapFunction0(jur_MatchResultImpl_reset), "$setStartIndex", $rt_wrapFunction1(jur_MatchResultImpl_setStartIndex), "$getLeftBound", $rt_wrapFunction0(jur_MatchResultImpl_getLeftBound), "$getRightBound", $rt_wrapFunction0(jur_MatchResultImpl_getRightBound), "$setMode", $rt_wrapFunction1(jur_MatchResultImpl_setMode),
-"$mode", $rt_wrapFunction0(jur_MatchResultImpl_mode), "$useAnchoringBounds", $rt_wrapFunction1(jur_MatchResultImpl_useAnchoringBounds), "$hasAnchoringBounds", $rt_wrapFunction0(jur_MatchResultImpl_hasAnchoringBounds), "$hasTransparentBounds", $rt_wrapFunction0(jur_MatchResultImpl_hasTransparentBounds), "$getPreviousMatchEnd", $rt_wrapFunction0(jur_MatchResultImpl_getPreviousMatchEnd)],
+"$setEnd", $rt_wrapFunction2(jur_MatchResultImpl_setEnd), "$getStart", $rt_wrapFunction1(jur_MatchResultImpl_getStart), "$getEnd", $rt_wrapFunction1(jur_MatchResultImpl_getEnd), "$group", $rt_wrapFunction1(jur_MatchResultImpl_group), "$getGroupNoCheck", $rt_wrapFunction1(jur_MatchResultImpl_getGroupNoCheck), "$start0", $rt_wrapFunction0(jur_MatchResultImpl_start0), "$start", $rt_wrapFunction1(jur_MatchResultImpl_start), "$finalizeMatch", $rt_wrapFunction0(jur_MatchResultImpl_finalizeMatch), "$getEnterCounter",
+$rt_wrapFunction1(jur_MatchResultImpl_getEnterCounter), "$setEnterCounter", $rt_wrapFunction2(jur_MatchResultImpl_setEnterCounter), "$setValid", $rt_wrapFunction0(jur_MatchResultImpl_setValid), "$isValid", $rt_wrapFunction0(jur_MatchResultImpl_isValid), "$reset0", $rt_wrapFunction3(jur_MatchResultImpl_reset0), "$reset2", $rt_wrapFunction0(jur_MatchResultImpl_reset), "$setStartIndex", $rt_wrapFunction1(jur_MatchResultImpl_setStartIndex), "$getLeftBound", $rt_wrapFunction0(jur_MatchResultImpl_getLeftBound), "$getRightBound",
+$rt_wrapFunction0(jur_MatchResultImpl_getRightBound), "$setMode", $rt_wrapFunction1(jur_MatchResultImpl_setMode), "$mode", $rt_wrapFunction0(jur_MatchResultImpl_mode), "$useAnchoringBounds", $rt_wrapFunction1(jur_MatchResultImpl_useAnchoringBounds), "$hasAnchoringBounds", $rt_wrapFunction0(jur_MatchResultImpl_hasAnchoringBounds), "$hasTransparentBounds", $rt_wrapFunction0(jur_MatchResultImpl_hasTransparentBounds), "$getPreviousMatchEnd", $rt_wrapFunction0(jur_MatchResultImpl_getPreviousMatchEnd)],
 jur_UCIRangeSet, "UCIRangeSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_96", $rt_wrapFunction1(jur_UCIRangeSet__init_0), "$accepts", $rt_wrapFunction2(jur_UCIRangeSet_accepts), "$getName", $rt_wrapFunction0(jur_UCIRangeSet_getName)],
-juf_Function, 0, jl_Object, [], 1537, 0, 0, 0,
 jur_AbstractCharClass$LazyJavaJavaIdentifierPart$1, "AbstractCharClass$LazyJavaJavaIdentifierPart$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_61", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaJavaIdentifierPart$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaJavaIdentifierPart$1_contains)],
+oajvo_OpenQasmParser$Program, 0, jl_Record, [], 17, 0, 0, ["$_init_159", $rt_wrapFunction4(oajvo_OpenQasmParser$Program__init_), "$spec", $rt_wrapFunction0(oajvo_OpenQasmParser$Program_spec), "$levelLocations", $rt_wrapFunction0(oajvo_OpenQasmParser$Program_levelLocations), "$barriers", $rt_wrapFunction0(oajvo_OpenQasmParser$Program_barriers), "$qubitNames", $rt_wrapFunction0(oajvo_OpenQasmParser$Program_qubitNames)],
 otp_Platform, 0, jl_Object, [], 17, 0, 0, 0,
 jnc_CodingErrorAction, 0, jl_Object, [], 1, 0, () => jnc_CodingErrorAction_$callClinit(), ["$_init_", $rt_wrapFunction1(jnc_CodingErrorAction__init_0)],
 jl_Boolean, "Boolean", 7, jl_Object, [ji_Serializable, jl_Comparable], 1, 0, () => jl_Boolean_$callClinit(), ["$_init_60", $rt_wrapFunction1(jl_Boolean__init_0), "$compareTo2", $rt_wrapFunction1(jl_Boolean_compareTo), "$toString", $rt_wrapFunction0(jl_Boolean_toString0), "$hashCode2", $rt_wrapFunction0(jl_Boolean_hashCode0), "$equals", $rt_wrapFunction1(jl_Boolean_equals), "$compareTo1", $rt_wrapFunction1(jl_Boolean_compareTo0)],
@@ -26970,11 +28175,12 @@ ju_NoSuchElementException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt
 jlr_AnnotatedElement, 0, jl_Object, [], 1537, 0, 0, 0,
 jlr_GenericDeclaration, 0, jl_Object, [jlr_AnnotatedElement], 1537, 0, 0, 0,
 jur_NegativeLookBehind, "NegativeLookBehind", 3, jur_AtomicJointSet, [], 0, 0, 0, ["$_init_44", $rt_wrapFunction2(jur_NegativeLookBehind__init_), "$matches", $rt_wrapFunction3(jur_NegativeLookBehind_matches), "$hasConsumed", $rt_wrapFunction1(jur_NegativeLookBehind_hasConsumed), "$getName", $rt_wrapFunction0(jur_NegativeLookBehind_getName)],
-oajqg_U3, "U3", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_114", $rt_wrapFunction4(oajqg_U3__init_)],
-jur_BackReferenceSet, "BackReferenceSet", 3, jur_CIBackReferenceSet, [], 0, 0, 0, ["$_init_10", $rt_wrapFunction2(jur_BackReferenceSet__init_), "$matches", $rt_wrapFunction3(jur_BackReferenceSet_matches), "$findBack", $rt_wrapFunction4(jur_BackReferenceSet_findBack), "$first", $rt_wrapFunction1(jur_BackReferenceSet_first), "$getName", $rt_wrapFunction0(jur_BackReferenceSet_getName)],
-jur_DotQuantifierSet, "DotQuantifierSet", 3, jur_QuantifierSet, [], 0, 0, 0, ["$_init_92", $rt_wrapFunction4(jur_DotQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_DotQuantifierSet_matches), "$getName", $rt_wrapFunction0(jur_DotQuantifierSet_getName)],
+oajw_JqapiBridge$sampleExpectation$lambda$_18_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajw_JqapiBridge$sampleExpectation$lambda$_18_0__init_), "$test", $rt_wrapFunction1(oajw_JqapiBridge$sampleExpectation$lambda$_18_0_test0), "$test2", $rt_wrapFunction1(oajw_JqapiBridge$sampleExpectation$lambda$_18_0_test)],
+oajqg_U3, "U3", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_114", $rt_wrapFunction4(oajqg_U3__init_)],
+jur_BackReferenceSet, "BackReferenceSet", 3, jur_CIBackReferenceSet, [], 0, 0, 0, ["$_init_10", $rt_wrapFunction2(jur_BackReferenceSet__init_), "$matches", $rt_wrapFunction3(jur_BackReferenceSet_matches), "$find", $rt_wrapFunction3(jur_BackReferenceSet_find), "$findBack", $rt_wrapFunction4(jur_BackReferenceSet_findBack), "$first", $rt_wrapFunction1(jur_BackReferenceSet_first), "$getName", $rt_wrapFunction0(jur_BackReferenceSet_getName)],
+jur_DotQuantifierSet, "DotQuantifierSet", 3, jur_QuantifierSet, [], 0, 0, 0, ["$_init_92", $rt_wrapFunction4(jur_DotQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_DotQuantifierSet_matches), "$find", $rt_wrapFunction3(jur_DotQuantifierSet_find), "$getName", $rt_wrapFunction0(jur_DotQuantifierSet_getName)],
 jur_AbstractCharClass$LazyJavaJavaIdentifierPart, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaJavaIdentifierPart__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaJavaIdentifierPart_computeValue)],
-jur_UnifiedQuantifierSet, "UnifiedQuantifierSet", 3, jur_LeafQuantifierSet, [], 0, 0, 0, ["$_init_91", $rt_wrapFunction1(jur_UnifiedQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_UnifiedQuantifierSet_matches)],
+jur_UnifiedQuantifierSet, "UnifiedQuantifierSet", 3, jur_LeafQuantifierSet, [], 0, 0, 0, ["$_init_91", $rt_wrapFunction1(jur_UnifiedQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_UnifiedQuantifierSet_matches), "$find", $rt_wrapFunction3(jur_UnifiedQuantifierSet_find)],
 jlr_Type, 0, jl_Object, [], 1537, 0, 0, 0,
 jl_Class, "Class", 7, jl_Object, [jlr_GenericDeclaration, jlr_Type], 17, 0, 0, ["$toString", $rt_wrapFunction0(jl_Class_toString), "$getClassInfo", $rt_wrapFunction0(jl_Class_getClassInfo), "$isInstance", $rt_wrapFunction1(jl_Class_isInstance), "$isAssignableFrom", $rt_wrapFunction1(jl_Class_isAssignableFrom), "$getName", $rt_wrapFunction0(jl_Class_getName), "$isPrimitive", $rt_wrapFunction0(jl_Class_isPrimitive), "$isEnum", $rt_wrapFunction0(jl_Class_isEnum), "$isInterface", $rt_wrapFunction0(jl_Class_isInterface),
 "$getComponentType", $rt_wrapFunction0(jl_Class_getComponentType), "$getSuperclass", $rt_wrapFunction0(jl_Class_getSuperclass), "$getEnumConstants", $rt_wrapFunction0(jl_Class_getEnumConstants), "$initialize", $rt_wrapFunction0(jl_Class_initialize)],
@@ -26982,25 +28188,28 @@ ju_BitSet, 0, jl_Object, [jl_Cloneable, ji_Serializable], 1, 0, 0, ["$_init_0", 
 $rt_wrapFunction1(ju_BitSet_intersects), "$and", $rt_wrapFunction1(ju_BitSet_and), "$andNot", $rt_wrapFunction1(ju_BitSet_andNot), "$or", $rt_wrapFunction1(ju_BitSet_or), "$xor", $rt_wrapFunction1(ju_BitSet_xor), "$isEmpty", $rt_wrapFunction0(ju_BitSet_isEmpty)],
 jur_AbstractCharClass$LazyJavaJavaIdentifierStart$1, "AbstractCharClass$LazyJavaJavaIdentifierStart$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_110", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaJavaIdentifierStart$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaJavaIdentifierStart$1_contains)],
 ju_Arrays, 0, jl_Object, [], 1, 0, 0, 0,
-jur_CharSet, "CharSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_90", $rt_wrapFunction1(jur_CharSet__init_0), "$charCount", $rt_wrapFunction0(jur_CharSet_charCount), "$accepts", $rt_wrapFunction2(jur_CharSet_accepts), "$findBack", $rt_wrapFunction4(jur_CharSet_findBack), "$getName", $rt_wrapFunction0(jur_CharSet_getName), "$getChar", $rt_wrapFunction0(jur_CharSet_getChar), "$first", $rt_wrapFunction1(jur_CharSet_first)],
+jur_CharSet, "CharSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_90", $rt_wrapFunction1(jur_CharSet__init_0), "$charCount", $rt_wrapFunction0(jur_CharSet_charCount), "$accepts", $rt_wrapFunction2(jur_CharSet_accepts), "$find", $rt_wrapFunction3(jur_CharSet_find), "$findBack", $rt_wrapFunction4(jur_CharSet_findBack), "$getName", $rt_wrapFunction0(jur_CharSet_getName), "$getChar", $rt_wrapFunction0(jur_CharSet_getChar), "$first", $rt_wrapFunction1(jur_CharSet_first)],
 jur_CharClass$3, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_104", $rt_wrapFunction3(jur_CharClass$3__init_), "$contains", $rt_wrapFunction1(jur_CharClass$3_contains)],
 jur_CharClass$4, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_102", $rt_wrapFunction4(jur_CharClass$4__init_), "$contains", $rt_wrapFunction1(jur_CharClass$4_contains)],
-oajqg_ControlledSwap, "ControlledSwap", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_116", $rt_wrapFunction3(oajqg_ControlledSwap__init_)],
+oajqg_ControlledSwap, "ControlledSwap", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_116", $rt_wrapFunction3(oajqg_ControlledSwap__init_)],
 jur_CharClass$1, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_103", $rt_wrapFunction2(jur_CharClass$1__init_), "$contains", $rt_wrapFunction1(jur_CharClass$1_contains)],
 jur_CharClass$2, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_104", $rt_wrapFunction3(jur_CharClass$2__init_), "$contains", $rt_wrapFunction1(jur_CharClass$2_contains)],
 jur_CharClass$7, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_103", $rt_wrapFunction2(jur_CharClass$7__init_), "$contains", $rt_wrapFunction1(jur_CharClass$7_contains)],
 jur_CharClass$8, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_105", $rt_wrapFunction3(jur_CharClass$8__init_), "$contains", $rt_wrapFunction1(jur_CharClass$8_contains)],
-jur_CharClass$5, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_102", $rt_wrapFunction4(jur_CharClass$5__init_), "$contains", $rt_wrapFunction1(jur_CharClass$5_contains)],
-jur_CharClass$6, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_103", $rt_wrapFunction2(jur_CharClass$6__init_), "$contains", $rt_wrapFunction1(jur_CharClass$6_contains)],
+jur_CharClass$5, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_102", $rt_wrapFunction4(jur_CharClass$5__init_), "$contains", $rt_wrapFunction1(jur_CharClass$5_contains)]]);
+$rt_metadata([jur_CharClass$6, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_103", $rt_wrapFunction2(jur_CharClass$6__init_), "$contains", $rt_wrapFunction1(jur_CharClass$6_contains)],
+oajvl_CircuitLinter$Diagnostic, "CircuitLinter$Diagnostic", 12, jl_Record, [], 17, 0, 0, ["$_init_152", function(var_1, var_2, var_3, var_4, var_5, var_6, var_7) { oajvl_CircuitLinter$Diagnostic__init_(this, var_1, var_2, var_3, var_4, var_5, var_6, var_7); }, "$toString", $rt_wrapFunction0(oajvl_CircuitLinter$Diagnostic_toString), "$hashCode2", $rt_wrapFunction0(oajvl_CircuitLinter$Diagnostic_hashCode), "$equals", $rt_wrapFunction1(oajvl_CircuitLinter$Diagnostic_equals), "$rule", $rt_wrapFunction0(oajvl_CircuitLinter$Diagnostic_rule),
+"$severity", $rt_wrapFunction0(oajvl_CircuitLinter$Diagnostic_severity), "$levels", $rt_wrapFunction0(oajvl_CircuitLinter$Diagnostic_levels), "$qubits", $rt_wrapFunction0(oajvl_CircuitLinter$Diagnostic_qubits), "$locations", $rt_wrapFunction0(oajvl_CircuitLinter$Diagnostic_locations)],
 ju_ListIterator, 0, jl_Object, [ju_Iterator], 1537, 0, 0, 0,
 ju_Collections$5, 0, jl_Object, [ju_ListIterator], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(ju_Collections$5__init_)],
 jm_BigDecimal, 0, jl_Number, [jl_Comparable, ji_Serializable], 1, 0, () => jm_BigDecimal_$callClinit(), ["$_init_32", $rt_wrapFunction3(jm_BigDecimal__init_1), "$_init_", $rt_wrapFunction1(jm_BigDecimal__init_4), "$_init_65", $rt_wrapFunction2(jm_BigDecimal__init_2), "$signum", $rt_wrapFunction0(jm_BigDecimal_signum), "$setScale", $rt_wrapFunction2(jm_BigDecimal_setScale), "$doubleValue", $rt_wrapFunction0(jm_BigDecimal_doubleValue)],
 ju_List, 0, jl_Object, [ju_SequencedCollection], 1537, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$getFirst", $rt_wrapFunction0(ju_List_getFirst)],
 ju_AbstractList, 0, ju_AbstractCollection, [ju_List], 1025, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$getFirst", $rt_wrapFunction0(ju_List_getFirst), "$_init_0", $rt_wrapFunction0(ju_AbstractList__init_), "$iterator", $rt_wrapFunction0(ju_AbstractList_iterator), "$listIterator", $rt_wrapFunction1(ju_AbstractList_listIterator), "$subList", $rt_wrapFunction2(ju_AbstractList_subList),
-"$hashCode2", $rt_wrapFunction0(ju_AbstractList_hashCode), "$equals", $rt_wrapFunction1(ju_AbstractList_equals)]]);
-$rt_metadata([ju_RandomAccess, 0, jl_Object, [], 1537, 0, 0, 0,
+"$hashCode2", $rt_wrapFunction0(ju_AbstractList_hashCode), "$equals", $rt_wrapFunction1(ju_AbstractList_equals)],
+ju_RandomAccess, 0, jl_Object, [], 1537, 0, 0, 0,
 ju_TemplateCollections$AbstractImmutableList, 0, ju_AbstractList, [ju_RandomAccess], 1024, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$getFirst", $rt_wrapFunction0(ju_List_getFirst), "$_init_0", $rt_wrapFunction0(ju_TemplateCollections$AbstractImmutableList__init_)],
-ju_Collections$3, 0, ju_TemplateCollections$AbstractImmutableList, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$getFirst", $rt_wrapFunction0(ju_List_getFirst), "$_init_0", $rt_wrapFunction0(ju_Collections$3__init_)],
+ju_Collections$3, "Collections$3", 2, ju_TemplateCollections$AbstractImmutableList, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$getFirst", $rt_wrapFunction0(ju_List_getFirst), "$_init_0", $rt_wrapFunction0(ju_Collections$3__init_), "$get0", $rt_wrapFunction1(ju_Collections$3_get), "$size", $rt_wrapFunction0(ju_Collections$3_size), "$iterator", $rt_wrapFunction0(ju_Collections$3_iterator),
+"$isEmpty", $rt_wrapFunction0(ju_Collections$3_isEmpty)],
 jur_DotSet, "DotSet", 3, jur_JointSet, [], 16, 0, 0, ["$_init_94", $rt_wrapFunction1(jur_DotSet__init_), "$matches", $rt_wrapFunction3(jur_DotSet_matches), "$getName", $rt_wrapFunction0(jur_DotSet_getName), "$setNext", $rt_wrapFunction1(jur_DotSet_setNext), "$getType", $rt_wrapFunction0(jur_DotSet_getType), "$hasConsumed", $rt_wrapFunction1(jur_DotSet_hasConsumed)],
 jur_CharClass$9, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_105", $rt_wrapFunction3(jur_CharClass$9__init_), "$contains", $rt_wrapFunction1(jur_CharClass$9_contains)],
 ju_Collections$4, 0, jl_Object, [ju_Iterator], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(ju_Collections$4__init_), "$hasNext", $rt_wrapFunction0(ju_Collections$4_hasNext), "$next", $rt_wrapFunction0(ju_Collections$4_next)],
@@ -27012,25 +28221,25 @@ ju_Collections$1, 0, ju_TemplateCollections$AbstractImmutableSet, [], 0, 0, 0, [
 ju_TemplateCollections$AbstractImmutableMap, 0, ju_AbstractMap, [], 1024, 0, 0, ["$_init_0", $rt_wrapFunction0(ju_TemplateCollections$AbstractImmutableMap__init_), "$put", $rt_wrapFunction2(ju_TemplateCollections$AbstractImmutableMap_put)],
 ju_Collections$2, "Collections$2", 2, ju_TemplateCollections$AbstractImmutableMap, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(ju_Collections$2__init_), "$entrySet", $rt_wrapFunction0(ju_Collections$2_entrySet), "$size", $rt_wrapFunction0(ju_Collections$2_size), "$get", $rt_wrapFunction1(ju_Collections$2_get), "$containsKey", $rt_wrapFunction1(ju_Collections$2_containsKey)],
 jur_CICharSet, "CICharSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_90", $rt_wrapFunction1(jur_CICharSet__init_0), "$accepts", $rt_wrapFunction2(jur_CICharSet_accepts), "$getName", $rt_wrapFunction0(jur_CICharSet_getName)],
-jur_SupplCharSet, "SupplCharSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_4", $rt_wrapFunction1(jur_SupplCharSet__init_), "$accepts", $rt_wrapFunction2(jur_SupplCharSet_accepts), "$findBack", $rt_wrapFunction4(jur_SupplCharSet_findBack), "$getName", $rt_wrapFunction0(jur_SupplCharSet_getName), "$getCodePoint", $rt_wrapFunction0(jur_SupplCharSet_getCodePoint), "$first", $rt_wrapFunction1(jur_SupplCharSet_first)],
+jur_SupplCharSet, "SupplCharSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_4", $rt_wrapFunction1(jur_SupplCharSet__init_), "$accepts", $rt_wrapFunction2(jur_SupplCharSet_accepts), "$find", $rt_wrapFunction3(jur_SupplCharSet_find), "$findBack", $rt_wrapFunction4(jur_SupplCharSet_findBack), "$getName", $rt_wrapFunction0(jur_SupplCharSet_getName), "$getCodePoint", $rt_wrapFunction0(jur_SupplCharSet_getCodePoint), "$first", $rt_wrapFunction1(jur_SupplCharSet_first)],
 otrr_ReflectionInfo, 0, jl_Object, [], 1025, 0, 0, 0,
-jusi_SimpleIntStreamImpl$ArrayFillingConsumer, 0, jl_Object, [juf_IntPredicate], 0, 0, 0, ["$_init_12", $rt_wrapFunction1(jusi_SimpleIntStreamImpl$ArrayFillingConsumer__init_), "$test5", $rt_wrapFunction1(jusi_SimpleIntStreamImpl$ArrayFillingConsumer_test)],
-oajqg_ControlledY, "ControlledY", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_115", $rt_wrapFunction2(oajqg_ControlledY__init_)],
-oajqg_ControlledZ, "ControlledZ", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_115", $rt_wrapFunction2(oajqg_ControlledZ__init_)],
+jusi_SimpleIntStreamImpl$ArrayFillingConsumer, 0, jl_Object, [juf_IntPredicate], 0, 0, 0, ["$_init_12", $rt_wrapFunction1(jusi_SimpleIntStreamImpl$ArrayFillingConsumer__init_), "$test6", $rt_wrapFunction1(jusi_SimpleIntStreamImpl$ArrayFillingConsumer_test)],
+oajqg_ControlledY, "ControlledY", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_115", $rt_wrapFunction2(oajqg_ControlledY__init_)],
+oajqg_ControlledZ, "ControlledZ", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_115", $rt_wrapFunction2(oajqg_ControlledZ__init_)],
 jur_AbstractCharClass$LazyCategoryScope, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_37", $rt_wrapFunction2(jur_AbstractCharClass$LazyCategoryScope__init_1), "$_init_38", $rt_wrapFunction3(jur_AbstractCharClass$LazyCategoryScope__init_0), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyCategoryScope_computeValue)],
-oajqg_Oracle, "Oracle", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_118", $rt_wrapFunction2(oajqg_Oracle__init_)],
+oajqg_Oracle, "Oracle", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_118", $rt_wrapFunction2(oajqg_Oracle__init_)],
 jur_AbstractLineTerminator, 0, jl_Object, [], 1024, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractLineTerminator__init_)],
 ju_SequencedSet, 0, jl_Object, [ju_SequencedCollection, ju_Set], 1537, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream)],
 jur_AbstractCharClass$LazyJavaTitleCase$1, "AbstractCharClass$LazyJavaTitleCase$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_138", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaTitleCase$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaTitleCase$1_contains)],
 jnc_StandardCharsets, 0, jl_Object, [], 17, 0, () => jnc_StandardCharsets_$callClinit(), 0,
 ju_Collections$_clinit_$lambda$_59_0, 0, jl_Object, [ju_Comparator], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(ju_Collections$_clinit_$lambda$_59_0__init_)],
-oajvo_OpenQasmGates$Mapping, "OpenQasmGates$Mapping", 12, jl_Record, [], 16, 0, 0, ["$_init_164", function(var_1, var_2, var_3, var_4, var_5) { oajvo_OpenQasmGates$Mapping__init_0(this, var_1, var_2, var_3, var_4, var_5); }, "$_init_70", function(var_1, var_2, var_3, var_4, var_5) { oajvo_OpenQasmGates$Mapping__init_1(this, var_1, var_2, var_3, var_4, var_5); }, "$toString", $rt_wrapFunction0(oajvo_OpenQasmGates$Mapping_toString), "$hashCode2", $rt_wrapFunction0(oajvo_OpenQasmGates$Mapping_hashCode), "$equals",
+oajvo_OpenQasmGates$Mapping, "OpenQasmGates$Mapping", 13, jl_Record, [], 16, 0, 0, ["$_init_168", function(var_1, var_2, var_3, var_4, var_5) { oajvo_OpenQasmGates$Mapping__init_0(this, var_1, var_2, var_3, var_4, var_5); }, "$_init_70", function(var_1, var_2, var_3, var_4, var_5) { oajvo_OpenQasmGates$Mapping__init_1(this, var_1, var_2, var_3, var_4, var_5); }, "$toString", $rt_wrapFunction0(oajvo_OpenQasmGates$Mapping_toString), "$hashCode2", $rt_wrapFunction0(oajvo_OpenQasmGates$Mapping_hashCode), "$equals",
 $rt_wrapFunction1(oajvo_OpenQasmGates$Mapping_equals), "$name", $rt_wrapFunction0(oajvo_OpenQasmGates$Mapping_name), "$kind", $rt_wrapFunction0(oajvo_OpenQasmGates$Mapping_kind), "$controls0", $rt_wrapFunction0(oajvo_OpenQasmGates$Mapping_controls), "$targets0", $rt_wrapFunction0(oajvo_OpenQasmGates$Mapping_targets), "$parameters", $rt_wrapFunction0(oajvo_OpenQasmGates$Mapping_parameters)],
 jur_AbstractCharClass$LazyJavaMirrored$1, "AbstractCharClass$LazyJavaMirrored$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_149", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaMirrored$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaMirrored$1_contains)],
-oajvs_GateSpec$_init_$lambda$_0_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvs_GateSpec$_init_$lambda$_0_0__init_), "$apply1", $rt_wrapFunction1(oajvs_GateSpec$_init_$lambda$_0_0_apply0), "$apply", $rt_wrapFunction1(oajvs_GateSpec$_init_$lambda$_0_0_apply)],
+oajvs_GateSpec$_init_$lambda$_0_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvs_GateSpec$_init_$lambda$_0_0__init_), "$apply3", $rt_wrapFunction1(oajvs_GateSpec$_init_$lambda$_0_0_apply0), "$apply1", $rt_wrapFunction1(oajvs_GateSpec$_init_$lambda$_0_0_apply)],
 ju_AbstractMap$KeySet, 0, ju_AbstractSet, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$iterator", $rt_wrapFunction0(ju_AbstractMap$KeySet_iterator), "$size", $rt_wrapFunction0(ju_AbstractMap$KeySet_size)],
 ju_LinkedHashMapIterator, 0, jl_Object, [], 0, 0, 0, ["$_init_30", $rt_wrapFunction2(ju_LinkedHashMapIterator__init_), "$hasNext", $rt_wrapFunction0(ju_LinkedHashMapIterator_hasNext), "$checkConcurrentMod", $rt_wrapFunction0(ju_LinkedHashMapIterator_checkConcurrentMod), "$makeNext", $rt_wrapFunction0(ju_LinkedHashMapIterator_makeNext)],
-jur_AbstractCharClass$LazyJavaISOControl$1, "AbstractCharClass$LazyJavaISOControl$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_151", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaISOControl$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaISOControl$1_contains)],
+jur_AbstractCharClass$LazyJavaISOControl$1, "AbstractCharClass$LazyJavaISOControl$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_153", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaISOControl$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaISOControl$1_contains)],
 jur_UEOLSet, "UEOLSet", 3, jur_AbstractSet, [], 16, 0, 0, ["$_init_4", $rt_wrapFunction1(jur_UEOLSet__init_), "$matches", $rt_wrapFunction3(jur_UEOLSet_matches), "$hasConsumed", $rt_wrapFunction1(jur_UEOLSet_hasConsumed), "$getName", $rt_wrapFunction0(jur_UEOLSet_getName)],
 oajv_CircuitSpecs$1, 0, jl_Object, [], 32768, 0, () => oajv_CircuitSpecs$1_$callClinit(), 0,
 jur_UCICharSet, "UCICharSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_90", $rt_wrapFunction1(jur_UCICharSet__init_), "$accepts", $rt_wrapFunction2(jur_UCICharSet_accepts), "$getName", $rt_wrapFunction0(jur_UCICharSet_getName)],
@@ -27040,10 +28249,11 @@ jus_Stream, 0, jl_Object, [jus_BaseStream], 1537, 0, 0, ["$toList", $rt_wrapFunc
 jusi_SimpleStreamImpl, 0, jl_Object, [jus_Stream], 1025, 0, 0, ["$toList", $rt_wrapFunction0(jus_Stream_toList), "$_init_0", $rt_wrapFunction0(jusi_SimpleStreamImpl__init_), "$filter", $rt_wrapFunction1(jusi_SimpleStreamImpl_filter), "$map", $rt_wrapFunction1(jusi_SimpleStreamImpl_map), "$flatMap", $rt_wrapFunction1(jusi_SimpleStreamImpl_flatMap), "$distinct", $rt_wrapFunction0(jusi_SimpleStreamImpl_distinct), "$toArray0", $rt_wrapFunction0(jusi_SimpleStreamImpl_toArray0), "$toArray1", $rt_wrapFunction1(jusi_SimpleStreamImpl_toArray),
 "$collect", $rt_wrapFunction1(jusi_SimpleStreamImpl_collect), "$count", $rt_wrapFunction0(jusi_SimpleStreamImpl_count), "$anyMatch", $rt_wrapFunction1(jusi_SimpleStreamImpl_anyMatch), "$allMatch", $rt_wrapFunction1(jusi_SimpleStreamImpl_allMatch), "$findFirst", $rt_wrapFunction0(jusi_SimpleStreamImpl_findFirst), "$iterator", $rt_wrapFunction0(jusi_SimpleStreamImpl_iterator), "$close", $rt_wrapFunction0(jusi_SimpleStreamImpl_close)],
 jusi_WrappingStreamImpl, 0, jusi_SimpleStreamImpl, [], 1025, 0, 0, ["$toList", $rt_wrapFunction0(jus_Stream_toList), "$_init_74", $rt_wrapFunction1(jusi_WrappingStreamImpl__init_), "$next2", $rt_wrapFunction1(jusi_WrappingStreamImpl_next), "$estimateSize", $rt_wrapFunction0(jusi_WrappingStreamImpl_estimateSize)],
-jur_LowSurrogateCharSet, "LowSurrogateCharSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_90", $rt_wrapFunction1(jur_LowSurrogateCharSet__init_), "$setNext", $rt_wrapFunction1(jur_LowSurrogateCharSet_setNext), "$matches", $rt_wrapFunction3(jur_LowSurrogateCharSet_matches), "$findBack", $rt_wrapFunction4(jur_LowSurrogateCharSet_findBack), "$getName", $rt_wrapFunction0(jur_LowSurrogateCharSet_getName), "$first", $rt_wrapFunction1(jur_LowSurrogateCharSet_first), "$hasConsumed", $rt_wrapFunction1(jur_LowSurrogateCharSet_hasConsumed)],
+jur_LowSurrogateCharSet, "LowSurrogateCharSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_90", $rt_wrapFunction1(jur_LowSurrogateCharSet__init_), "$setNext", $rt_wrapFunction1(jur_LowSurrogateCharSet_setNext), "$matches", $rt_wrapFunction3(jur_LowSurrogateCharSet_matches), "$find", $rt_wrapFunction3(jur_LowSurrogateCharSet_find), "$findBack", $rt_wrapFunction4(jur_LowSurrogateCharSet_findBack), "$getName", $rt_wrapFunction0(jur_LowSurrogateCharSet_getName), "$first", $rt_wrapFunction1(jur_LowSurrogateCharSet_first),
+"$hasConsumed", $rt_wrapFunction1(jur_LowSurrogateCharSet_hasConsumed)],
 jl_AssertionError, 0, jl_Error, [], 1, 0, 0, ["$_init_15", $rt_wrapFunction2(jl_AssertionError__init_)],
-oajqs_SamplingOptions$_init_$lambda$_0_0, "SamplingOptions$<init>$lambda$_0_0", 18, jl_Object, [juf_Supplier], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajqs_SamplingOptions$_init_$lambda$_0_0__init_), "$get5", $rt_wrapFunction0(oajqs_SamplingOptions$_init_$lambda$_0_0_get0), "$get6", $rt_wrapFunction0(oajqs_SamplingOptions$_init_$lambda$_0_0_get)],
-ju_Map$Entry, 0, jl_Object, [], 1537, 0, 0, 0,
+oajqs_SamplingOptions$_init_$lambda$_0_0, "SamplingOptions$<init>$lambda$_0_0", 19, jl_Object, [juf_Supplier], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajqs_SamplingOptions$_init_$lambda$_0_0__init_), "$get5", $rt_wrapFunction0(oajqs_SamplingOptions$_init_$lambda$_0_0_get0), "$get6", $rt_wrapFunction0(oajqs_SamplingOptions$_init_$lambda$_0_0_get)]]);
+$rt_metadata([ju_Map$Entry, 0, jl_Object, [], 1537, 0, 0, 0,
 ju_TemplateCollections$ImmutableEntry, "TemplateCollections$ImmutableEntry", 2, jl_Object, [ju_Map$Entry, jl_Cloneable], 0, 0, 0, ["$_init_21", $rt_wrapFunction2(ju_TemplateCollections$ImmutableEntry__init_0), "$equals", $rt_wrapFunction1(ju_TemplateCollections$ImmutableEntry_equals), "$getKey", $rt_wrapFunction0(ju_TemplateCollections$ImmutableEntry_getKey), "$getValue", $rt_wrapFunction0(ju_TemplateCollections$ImmutableEntry_getValue), "$hashCode2", $rt_wrapFunction0(ju_TemplateCollections$ImmutableEntry_hashCode),
 "$toString", $rt_wrapFunction0(ju_TemplateCollections$ImmutableEntry_toString)],
 jur_CompositeGroupQuantifierSet, "CompositeGroupQuantifierSet", 3, jur_GroupQuantifierSet, [], 0, 0, 0, ["$_init_77", function(var_1, var_2, var_3, var_4, var_5) { jur_CompositeGroupQuantifierSet__init_(this, var_1, var_2, var_3, var_4, var_5); }, "$matches", $rt_wrapFunction3(jur_CompositeGroupQuantifierSet_matches), "$getName", $rt_wrapFunction0(jur_CompositeGroupQuantifierSet_getName)],
@@ -27051,8 +28261,8 @@ jur_RelCompositeGroupQuantifierSet, "RelCompositeGroupQuantifierSet", 3, jur_Com
 ju_ArrayList, "ArrayList", 2, ju_AbstractList, [jl_Cloneable, ji_Serializable, ju_RandomAccess], 1, 0, 0, ["$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_0", $rt_wrapFunction0(ju_ArrayList__init_4), "$_init_4", $rt_wrapFunction1(ju_ArrayList__init_1), "$_init_50", $rt_wrapFunction1(ju_ArrayList__init_3), "$ensureCapacity", $rt_wrapFunction1(ju_ArrayList_ensureCapacity), "$get0", $rt_wrapFunction1(ju_ArrayList_get), "$getFirst", $rt_wrapFunction0(ju_ArrayList_getFirst),
 "$size", $rt_wrapFunction0(ju_ArrayList_size), "$add", $rt_wrapFunction1(ju_ArrayList_add0), "$add2", $rt_wrapFunction2(ju_ArrayList_add), "$remove0", $rt_wrapFunction1(ju_ArrayList_remove), "$forEach", $rt_wrapFunction1(ju_ArrayList_forEach), "$toString", $rt_wrapFunction0(ju_ArrayList_toString), "$hashCode2", $rt_wrapFunction0(ju_ArrayList_hashCode)],
 otrf_VirtualFileSystem, 0, jl_Object, [], 1537, 0, 0, 0,
-jl_IllegalMonitorStateException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_IllegalMonitorStateException__init_)]]);
-$rt_metadata([ju_LinkedHashMapIterator$EntryIterator, 0, ju_LinkedHashMapIterator, [ju_Iterator], 0, 0, 0, ["$_init_30", $rt_wrapFunction2(ju_LinkedHashMapIterator$EntryIterator__init_), "$next1", $rt_wrapFunction0(ju_LinkedHashMapIterator$EntryIterator_next), "$next", $rt_wrapFunction0(ju_LinkedHashMapIterator$EntryIterator_next0)],
+jl_IllegalMonitorStateException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_IllegalMonitorStateException__init_)],
+ju_LinkedHashMapIterator$EntryIterator, 0, ju_LinkedHashMapIterator, [ju_Iterator], 0, 0, 0, ["$_init_30", $rt_wrapFunction2(ju_LinkedHashMapIterator$EntryIterator__init_), "$next1", $rt_wrapFunction0(ju_LinkedHashMapIterator$EntryIterator_next), "$next", $rt_wrapFunction0(ju_LinkedHashMapIterator$EntryIterator_next0)],
 jusi_FilteringStreamImpl$wrap$lambda$_1_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_100", $rt_wrapFunction2(jusi_FilteringStreamImpl$wrap$lambda$_1_0__init_), "$test", $rt_wrapFunction1(jusi_FilteringStreamImpl$wrap$lambda$_1_0_test)],
 jur_CompositeQuantifierSet, "CompositeQuantifierSet", 3, jur_LeafQuantifierSet, [], 0, 0, 0, ["$_init_93", $rt_wrapFunction4(jur_CompositeQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_CompositeQuantifierSet_matches), "$getName", $rt_wrapFunction0(jur_CompositeQuantifierSet_getName)],
 jm_Division, 0, jl_Object, [], 0, 0, 0, 0,
@@ -27062,11 +28272,11 @@ jur_RelAltGroupQuantifierSet, "RelAltGroupQuantifierSet", 3, jur_AltGroupQuantif
 ju_AbstractList$SubAbstractList, 0, ju_AbstractList, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$getFirst", $rt_wrapFunction0(ju_List_getFirst), "$_init_68", $rt_wrapFunction3(ju_AbstractList$SubAbstractList__init_), "$get0", $rt_wrapFunction1(ju_AbstractList$SubAbstractList_get), "$iterator", $rt_wrapFunction0(ju_AbstractList$SubAbstractList_iterator), "$listIterator", $rt_wrapFunction1(ju_AbstractList$SubAbstractList_listIterator),
 "$size", $rt_wrapFunction0(ju_AbstractList$SubAbstractList_size)],
 ju_AbstractList$SubAbstractListRandomAccess, 0, ju_AbstractList$SubAbstractList, [ju_RandomAccess], 16, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$getFirst", $rt_wrapFunction0(ju_List_getFirst), "$_init_68", $rt_wrapFunction3(ju_AbstractList$SubAbstractListRandomAccess__init_)],
-jl_String, "String", 7, jl_Object, [ji_Serializable, jl_Comparable, jl_CharSequence], 17, 0, () => jl_String_$callClinit(), ["$_init_0", $rt_wrapFunction0(jl_String__init_3), "$_init_52", $rt_wrapFunction1(jl_String__init_1), "$_init_2", $rt_wrapFunction1(jl_String__init_4), "$_init_32", $rt_wrapFunction3(jl_String__init_5), "$charAt", $rt_wrapFunction1(jl_String_charAt), "$length", $rt_wrapFunction0(jl_String_length), "$isEmpty", $rt_wrapFunction0(jl_String_isEmpty), "$compareTo4", $rt_wrapFunction1(jl_String_compareTo),
-"$startsWith0", $rt_wrapFunction2(jl_String_startsWith), "$startsWith1", $rt_wrapFunction1(jl_String_startsWith0), "$regionMatches", function(var_1, var_2, var_3, var_4, var_5) { return jl_String_regionMatches(this, var_1, var_2, var_3, var_4, var_5); }, "$indexOf", $rt_wrapFunction2(jl_String_indexOf1), "$indexOf0", $rt_wrapFunction1(jl_String_indexOf0), "$lastIndexOf1", $rt_wrapFunction2(jl_String_lastIndexOf), "$indexOf1", $rt_wrapFunction2(jl_String_indexOf), "$lastIndexOf0", $rt_wrapFunction2(jl_String_lastIndexOf0),
-"$substring", $rt_wrapFunction2(jl_String_substring), "$substring0", $rt_wrapFunction1(jl_String_substring0), "$subSequence", $rt_wrapFunction2(jl_String_subSequence), "$toString", $rt_wrapFunction0(jl_String_toString), "$toCharArray", $rt_wrapFunction0(jl_String_toCharArray), "$equals", $rt_wrapFunction1(jl_String_equals), "$getBytes", $rt_wrapFunction1(jl_String_getBytes), "$hashCode2", $rt_wrapFunction0(jl_String_hashCode), "$toLowerCase0", $rt_wrapFunction0(jl_String_toLowerCase), "$matches2", $rt_wrapFunction1(jl_String_matches),
-"$compareTo1", $rt_wrapFunction1(jl_String_compareTo0)],
-oajqs_SampledExpectation$TermEstimate, "SampledExpectation$TermEstimate", 18, jl_Record, [], 17, 0, 0, ["$_init_166", function(var_1, var_2, var_3, var_4, var_5) { oajqs_SampledExpectation$TermEstimate__init_0(this, var_1, var_2, var_3, var_4, var_5); }, "$toString", $rt_wrapFunction0(oajqs_SampledExpectation$TermEstimate_toString), "$hashCode2", $rt_wrapFunction0(oajqs_SampledExpectation$TermEstimate_hashCode), "$equals", $rt_wrapFunction1(oajqs_SampledExpectation$TermEstimate_equals), "$coeff", $rt_wrapFunction0(oajqs_SampledExpectation$TermEstimate_coeff),
+jl_String, "String", 7, jl_Object, [ji_Serializable, jl_Comparable, jl_CharSequence], 17, 0, () => jl_String_$callClinit(), ["$_init_0", $rt_wrapFunction0(jl_String__init_3), "$_init_52", $rt_wrapFunction1(jl_String__init_1), "$_init_2", $rt_wrapFunction1(jl_String__init_4), "$_init_32", $rt_wrapFunction3(jl_String__init_6), "$charAt", $rt_wrapFunction1(jl_String_charAt), "$length", $rt_wrapFunction0(jl_String_length), "$isEmpty", $rt_wrapFunction0(jl_String_isEmpty), "$isBlank", $rt_wrapFunction0(jl_String_isBlank),
+"$compareTo4", $rt_wrapFunction1(jl_String_compareTo), "$startsWith0", $rt_wrapFunction2(jl_String_startsWith), "$startsWith1", $rt_wrapFunction1(jl_String_startsWith0), "$regionMatches", function(var_1, var_2, var_3, var_4, var_5) { return jl_String_regionMatches(this, var_1, var_2, var_3, var_4, var_5); }, "$indexOf1", $rt_wrapFunction2(jl_String_indexOf), "$indexOf2", $rt_wrapFunction1(jl_String_indexOf1), "$lastIndexOf1", $rt_wrapFunction2(jl_String_lastIndexOf), "$indexOf0", $rt_wrapFunction2(jl_String_indexOf0),
+"$lastIndexOf0", $rt_wrapFunction2(jl_String_lastIndexOf0), "$substring", $rt_wrapFunction2(jl_String_substring), "$substring0", $rt_wrapFunction1(jl_String_substring0), "$subSequence", $rt_wrapFunction2(jl_String_subSequence), "$replace", $rt_wrapFunction2(jl_String_replace0), "$replace0", $rt_wrapFunction2(jl_String_replace), "$trim", $rt_wrapFunction0(jl_String_trim), "$toString", $rt_wrapFunction0(jl_String_toString), "$toCharArray", $rt_wrapFunction0(jl_String_toCharArray), "$equals", $rt_wrapFunction1(jl_String_equals),
+"$getBytes", $rt_wrapFunction1(jl_String_getBytes), "$hashCode2", $rt_wrapFunction0(jl_String_hashCode), "$toLowerCase0", $rt_wrapFunction0(jl_String_toLowerCase), "$matches2", $rt_wrapFunction1(jl_String_matches), "$split1", $rt_wrapFunction1(jl_String_split), "$compareTo1", $rt_wrapFunction1(jl_String_compareTo0)],
+oajqs_SampledExpectation$TermEstimate, "SampledExpectation$TermEstimate", 19, jl_Record, [], 17, 0, 0, ["$_init_170", function(var_1, var_2, var_3, var_4, var_5) { oajqs_SampledExpectation$TermEstimate__init_0(this, var_1, var_2, var_3, var_4, var_5); }, "$toString", $rt_wrapFunction0(oajqs_SampledExpectation$TermEstimate_toString), "$hashCode2", $rt_wrapFunction0(oajqs_SampledExpectation$TermEstimate_hashCode), "$equals", $rt_wrapFunction1(oajqs_SampledExpectation$TermEstimate_equals), "$coeff", $rt_wrapFunction0(oajqs_SampledExpectation$TermEstimate_coeff),
 "$pauli", $rt_wrapFunction0(oajqs_SampledExpectation$TermEstimate_pauli), "$shots", $rt_wrapFunction0(oajqs_SampledExpectation$TermEstimate_shots), "$mean", $rt_wrapFunction0(oajqs_SampledExpectation$TermEstimate_mean), "$variance", $rt_wrapFunction0(oajqs_SampledExpectation$TermEstimate_variance)],
 otjt_Uint16Array, 0, otjt_TypedArray, [], 1, 0, 0, 0,
 jnci_BufferedEncoder, 0, jnc_CharsetEncoder, [], 1025, 0, 0, ["$_init_80", $rt_wrapFunction3(jnci_BufferedEncoder__init_), "$encodeLoop", $rt_wrapFunction2(jnci_BufferedEncoder_encodeLoop)],
@@ -27093,40 +28303,41 @@ jur_AbstractCharClass$LazyJavaDigit$1, "AbstractCharClass$LazyJavaDigit$1", 3, j
 jusi_AllMatchConsumer, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_76", $rt_wrapFunction1(jusi_AllMatchConsumer__init_), "$test", $rt_wrapFunction1(jusi_AllMatchConsumer_test)],
 ju_HashMap$AbstractMapIterator, 0, jl_Object, [], 0, 0, 0, ["$_init_28", $rt_wrapFunction1(ju_HashMap$AbstractMapIterator__init_), "$hasNext", $rt_wrapFunction0(ju_HashMap$AbstractMapIterator_hasNext), "$checkConcurrentMod", $rt_wrapFunction0(ju_HashMap$AbstractMapIterator_checkConcurrentMod), "$makeNext", $rt_wrapFunction0(ju_HashMap$AbstractMapIterator_makeNext)],
 jl_NullPointerException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_", $rt_wrapFunction1(jl_NullPointerException__init_2), "$_init_0", $rt_wrapFunction0(jl_NullPointerException__init_1)],
-jus_Collector$of$lambda$_5_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jus_Collector$of$lambda$_5_0__init_), "$apply1", $rt_wrapFunction1(jus_Collector$of$lambda$_5_0_apply)],
+jus_Collector$of$lambda$_5_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jus_Collector$of$lambda$_5_0__init_), "$apply3", $rt_wrapFunction1(jus_Collector$of$lambda$_5_0_apply)],
 jur_AbstractCharClass$LazyJavaSpaceChar$1, "AbstractCharClass$LazyJavaSpaceChar$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_58", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaSpaceChar$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaSpaceChar$1_contains)],
+oajvl_CircuitLinter$Severity, "CircuitLinter$Severity", 12, jl_Enum, [], 65553, 0, () => oajvl_CircuitLinter$Severity_$callClinit(), 0,
 jl_Object$Monitor, 0, jl_Object, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_Object$Monitor__init_)],
 ju_LinkedHashMapEntrySet, 0, ju_AbstractSet, [ju_SequencedSet], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_30", $rt_wrapFunction2(ju_LinkedHashMapEntrySet__init_), "$size", $rt_wrapFunction0(ju_LinkedHashMapEntrySet_size), "$iterator", $rt_wrapFunction0(ju_LinkedHashMapEntrySet_iterator)],
 jl_Math, 0, jl_Object, [], 17, 0, 0, 0,
 jur_AbstractCharClass$LazyJavaUnicodeIdentifierPart, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaUnicodeIdentifierPart__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaUnicodeIdentifierPart_computeValue)],
-jur_PatternSyntaxException, 0, jl_IllegalArgumentException, [], 1, 0, 0, ["$_init_86", $rt_wrapFunction3(jur_PatternSyntaxException__init_0), "$getMessage", $rt_wrapFunction0(jur_PatternSyntaxException_getMessage)],
-jur_AbstractCharClass$LazyJavaDefined, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaDefined__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaDefined_computeValue)],
+jur_PatternSyntaxException, 0, jl_IllegalArgumentException, [], 1, 0, 0, ["$_init_86", $rt_wrapFunction3(jur_PatternSyntaxException__init_0), "$getMessage", $rt_wrapFunction0(jur_PatternSyntaxException_getMessage)]]);
+$rt_metadata([jur_AbstractCharClass$LazyJavaDefined, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaDefined__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaDefined_computeValue)],
 oaju_JsonParser, 0, jl_Object, [], 17, 0, 0, 0,
-jur_Pattern, 0, jl_Object, [ji_Serializable], 17, 0, 0, ["$matcher", $rt_wrapFunction1(jur_Pattern_matcher), "$pattern", $rt_wrapFunction0(jur_Pattern_pattern), "$namedGroups", $rt_wrapFunction0(jur_Pattern_namedGroups), "$groupCount", $rt_wrapFunction0(jur_Pattern_groupCount), "$compCount", $rt_wrapFunction0(jur_Pattern_compCount), "$consCount", $rt_wrapFunction0(jur_Pattern_consCount)],
+jur_Pattern, 0, jl_Object, [ji_Serializable], 17, 0, 0, ["$matcher", $rt_wrapFunction1(jur_Pattern_matcher), "$split0", $rt_wrapFunction2(jur_Pattern_split0), "$split", $rt_wrapFunction1(jur_Pattern_split), "$pattern", $rt_wrapFunction0(jur_Pattern_pattern), "$namedGroups", $rt_wrapFunction0(jur_Pattern_namedGroups), "$groupCount", $rt_wrapFunction0(jur_Pattern_groupCount), "$compCount", $rt_wrapFunction0(jur_Pattern_compCount), "$consCount", $rt_wrapFunction0(jur_Pattern_consCount)],
 jur_PosAltGroupQuantifierSet, "PosAltGroupQuantifierSet", 3, jur_AltGroupQuantifierSet, [], 0, 0, 0, ["$_init_24", $rt_wrapFunction3(jur_PosAltGroupQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_PosAltGroupQuantifierSet_matches), "$setNext", $rt_wrapFunction1(jur_PosAltGroupQuantifierSet_setNext)],
 juf_IntConsumer, 0, jl_Object, [], 1537, 0, 0, 0,
-oajq_QuantumRegister$applyOperator$lambda$_18_0, 0, jl_Object, [juf_IntConsumer], 1, 0, 0, ["$_init_169", function(var_1, var_2, var_3, var_4, var_5, var_6) { oajq_QuantumRegister$applyOperator$lambda$_18_0__init_(this, var_1, var_2, var_3, var_4, var_5, var_6); }, "$accept1", $rt_wrapFunction1(oajq_QuantumRegister$applyOperator$lambda$_18_0_accept)],
-ju_Collections$14, 0, ju_AbstractSet, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_171", $rt_wrapFunction1(ju_Collections$14__init_), "$size", $rt_wrapFunction0(ju_Collections$14_size), "$iterator", $rt_wrapFunction0(ju_Collections$14_iterator)],
-ju_Collections$15, 0, jl_Object, [ju_Iterator], 0, 0, 0, ["$_init_172", $rt_wrapFunction1(ju_Collections$15__init_), "$hasNext", $rt_wrapFunction0(ju_Collections$15_hasNext), "$next1", $rt_wrapFunction0(ju_Collections$15_next0), "$next", $rt_wrapFunction0(ju_Collections$15_next)]]);
-$rt_metadata([jn_BufferOverflowException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jn_BufferOverflowException__init_)],
+oajq_QuantumRegister$applyOperator$lambda$_18_0, 0, jl_Object, [juf_IntConsumer], 1, 0, 0, ["$_init_173", function(var_1, var_2, var_3, var_4, var_5, var_6) { oajq_QuantumRegister$applyOperator$lambda$_18_0__init_(this, var_1, var_2, var_3, var_4, var_5, var_6); }, "$accept1", $rt_wrapFunction1(oajq_QuantumRegister$applyOperator$lambda$_18_0_accept)],
+ju_Collections$14, 0, ju_AbstractSet, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_175", $rt_wrapFunction1(ju_Collections$14__init_), "$size", $rt_wrapFunction0(ju_Collections$14_size), "$iterator", $rt_wrapFunction0(ju_Collections$14_iterator)],
+ju_Collections$15, 0, jl_Object, [ju_Iterator], 0, 0, 0, ["$_init_176", $rt_wrapFunction1(ju_Collections$15__init_), "$hasNext", $rt_wrapFunction0(ju_Collections$15_hasNext), "$next1", $rt_wrapFunction0(ju_Collections$15_next0), "$next", $rt_wrapFunction0(ju_Collections$15_next)],
+jn_BufferOverflowException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jn_BufferOverflowException__init_)],
 ju_Collections$13, "Collections$13", 2, ju_AbstractMap, [], 0, 0, 0, ["$_init_23", $rt_wrapFunction1(ju_Collections$13__init_), "$entrySet", $rt_wrapFunction0(ju_Collections$13_entrySet)],
-oajvo_OpenQasmGates$forKind$lambda$_2_1, 0, jl_Object, [juf_Supplier], 1, 0, 0, ["$_init_163", $rt_wrapFunction1(oajvo_OpenQasmGates$forKind$lambda$_2_1__init_), "$get5", $rt_wrapFunction0(oajvo_OpenQasmGates$forKind$lambda$_2_1_get0), "$get9", $rt_wrapFunction0(oajvo_OpenQasmGates$forKind$lambda$_2_1_get)],
-oajvo_OpenQasmGates$forKind$lambda$_2_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_163", $rt_wrapFunction1(oajvo_OpenQasmGates$forKind$lambda$_2_0__init_), "$test", $rt_wrapFunction1(oajvo_OpenQasmGates$forKind$lambda$_2_0_test0), "$test2", $rt_wrapFunction1(oajvo_OpenQasmGates$forKind$lambda$_2_0_test)],
+oajvo_OpenQasmGates$forKind$lambda$_2_1, 0, jl_Object, [juf_Supplier], 1, 0, 0, ["$_init_167", $rt_wrapFunction1(oajvo_OpenQasmGates$forKind$lambda$_2_1__init_), "$get5", $rt_wrapFunction0(oajvo_OpenQasmGates$forKind$lambda$_2_1_get0), "$get9", $rt_wrapFunction0(oajvo_OpenQasmGates$forKind$lambda$_2_1_get)],
+oajvo_OpenQasmGates$forKind$lambda$_2_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_167", $rt_wrapFunction1(oajvo_OpenQasmGates$forKind$lambda$_2_0__init_), "$test", $rt_wrapFunction1(oajvo_OpenQasmGates$forKind$lambda$_2_0_test0), "$test3", $rt_wrapFunction1(oajvo_OpenQasmGates$forKind$lambda$_2_0_test)],
 ju_TemplateCollections$ImmutableArrayList, "TemplateCollections$ImmutableArrayList", 2, ju_TemplateCollections$AbstractImmutableList, [ju_RandomAccess], 1, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$getFirst", $rt_wrapFunction0(ju_List_getFirst), "$_init_63", $rt_wrapFunction1(ju_TemplateCollections$ImmutableArrayList__init_0), "$_init_50", $rt_wrapFunction1(ju_TemplateCollections$ImmutableArrayList__init_1),
 "$get0", $rt_wrapFunction1(ju_TemplateCollections$ImmutableArrayList_get), "$size", $rt_wrapFunction0(ju_TemplateCollections$ImmutableArrayList_size)],
 oajvo_OpenQasmGates$named$lambda$_1_1, 0, jl_Object, [juf_Supplier], 1, 0, 0, ["$_init_", $rt_wrapFunction1(oajvo_OpenQasmGates$named$lambda$_1_1__init_), "$get5", $rt_wrapFunction0(oajvo_OpenQasmGates$named$lambda$_1_1_get0), "$get9", $rt_wrapFunction0(oajvo_OpenQasmGates$named$lambda$_1_1_get)],
-oajvo_OpenQasmGates$validate$lambda$_4_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvo_OpenQasmGates$validate$lambda$_4_0__init_), "$test", $rt_wrapFunction1(oajvo_OpenQasmGates$validate$lambda$_4_0_test0), "$test3", $rt_wrapFunction1(oajvo_OpenQasmGates$validate$lambda$_4_0_test)],
+oajvo_OpenQasmGates$validate$lambda$_4_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvo_OpenQasmGates$validate$lambda$_4_0__init_), "$test", $rt_wrapFunction1(oajvo_OpenQasmGates$validate$lambda$_4_0_test0), "$test4", $rt_wrapFunction1(oajvo_OpenQasmGates$validate$lambda$_4_0_test)],
 jur_AbstractCharClass$LazyJavaLetterOrDigit, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaLetterOrDigit__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaLetterOrDigit_computeValue)],
-oajvo_OpenQasmGates$named$lambda$_1_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_", $rt_wrapFunction1(oajvo_OpenQasmGates$named$lambda$_1_0__init_), "$test", $rt_wrapFunction1(oajvo_OpenQasmGates$named$lambda$_1_0_test0), "$test2", $rt_wrapFunction1(oajvo_OpenQasmGates$named$lambda$_1_0_test)],
-otciu_UnicodeHelper$Range, "UnicodeHelper$Range", 24, jl_Object, [], 1, 0, 0, ["$_init_56", $rt_wrapFunction3(otciu_UnicodeHelper$Range__init_)],
-oajvs_CircuitSpec, "CircuitSpec", 13, jl_Record, [], 17, 0, 0, ["$_init_39", $rt_wrapFunction4(oajvs_CircuitSpec__init_), "$toString", $rt_wrapFunction0(oajvs_CircuitSpec_toString), "$hashCode2", $rt_wrapFunction0(oajvs_CircuitSpec_hashCode), "$equals", $rt_wrapFunction1(oajvs_CircuitSpec_equals), "$version", $rt_wrapFunction0(oajvs_CircuitSpec_version), "$numQubits", $rt_wrapFunction0(oajvs_CircuitSpec_numQubits), "$levels", $rt_wrapFunction0(oajvs_CircuitSpec_levels), "$numClassicalBits", $rt_wrapFunction0(oajvs_CircuitSpec_numClassicalBits)],
+oajvo_OpenQasmGates$named$lambda$_1_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_", $rt_wrapFunction1(oajvo_OpenQasmGates$named$lambda$_1_0__init_), "$test", $rt_wrapFunction1(oajvo_OpenQasmGates$named$lambda$_1_0_test0), "$test3", $rt_wrapFunction1(oajvo_OpenQasmGates$named$lambda$_1_0_test)],
+otciu_UnicodeHelper$Range, "UnicodeHelper$Range", 25, jl_Object, [], 1, 0, 0, ["$_init_56", $rt_wrapFunction3(otciu_UnicodeHelper$Range__init_)],
+oajvs_CircuitSpec, "CircuitSpec", 14, jl_Record, [], 17, 0, 0, ["$_init_39", $rt_wrapFunction4(oajvs_CircuitSpec__init_), "$toString", $rt_wrapFunction0(oajvs_CircuitSpec_toString), "$hashCode2", $rt_wrapFunction0(oajvs_CircuitSpec_hashCode), "$equals", $rt_wrapFunction1(oajvs_CircuitSpec_equals), "$version", $rt_wrapFunction0(oajvs_CircuitSpec_version), "$numQubits", $rt_wrapFunction0(oajvs_CircuitSpec_numQubits), "$levels", $rt_wrapFunction0(oajvs_CircuitSpec_levels), "$numClassicalBits", $rt_wrapFunction0(oajvs_CircuitSpec_numClassicalBits)],
 jusi_FilteringStreamImpl, 0, jusi_WrappingStreamImpl, [], 1, 0, 0, ["$toList", $rt_wrapFunction0(jus_Stream_toList), "$_init_72", $rt_wrapFunction2(jusi_FilteringStreamImpl__init_), "$wrap1", $rt_wrapFunction1(jusi_FilteringStreamImpl_wrap)],
 jusi_CountingConsumer, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jusi_CountingConsumer__init_), "$test", $rt_wrapFunction1(jusi_CountingConsumer_test)],
 jur_AbstractLineTerminator$2, 0, jur_AbstractLineTerminator, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractLineTerminator$2__init_), "$isLineTerminator", $rt_wrapFunction1(jur_AbstractLineTerminator$2_isLineTerminator), "$isAfterLineTerminator", $rt_wrapFunction2(jur_AbstractLineTerminator$2_isAfterLineTerminator)],
 otciu_CharMapping, 0, jl_Object, [], 1, 0, 0, ["$_init_55", $rt_wrapFunction2(otciu_CharMapping__init_)],
 jur_AbstractLineTerminator$1, 0, jur_AbstractLineTerminator, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractLineTerminator$1__init_), "$isLineTerminator", $rt_wrapFunction1(jur_AbstractLineTerminator$1_isLineTerminator), "$isAfterLineTerminator", $rt_wrapFunction2(jur_AbstractLineTerminator$1_isAfterLineTerminator)],
 jur_AbstractCharClass$LazyJavaUnicodeIdentifierStart, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaUnicodeIdentifierStart__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaUnicodeIdentifierStart_computeValue)],
-oajvo_OpenQasmParser$Register, "OpenQasmParser$Register", 12, jl_Record, [], 16, 0, 0, ["$toString", $rt_wrapFunction0(oajvo_OpenQasmParser$Register_toString), "$hashCode2", $rt_wrapFunction0(oajvo_OpenQasmParser$Register_hashCode), "$equals", $rt_wrapFunction1(oajvo_OpenQasmParser$Register_equals), "$offset", $rt_wrapFunction0(oajvo_OpenQasmParser$Register_offset), "$size", $rt_wrapFunction0(oajvo_OpenQasmParser$Register_size)],
+oajvo_OpenQasmParser$Register, "OpenQasmParser$Register", 13, jl_Record, [], 16, 0, 0, ["$toString", $rt_wrapFunction0(oajvo_OpenQasmParser$Register_toString), "$hashCode2", $rt_wrapFunction0(oajvo_OpenQasmParser$Register_hashCode), "$equals", $rt_wrapFunction1(oajvo_OpenQasmParser$Register_equals), "$offset", $rt_wrapFunction0(oajvo_OpenQasmParser$Register_offset), "$size", $rt_wrapFunction0(oajvo_OpenQasmParser$Register_size)],
 otci_CharFlow, 0, jl_Object, [], 1, 0, 0, ["$_init_52", $rt_wrapFunction1(otci_CharFlow__init_)],
 jur_RangeSet, "RangeSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_96", $rt_wrapFunction1(jur_RangeSet__init_), "$accepts", $rt_wrapFunction2(jur_RangeSet_accepts), "$getName", $rt_wrapFunction0(jur_RangeSet_getName), "$first", $rt_wrapFunction1(jur_RangeSet_first), "$getChars", $rt_wrapFunction0(jur_RangeSet_getChars)],
 jur_UnicodeCategory, "UnicodeCategory", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_4", $rt_wrapFunction1(jur_UnicodeCategory__init_), "$contains", $rt_wrapFunction1(jur_UnicodeCategory_contains)],
@@ -27140,7 +28351,7 @@ otcit_DoubleSynthesizer, 0, jl_Object, [], 17, 0, () => otcit_DoubleSynthesizer_
 jusi_FlatMappingStreamImpl, 0, jusi_SimpleStreamImpl, [], 1, 0, 0, ["$toList", $rt_wrapFunction0(jus_Stream_toList), "$_init_73", $rt_wrapFunction2(jusi_FlatMappingStreamImpl__init_), "$next2", $rt_wrapFunction1(jusi_FlatMappingStreamImpl_next)],
 jn_BufferUnderflowException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jn_BufferUnderflowException__init_)],
 otcit_FloatAnalyzer$Result, 0, jl_Object, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(otcit_FloatAnalyzer$Result__init_)],
-oajqs_SamplingOptions, "SamplingOptions", 18, jl_Object, [], 17, 0, 0, ["$_init_4", $rt_wrapFunction1(oajqs_SamplingOptions__init_2), "$withMeasuredQubits", $rt_wrapFunction1(oajqs_SamplingOptions_withMeasuredQubits), "$withClassicalBits", $rt_wrapFunction1(oajqs_SamplingOptions_withClassicalBits), "$classicalIndexesFor", $rt_wrapFunction1(oajqs_SamplingOptions_classicalIndexesFor), "$withRandomSource", $rt_wrapFunction1(oajqs_SamplingOptions_withRandomSource), "$withMaxWork", $rt_wrapFunction1(oajqs_SamplingOptions_withMaxWork),
+oajqs_SamplingOptions, "SamplingOptions", 19, jl_Object, [], 17, 0, 0, ["$_init_4", $rt_wrapFunction1(oajqs_SamplingOptions__init_2), "$withMeasuredQubits", $rt_wrapFunction1(oajqs_SamplingOptions_withMeasuredQubits), "$withClassicalBits", $rt_wrapFunction1(oajqs_SamplingOptions_withClassicalBits), "$classicalIndexesFor", $rt_wrapFunction1(oajqs_SamplingOptions_classicalIndexesFor), "$withRandomSource", $rt_wrapFunction1(oajqs_SamplingOptions_withRandomSource), "$withMaxWork", $rt_wrapFunction1(oajqs_SamplingOptions_withMaxWork),
 "$shots", $rt_wrapFunction0(oajqs_SamplingOptions_shots), "$maxWork", $rt_wrapFunction0(oajqs_SamplingOptions_maxWork), "$indexesFor", $rt_wrapFunction1(oajqs_SamplingOptions_indexesFor), "$newRandom", $rt_wrapFunction0(oajqs_SamplingOptions_newRandom)],
 jur_UCIDecomposedCharSet, "UCIDecomposedCharSet", 3, jur_DecomposedCharSet, [], 0, 0, 0, ["$_init_42", $rt_wrapFunction2(jur_UCIDecomposedCharSet__init_)],
 otrr_ClassInfo, 0, otrr_ReflectionInfo, [], 17, 0, 0, ["$newArrayInstance", $rt_wrapFunction1(otrr_ClassInfo_newArrayInstance)],
@@ -27149,12 +28360,12 @@ jnc_MalformedInputException, 0, jnc_CharacterCodingException, [], 1, 0, 0, ["$_i
 jur_AbstractCharClass$LazyJavaWhitespace$1, "AbstractCharClass$LazyJavaWhitespace$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_145", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaWhitespace$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaWhitespace$1_contains)],
 jur_AbstractCharClass$LazyJavaJavaIdentifierStart, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaJavaIdentifierStart__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaJavaIdentifierStart_computeValue)],
 oajv_CircuitSpecs, 0, jl_Object, [], 17, 0, () => oajv_CircuitSpecs_$callClinit(), 0,
-oajvs_GateSpec, "GateSpec", 13, jl_Record, [], 17, 0, 0, ["$_init_40", function(var_1, var_2, var_3, var_4, var_5, var_6, var_7) { oajvs_GateSpec__init_(this, var_1, var_2, var_3, var_4, var_5, var_6, var_7); }, "$toString", $rt_wrapFunction0(oajvs_GateSpec_toString), "$hashCode2", $rt_wrapFunction0(oajvs_GateSpec_hashCode), "$equals", $rt_wrapFunction1(oajvs_GateSpec_equals), "$kind", $rt_wrapFunction0(oajvs_GateSpec_kind), "$targets", $rt_wrapFunction0(oajvs_GateSpec_targets), "$controls", $rt_wrapFunction0(oajvs_GateSpec_controls),
+oajvs_GateSpec, "GateSpec", 14, jl_Record, [], 17, 0, 0, ["$_init_40", function(var_1, var_2, var_3, var_4, var_5, var_6, var_7) { oajvs_GateSpec__init_(this, var_1, var_2, var_3, var_4, var_5, var_6, var_7); }, "$toString", $rt_wrapFunction0(oajvs_GateSpec_toString), "$hashCode2", $rt_wrapFunction0(oajvs_GateSpec_hashCode), "$equals", $rt_wrapFunction1(oajvs_GateSpec_equals), "$kind", $rt_wrapFunction0(oajvs_GateSpec_kind), "$targets", $rt_wrapFunction0(oajvs_GateSpec_targets), "$controls", $rt_wrapFunction0(oajvs_GateSpec_controls),
 "$params", $rt_wrapFunction0(oajvs_GateSpec_params), "$matrix", $rt_wrapFunction0(oajvs_GateSpec_matrix), "$classicalTarget", $rt_wrapFunction0(oajvs_GateSpec_classicalTarget), "$condition", $rt_wrapFunction0(oajvs_GateSpec_condition)],
 jl_CloneNotSupportedException, 0, jl_Exception, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_CloneNotSupportedException__init_)],
 oaju_Constants, 0, jl_Object, [], 1, 0, () => oaju_Constants_$callClinit(), 0,
-jl_Long, 0, jl_Number, [jl_Comparable], 1, 0, () => jl_Long_$callClinit(), 0,
-jur_SequenceSet$IntHash, 0, jl_Object, [], 0, 0, 0, ["$_init_4", $rt_wrapFunction1(jur_SequenceSet$IntHash__init_), "$put1", $rt_wrapFunction2(jur_SequenceSet$IntHash_put), "$get3", $rt_wrapFunction1(jur_SequenceSet$IntHash_get)],
+jl_Long, 0, jl_Number, [jl_Comparable], 1, 0, () => jl_Long_$callClinit(), 0]);
+$rt_metadata([jur_SequenceSet$IntHash, 0, jl_Object, [], 0, 0, 0, ["$_init_4", $rt_wrapFunction1(jur_SequenceSet$IntHash__init_), "$put1", $rt_wrapFunction2(jur_SequenceSet$IntHash_put), "$get3", $rt_wrapFunction1(jur_SequenceSet$IntHash_get)],
 jm_BigInteger, 0, jl_Number, [jl_Comparable, ji_Serializable], 1, 0, () => jm_BigInteger_$callClinit(), ["$_init_", $rt_wrapFunction1(jm_BigInteger__init_6), "$_init_43", $rt_wrapFunction2(jm_BigInteger__init_1), "$_init_10", $rt_wrapFunction2(jm_BigInteger__init_5), "$_init_78", $rt_wrapFunction3(jm_BigInteger__init_2), "$_init_120", $rt_wrapFunction2(jm_BigInteger__init_4), "$_init_144", $rt_wrapFunction2(jm_BigInteger__init_7), "$abs0", $rt_wrapFunction0(jm_BigInteger_abs), "$negate", $rt_wrapFunction0(jm_BigInteger_negate),
 "$add3", $rt_wrapFunction1(jm_BigInteger_add), "$subtract0", $rt_wrapFunction1(jm_BigInteger_subtract), "$signum", $rt_wrapFunction0(jm_BigInteger_signum), "$shiftRight", $rt_wrapFunction1(jm_BigInteger_shiftRight), "$shiftLeft", $rt_wrapFunction1(jm_BigInteger_shiftLeft), "$shiftLeftOneBit", $rt_wrapFunction0(jm_BigInteger_shiftLeftOneBit), "$bitLength1", $rt_wrapFunction0(jm_BigInteger_bitLength), "$testBit", $rt_wrapFunction1(jm_BigInteger_testBit), "$getLowestSetBit", $rt_wrapFunction0(jm_BigInteger_getLowestSetBit),
 "$longValue", $rt_wrapFunction0(jm_BigInteger_longValue), "$compareTo3", $rt_wrapFunction1(jm_BigInteger_compareTo), "$equals", $rt_wrapFunction1(jm_BigInteger_equals), "$equalsArrays", $rt_wrapFunction1(jm_BigInteger_equalsArrays), "$multiply", $rt_wrapFunction1(jm_BigInteger_multiply), "$pow1", $rt_wrapFunction1(jm_BigInteger_pow), "$divideAndRemainder", $rt_wrapFunction1(jm_BigInteger_divideAndRemainder), "$cutOffLeadingZeroes", $rt_wrapFunction0(jm_BigInteger_cutOffLeadingZeroes), "$getFirstNonzeroDigit",
@@ -27164,8 +28375,8 @@ jur_AbstractCharClass$LazyNonDigit, 0, jur_AbstractCharClass$LazyDigit, [], 0, 0
 jusi_SimpleStreamImpl$collect$lambda$_26_0, "SimpleStreamImpl$collect$lambda$_26_0", 5, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_75", $rt_wrapFunction2(jusi_SimpleStreamImpl$collect$lambda$_26_0__init_), "$test", $rt_wrapFunction1(jusi_SimpleStreamImpl$collect$lambda$_26_0_test)],
 ju_EnumSet, 0, ju_AbstractSet, [jl_Cloneable, ji_Serializable], 1025, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_0", $rt_wrapFunction0(ju_EnumSet__init_)],
 jur_AbstractCharClass$1, "AbstractCharClass$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_34", $rt_wrapFunction2(jur_AbstractCharClass$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$1_contains)],
-ju_TemplateCollections$TwoElementsSet, "TemplateCollections$TwoElementsSet", 2, ju_TemplateCollections$AbstractImmutableSet, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_21", $rt_wrapFunction2(ju_TemplateCollections$TwoElementsSet__init_), "$iterator", $rt_wrapFunction0(ju_TemplateCollections$TwoElementsSet_iterator), "$size", $rt_wrapFunction0(ju_TemplateCollections$TwoElementsSet_size)]]);
-$rt_metadata([jur_AbstractCharClass$2, "AbstractCharClass$2", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_35", $rt_wrapFunction3(jur_AbstractCharClass$2__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$2_contains)],
+ju_TemplateCollections$TwoElementsSet, "TemplateCollections$TwoElementsSet", 2, ju_TemplateCollections$AbstractImmutableSet, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_21", $rt_wrapFunction2(ju_TemplateCollections$TwoElementsSet__init_), "$iterator", $rt_wrapFunction0(ju_TemplateCollections$TwoElementsSet_iterator), "$size", $rt_wrapFunction0(ju_TemplateCollections$TwoElementsSet_size)],
+jur_AbstractCharClass$2, "AbstractCharClass$2", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_35", $rt_wrapFunction3(jur_AbstractCharClass$2__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$2_contains)],
 jur_AbstractCharClass$LazyJavaLowerCase, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaLowerCase__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaLowerCase_computeValue)],
 jur_PossessiveCompositeQuantifierSet, "PossessiveCompositeQuantifierSet", 3, jur_CompositeQuantifierSet, [], 0, 0, 0, ["$_init_93", $rt_wrapFunction4(jur_PossessiveCompositeQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_PossessiveCompositeQuantifierSet_matches)],
 oajqs_LocalSimulator, 0, jl_Object, [oajqs_QuantumSimulator], 1, 0, 0, ["$_init_131", $rt_wrapFunction2(oajqs_LocalSimulator__init_0), "$_init_130", $rt_wrapFunction3(oajqs_LocalSimulator__init_), "$_init_146", $rt_wrapFunction1(oajqs_LocalSimulator__init_1), "$execute1", $rt_wrapFunction0(oajqs_LocalSimulator_execute0), "$execute", $rt_wrapFunction1(oajqs_LocalSimulator_execute), "$extractClassicalRecords", $rt_wrapFunction0(oajqs_LocalSimulator_extractClassicalRecords), "$getQuantumRegister", $rt_wrapFunction0(oajqs_LocalSimulator_getQuantumRegister)],
@@ -27173,13 +28384,13 @@ jusi_DistinctStreamImpl, 0, jusi_WrappingStreamImpl, [], 1, 0, 0, ["$toList", $r
 jur_AbstractCharClass$LazyJavaLetterOrDigit$1, "AbstractCharClass$LazyJavaLetterOrDigit$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_99", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaLetterOrDigit$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaLetterOrDigit$1_contains)],
 jur_CharClass$18, "CharClass$18", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_106", $rt_wrapFunction2(jur_CharClass$18__init_), "$contains", $rt_wrapFunction1(jur_CharClass$18_contains), "$toString", $rt_wrapFunction0(jur_CharClass$18_toString)],
 jur_PossessiveGroupQuantifierSet, "PossessiveGroupQuantifierSet", 3, jur_GroupQuantifierSet, [], 0, 0, 0, ["$_init_24", $rt_wrapFunction3(jur_PossessiveGroupQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_PossessiveGroupQuantifierSet_matches)],
-oajqg_Measurement, "Measurement", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_Measurement__init_0), "$classicalTarget", $rt_wrapFunction0(oajqg_Measurement_classicalTarget)],
+oajqg_Measurement, "Measurement", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_Measurement__init_0), "$classicalTarget", $rt_wrapFunction0(oajqg_Measurement_classicalTarget)],
 jur_CharClass$13, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_103", $rt_wrapFunction2(jur_CharClass$13__init_), "$contains", $rt_wrapFunction1(jur_CharClass$13_contains)],
 jur_CharClass$12, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_103", $rt_wrapFunction2(jur_CharClass$12__init_), "$contains", $rt_wrapFunction1(jur_CharClass$12_contains)],
 jur_CharClass$11, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_102", $rt_wrapFunction4(jur_CharClass$11__init_), "$contains", $rt_wrapFunction1(jur_CharClass$11_contains)],
 otci_Base46, 0, jl_Object, [], 17, 0, 0, 0,
 jur_CharClass$10, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_102", $rt_wrapFunction4(jur_CharClass$10__init_), "$contains", $rt_wrapFunction1(jur_CharClass$10_contains)],
-oajq_CircuitLevel, "CircuitLevel", 16, jl_Object, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajq_CircuitLevel__init_0), "$addGate", $rt_wrapFunction1(oajq_CircuitLevel_addGate0), "$addGate0", $rt_wrapFunction2(oajq_CircuitLevel_addGate), "$getGates", $rt_wrapFunction0(oajq_CircuitLevel_getGates)],
+oajq_CircuitLevel, "CircuitLevel", 17, jl_Object, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajq_CircuitLevel__init_0), "$addGate", $rt_wrapFunction1(oajq_CircuitLevel_addGate0), "$addGate0", $rt_wrapFunction2(oajq_CircuitLevel_addGate), "$getGates", $rt_wrapFunction0(oajq_CircuitLevel_getGates)],
 ju_GenericEnumSet, 0, ju_EnumSet, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_121", $rt_wrapFunction1(ju_GenericEnumSet__init_), "$add6", $rt_wrapFunction1(ju_GenericEnumSet_add), "$addAll", $rt_wrapFunction1(ju_GenericEnumSet_addAll), "$add", $rt_wrapFunction1(ju_GenericEnumSet_add0)],
 jur_CharClass$17, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_102", $rt_wrapFunction4(jur_CharClass$17__init_), "$contains", $rt_wrapFunction1(jur_CharClass$17_contains)],
 jur_UCISequenceSet, "UCISequenceSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_88", $rt_wrapFunction1(jur_UCISequenceSet__init_), "$accepts", $rt_wrapFunction2(jur_UCISequenceSet_accepts), "$getName", $rt_wrapFunction0(jur_UCISequenceSet_getName)],
@@ -27189,16 +28400,16 @@ jur_AbstractCharClass$LazyJavaDefined$1, "AbstractCharClass$LazyJavaDefined$1", 
 otjt_Int8Array, 0, otjt_TypedArray, [], 1, 0, 0, 0,
 oajqs_LocalSimulator$execute$lambda$_5_0, 0, jl_Object, [oajqs_LocalSimulator$OperationListener], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajqs_LocalSimulator$execute$lambda$_5_0__init_), "$onOperation", $rt_wrapFunction4(oajqs_LocalSimulator$execute$lambda$_5_0_onOperation)],
 jur_CharClass$14, 0, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_105", $rt_wrapFunction3(jur_CharClass$14__init_), "$contains", $rt_wrapFunction1(jur_CharClass$14_contains)],
-jl_StringBuilder, 0, jl_AbstractStringBuilder, [jl_Appendable], 1, 0, 0, ["$_init_4", $rt_wrapFunction1(jl_StringBuilder__init_3), "$_init_0", $rt_wrapFunction0(jl_StringBuilder__init_4), "$_init_", $rt_wrapFunction1(jl_StringBuilder__init_2), "$append", $rt_wrapFunction1(jl_StringBuilder_append), "$append1", $rt_wrapFunction1(jl_StringBuilder_append2), "$append2", $rt_wrapFunction1(jl_StringBuilder_append1), "$append4", $rt_wrapFunction1(jl_StringBuilder_append5), "$append0", $rt_wrapFunction1(jl_StringBuilder_append0),
-"$append12", $rt_wrapFunction3(jl_StringBuilder_append4), "$append10", $rt_wrapFunction1(jl_StringBuilder_append10), "$append21", $rt_wrapFunction3(jl_StringBuilder_append9), "$append11", $rt_wrapFunction1(jl_StringBuilder_append8), "$append22", $rt_wrapFunction1(jl_StringBuilder_append3), "$insert16", $rt_wrapFunction2(jl_StringBuilder_insert0), "$insert12", $rt_wrapFunction4(jl_StringBuilder_insert6), "$insert9", $rt_wrapFunction2(jl_StringBuilder_insert), "$insert11", $rt_wrapFunction4(jl_StringBuilder_insert10),
-"$insert14", $rt_wrapFunction2(jl_StringBuilder_insert12), "$insert13", $rt_wrapFunction2(jl_StringBuilder_insert7), "$insert15", $rt_wrapFunction2(jl_StringBuilder_insert8), "$delete0", $rt_wrapFunction2(jl_StringBuilder_delete), "$deleteCharAt", $rt_wrapFunction1(jl_StringBuilder_deleteCharAt), "$insert17", $rt_wrapFunction2(jl_StringBuilder_insert2), "$insert6", $rt_wrapFunction4(jl_StringBuilder_insert1), "$append6", $rt_wrapFunction3(jl_StringBuilder_append7), "$insert5", $rt_wrapFunction4(jl_StringBuilder_insert9),
-"$append5", $rt_wrapFunction3(jl_StringBuilder_append6), "$charAt", $rt_wrapFunction1(jl_StringBuilder_charAt), "$length", $rt_wrapFunction0(jl_StringBuilder_length), "$toString", $rt_wrapFunction0(jl_StringBuilder_toString), "$ensureCapacity", $rt_wrapFunction1(jl_StringBuilder_ensureCapacity), "$insert4", $rt_wrapFunction2(jl_StringBuilder_insert3), "$insert", $rt_wrapFunction2(jl_StringBuilder_insert5), "$insert3", $rt_wrapFunction2(jl_StringBuilder_insert4), "$insert2", $rt_wrapFunction2(jl_StringBuilder_insert11),
-"$insert0", $rt_wrapFunction2(jl_StringBuilder_insert13)],
+jl_StringBuilder, "StringBuilder", 7, jl_AbstractStringBuilder, [jl_Appendable], 1, 0, 0, ["$_init_4", $rt_wrapFunction1(jl_StringBuilder__init_3), "$_init_0", $rt_wrapFunction0(jl_StringBuilder__init_4), "$_init_", $rt_wrapFunction1(jl_StringBuilder__init_2), "$append", $rt_wrapFunction1(jl_StringBuilder_append), "$append1", $rt_wrapFunction1(jl_StringBuilder_append2), "$append2", $rt_wrapFunction1(jl_StringBuilder_append1), "$append24", $rt_wrapFunction1(jl_StringBuilder_append9), "$append4", $rt_wrapFunction1(jl_StringBuilder_append5),
+"$append0", $rt_wrapFunction1(jl_StringBuilder_append0), "$append12", $rt_wrapFunction3(jl_StringBuilder_append4), "$append10", $rt_wrapFunction1(jl_StringBuilder_append11), "$append22", $rt_wrapFunction3(jl_StringBuilder_append10), "$append11", $rt_wrapFunction1(jl_StringBuilder_append8), "$append23", $rt_wrapFunction1(jl_StringBuilder_append3), "$insert19", $rt_wrapFunction2(jl_StringBuilder_insert1), "$insert18", $rt_wrapFunction2(jl_StringBuilder_insert2), "$insert14", $rt_wrapFunction4(jl_StringBuilder_insert8),
+"$insert11", $rt_wrapFunction2(jl_StringBuilder_insert0), "$insert13", $rt_wrapFunction4(jl_StringBuilder_insert12), "$insert16", $rt_wrapFunction2(jl_StringBuilder_insert14), "$insert15", $rt_wrapFunction2(jl_StringBuilder_insert9), "$insert17", $rt_wrapFunction2(jl_StringBuilder_insert10), "$delete0", $rt_wrapFunction2(jl_StringBuilder_delete), "$deleteCharAt", $rt_wrapFunction1(jl_StringBuilder_deleteCharAt), "$insert20", $rt_wrapFunction2(jl_StringBuilder_insert4), "$insert8", $rt_wrapFunction4(jl_StringBuilder_insert3),
+"$append6", $rt_wrapFunction3(jl_StringBuilder_append7), "$insert7", $rt_wrapFunction4(jl_StringBuilder_insert11), "$append5", $rt_wrapFunction3(jl_StringBuilder_append6), "$charAt", $rt_wrapFunction1(jl_StringBuilder_charAt), "$length", $rt_wrapFunction0(jl_StringBuilder_length), "$toString", $rt_wrapFunction0(jl_StringBuilder_toString), "$ensureCapacity", $rt_wrapFunction1(jl_StringBuilder_ensureCapacity), "$insert6", $rt_wrapFunction2(jl_StringBuilder_insert5), "$insert", $rt_wrapFunction2(jl_StringBuilder_insert7),
+"$insert5", $rt_wrapFunction2(jl_StringBuilder_insert6), "$insert4", $rt_wrapFunction2(jl_StringBuilder_insert13), "$insert2", $rt_wrapFunction2(jl_StringBuilder_insert), "$insert0", $rt_wrapFunction2(jl_StringBuilder_insert15)],
 otrfm_InMemoryVirtualDirectory, 0, otrfm_AbstractInMemoryVirtualFile, [], 1, 0, 0, ["$_init_", $rt_wrapFunction1(otrfm_InMemoryVirtualDirectory__init_)],
-oajqg_Phase, "Phase", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_113", $rt_wrapFunction2(oajqg_Phase__init_)],
+oajqg_Phase, "Phase", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_113", $rt_wrapFunction2(oajqg_Phase__init_)],
 jur_CompositeRangeSet, "CompositeRangeSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_97", $rt_wrapFunction2(jur_CompositeRangeSet__init_0), "$matches", $rt_wrapFunction3(jur_CompositeRangeSet_matches), "$setNext", $rt_wrapFunction1(jur_CompositeRangeSet_setNext), "$getName", $rt_wrapFunction0(jur_CompositeRangeSet_getName), "$hasConsumed", $rt_wrapFunction1(jur_CompositeRangeSet_hasConsumed), "$first", $rt_wrapFunction1(jur_CompositeRangeSet_first)],
 ju_ConcurrentModificationException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(ju_ConcurrentModificationException__init_0)],
-oajqg_Hadamard, "Hadamard", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_Hadamard__init_)],
+oajqg_Hadamard, "Hadamard", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_Hadamard__init_)],
 ju_Hashtable$1, 0, jl_Object, [ju_Enumeration], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(ju_Hashtable$1__init_)],
 ju_Hashtable$2, 0, jl_Object, [ju_Iterator], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(ju_Hashtable$2__init_)],
 ju_MapEntry, 0, jl_Object, [ju_Map$Entry, jl_Cloneable], 0, 0, 0, ["$_init_21", $rt_wrapFunction2(ju_MapEntry__init_), "$equals", $rt_wrapFunction1(ju_MapEntry_equals), "$getKey", $rt_wrapFunction0(ju_MapEntry_getKey), "$getValue", $rt_wrapFunction0(ju_MapEntry_getValue), "$hashCode2", $rt_wrapFunction0(ju_MapEntry_hashCode), "$toString", $rt_wrapFunction0(ju_MapEntry_toString)],
@@ -27207,30 +28418,30 @@ ju_TreeMap$_init_$lambda$_3_0, 0, jl_Object, [ju_Comparator], 1, 0, 0, ["$_init_
 oajqs_LocalSimulator$step$lambda$_7_0, 0, jl_Object, [juf_Consumer], 1, 0, 0, ["$_init_127", $rt_wrapFunction2(oajqs_LocalSimulator$step$lambda$_7_0__init_), "$accept0", $rt_wrapFunction1(oajqs_LocalSimulator$step$lambda$_7_0_accept0), "$accept", $rt_wrapFunction1(oajqs_LocalSimulator$step$lambda$_7_0_accept)],
 jur_FinalSet, "FinalSet", 3, jur_FSet, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_FinalSet__init_), "$matches", $rt_wrapFunction3(jur_FinalSet_matches), "$getName", $rt_wrapFunction0(jur_FinalSet_getName)],
 oaju_Utils, 0, jl_Object, [], 1, 0, 0, 0,
-oajqg_Reset, "Reset", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_Reset__init_)],
+oajqg_Reset, "Reset", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_Reset__init_)],
 oajq_QubitOne, 0, oajq_Qubit, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajq_QubitOne__init_0)],
 oajqs_CircuitSampler, 0, jl_Object, [], 17, 0, 0, 0,
-jur_EmptySet, "EmptySet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_20", $rt_wrapFunction1(jur_EmptySet__init_0), "$accepts", $rt_wrapFunction2(jur_EmptySet_accepts), "$findBack", $rt_wrapFunction4(jur_EmptySet_findBack), "$getName", $rt_wrapFunction0(jur_EmptySet_getName), "$hasConsumed", $rt_wrapFunction1(jur_EmptySet_hasConsumed)],
-juf_IntFunction, 0, jl_Object, [], 1537, 0, 0, 0,
+jur_EmptySet, "EmptySet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_20", $rt_wrapFunction1(jur_EmptySet__init_0), "$accepts", $rt_wrapFunction2(jur_EmptySet_accepts), "$find", $rt_wrapFunction3(jur_EmptySet_find), "$findBack", $rt_wrapFunction4(jur_EmptySet_findBack), "$getName", $rt_wrapFunction0(jur_EmptySet_getName), "$hasConsumed", $rt_wrapFunction1(jur_EmptySet_hasConsumed)]]);
+$rt_metadata([juf_IntFunction, 0, jl_Object, [], 1537, 0, 0, 0,
 ju_TemplateCollections$NEtriesMap, "TemplateCollections$NEtriesMap", 2, ju_TemplateCollections$AbstractImmutableMap, [], 0, 0, 0, ["$_init_22", $rt_wrapFunction1(ju_TemplateCollections$NEtriesMap__init_), "$_init_23", $rt_wrapFunction1(ju_TemplateCollections$NEtriesMap__init_0), "$size", $rt_wrapFunction0(ju_TemplateCollections$NEtriesMap_size), "$containsKey", $rt_wrapFunction1(ju_TemplateCollections$NEtriesMap_containsKey), "$get", $rt_wrapFunction1(ju_TemplateCollections$NEtriesMap_get), "$entrySet", $rt_wrapFunction0(ju_TemplateCollections$NEtriesMap_entrySet)],
 ju_HashMap$HashEntry, 0, ju_MapEntry, [], 0, 0, 0, ["$_init_29", $rt_wrapFunction2(ju_HashMap$HashEntry__init_)],
 ju_LinkedHashMap$LinkedHashMapEntry, "LinkedHashMap$LinkedHashMapEntry", 2, ju_HashMap$HashEntry, [], 16, 0, 0, ["$_init_29", $rt_wrapFunction2(ju_LinkedHashMap$LinkedHashMapEntry__init_)],
-jus_Collectors$joining$lambda$_8_3, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_57", $rt_wrapFunction2(jus_Collectors$joining$lambda$_8_3__init_), "$apply1", $rt_wrapFunction1(jus_Collectors$joining$lambda$_8_3_apply0), "$apply2", $rt_wrapFunction1(jus_Collectors$joining$lambda$_8_3_apply)],
+jus_Collectors$joining$lambda$_8_3, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_57", $rt_wrapFunction2(jus_Collectors$joining$lambda$_8_3__init_), "$apply3", $rt_wrapFunction1(jus_Collectors$joining$lambda$_8_3_apply0), "$apply4", $rt_wrapFunction1(jus_Collectors$joining$lambda$_8_3_apply)],
 jur_AbstractCharClass$LazyASCII, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyASCII__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyASCII_computeValue)],
 jus_Collectors$joining$lambda$_8_2, 0, jl_Object, [juf_Supplier], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jus_Collectors$joining$lambda$_8_2__init_), "$get5", $rt_wrapFunction0(jus_Collectors$joining$lambda$_8_2_get0), "$get10", $rt_wrapFunction0(jus_Collectors$joining$lambda$_8_2_get)],
-oaje_JQApiLimitException, 0, jl_IllegalArgumentException, [], 1, 0, 0, ["$_init_", $rt_wrapFunction1(oaje_JQApiLimitException__init_0)]]);
-$rt_metadata([jus_Collectors$joining$lambda$_8_1, 0, jl_Object, [juf_BinaryOperator], 1, 0, 0, ["$_init_31", $rt_wrapFunction1(jus_Collectors$joining$lambda$_8_1__init_)],
-oajqs_ExpectationSampler$support$lambda$_6_0, 0, jl_Object, [juf_IntPredicate], 1, 0, 0, ["$_init_168", $rt_wrapFunction1(oajqs_ExpectationSampler$support$lambda$_6_0__init_), "$test5", $rt_wrapFunction1(oajqs_ExpectationSampler$support$lambda$_6_0_test)],
+oaje_JQApiLimitException, 0, jl_IllegalArgumentException, [], 1, 0, 0, ["$_init_", $rt_wrapFunction1(oaje_JQApiLimitException__init_0)],
+jus_Collectors$joining$lambda$_8_1, 0, jl_Object, [juf_BinaryOperator], 1, 0, 0, ["$_init_31", $rt_wrapFunction1(jus_Collectors$joining$lambda$_8_1__init_)],
+oajqs_ExpectationSampler$support$lambda$_6_0, 0, jl_Object, [juf_IntPredicate], 1, 0, 0, ["$_init_172", $rt_wrapFunction1(oajqs_ExpectationSampler$support$lambda$_6_0__init_), "$test6", $rt_wrapFunction1(oajqs_ExpectationSampler$support$lambda$_6_0_test)],
 jus_Collectors$joining$lambda$_8_0, 0, jl_Object, [juf_BiConsumer], 1, 0, 0, ["$_init_31", $rt_wrapFunction1(jus_Collectors$joining$lambda$_8_0__init_), "$accept2", $rt_wrapFunction2(jus_Collectors$joining$lambda$_8_0_accept0), "$accept4", $rt_wrapFunction2(jus_Collectors$joining$lambda$_8_0_accept)],
-oajm_ComplexVector, "ComplexVector", 20, jl_Object, [], 1, 0, 0, ["$_init_4", $rt_wrapFunction1(oajm_ComplexVector__init_0), "$_init_18", $rt_wrapFunction1(oajm_ComplexVector__init_), "$getEntry", $rt_wrapFunction1(oajm_ComplexVector_getEntry), "$setEntry", $rt_wrapFunction2(oajm_ComplexVector_setEntry), "$getDimension", $rt_wrapFunction0(oajm_ComplexVector_getDimension), "$getData0", $rt_wrapFunction0(oajm_ComplexVector_getData), "$outerProduct", $rt_wrapFunction1(oajm_ComplexVector_outerProduct), "$innerProduct",
+oajm_ComplexVector, "ComplexVector", 21, jl_Object, [], 1, 0, 0, ["$_init_4", $rt_wrapFunction1(oajm_ComplexVector__init_0), "$_init_18", $rt_wrapFunction1(oajm_ComplexVector__init_), "$getEntry", $rt_wrapFunction1(oajm_ComplexVector_getEntry), "$setEntry", $rt_wrapFunction2(oajm_ComplexVector_setEntry), "$getDimension", $rt_wrapFunction0(oajm_ComplexVector_getDimension), "$getData0", $rt_wrapFunction0(oajm_ComplexVector_getData), "$outerProduct", $rt_wrapFunction1(oajm_ComplexVector_outerProduct), "$innerProduct",
 $rt_wrapFunction1(oajm_ComplexVector_innerProduct), "$tensorProduct", $rt_wrapFunction1(oajm_ComplexVector_tensorProduct), "$equals", $rt_wrapFunction1(oajm_ComplexVector_equals), "$hashCode2", $rt_wrapFunction0(oajm_ComplexVector_hashCode), "$toString", $rt_wrapFunction0(oajm_ComplexVector_toString)],
 ju_AbstractList$1, 0, jl_Object, [ju_Iterator], 0, 0, 0, ["$_init_66", $rt_wrapFunction1(ju_AbstractList$1__init_), "$hasNext", $rt_wrapFunction0(ju_AbstractList$1_hasNext), "$next", $rt_wrapFunction0(ju_AbstractList$1_next)],
 oajw_BrowserBudget, 0, jl_Object, [], 17, 0, 0, 0,
 ju_AbstractMap$SimpleEntry, 0, jl_Object, [ju_Map$Entry, ji_Serializable], 1, 0, 0, ["$_init_21", $rt_wrapFunction2(ju_AbstractMap$SimpleEntry__init_), "$getValue", $rt_wrapFunction0(ju_AbstractMap$SimpleEntry_getValue), "$setValue", $rt_wrapFunction1(ju_AbstractMap$SimpleEntry_setValue), "$getKey", $rt_wrapFunction0(ju_AbstractMap$SimpleEntry_getKey), "$equals", $rt_wrapFunction1(ju_AbstractMap$SimpleEntry_equals), "$hashCode2", $rt_wrapFunction0(ju_AbstractMap$SimpleEntry_hashCode), "$toString", $rt_wrapFunction0(ju_AbstractMap$SimpleEntry_toString)],
 otjc_Crypto, 0, jl_Object, [otj_JSObject], 1025, 0, 0, 0,
-oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0, 0, jl_Object, [juf_Consumer], 1, 0, 0, ["$_init_170", $rt_wrapFunction1(oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0__init_), "$accept0", $rt_wrapFunction1(oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0_accept0), "$accept", $rt_wrapFunction1(oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0_accept)],
+oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0, 0, jl_Object, [juf_Consumer], 1, 0, 0, ["$_init_174", $rt_wrapFunction1(oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0__init_), "$accept0", $rt_wrapFunction1(oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0_accept0), "$accept", $rt_wrapFunction1(oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_0_accept)],
 oaj_JQAPIConfig, "JQAPIConfig", 10, jl_Object, [], 17, 0, () => oaj_JQAPIConfig_$callClinit(), ["$maxQubits", $rt_wrapFunction0(oaj_JQAPIConfig_maxQubits), "$parallelEnabled", $rt_wrapFunction0(oaj_JQAPIConfig_parallelEnabled), "$parallelThreshold", $rt_wrapFunction0(oaj_JQAPIConfig_parallelThreshold), "$operatorExecutor", $rt_wrapFunction0(oaj_JQAPIConfig_operatorExecutor)],
-oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1, 0, jl_Object, [juf_Consumer], 1, 0, 0, ["$_init_170", $rt_wrapFunction1(oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1__init_), "$accept0", $rt_wrapFunction1(oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1_accept0), "$accept", $rt_wrapFunction1(oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1_accept)],
+oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1, 0, jl_Object, [juf_Consumer], 1, 0, 0, ["$_init_174", $rt_wrapFunction1(oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1__init_), "$accept0", $rt_wrapFunction1(oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1_accept0), "$accept", $rt_wrapFunction1(oajq_QuantumRegister$resetQubitAtIndexes$lambda$_25_1_accept)],
 jur_Quantifier, "Quantifier", 3, jur_SpecialToken, [jl_Cloneable], 0, 0, 0, ["$_init_10", $rt_wrapFunction2(jur_Quantifier__init_), "$min0", $rt_wrapFunction0(jur_Quantifier_min), "$max0", $rt_wrapFunction0(jur_Quantifier_max), "$toString", $rt_wrapFunction0(jur_Quantifier_toString)],
 ju_TemplateCollections$NEtriesMap$1$1, 0, jl_Object, [ju_Iterator], 0, 0, 0, ["$_init_143", $rt_wrapFunction1(ju_TemplateCollections$NEtriesMap$1$1__init_), "$hasNext", $rt_wrapFunction0(ju_TemplateCollections$NEtriesMap$1$1_hasNext), "$next1", $rt_wrapFunction0(ju_TemplateCollections$NEtriesMap$1$1_next), "$next", $rt_wrapFunction0(ju_TemplateCollections$NEtriesMap$1$1_next0)],
 jur_AbstractCharClass$LazyJavaUpperCase$1, "AbstractCharClass$LazyJavaUpperCase$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_142", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaUpperCase$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaUpperCase$1_contains)],
@@ -27238,7 +28449,7 @@ jus_CollectorImpl, 0, jl_Object, [jus_Collector], 0, 0, 0, ["$_init_9", function
 ju_Random, 0, jl_Object, [jur_RandomGenerator, ji_Serializable], 1, 0, 0, ["$nextBytes", $rt_wrapFunction1(jur_RandomGenerator_nextBytes), "$_init_0", $rt_wrapFunction0(ju_Random__init_), "$_init_135", $rt_wrapFunction1(ju_Random__init_0), "$setSeed", $rt_wrapFunction1(ju_Random_setSeed), "$next4", $rt_wrapFunction1(ju_Random_next), "$nextDouble", $rt_wrapFunction0(ju_Random_nextDouble)],
 otpp_ResourceAccessor, 0, jl_Object, [], 16, 0, 0, 0,
 jur_PossessiveQuantifierSet, "PossessiveQuantifierSet", 3, jur_LeafQuantifierSet, [], 0, 0, 0, ["$_init_53", $rt_wrapFunction3(jur_PossessiveQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_PossessiveQuantifierSet_matches)],
-jur_AbstractCharClass$LazyJavaIdentifierIgnorable$1, "AbstractCharClass$LazyJavaIdentifierIgnorable$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_159", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaIdentifierIgnorable$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaIdentifierIgnorable$1_contains)],
+jur_AbstractCharClass$LazyJavaIdentifierIgnorable$1, "AbstractCharClass$LazyJavaIdentifierIgnorable$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_163", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaIdentifierIgnorable$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaIdentifierIgnorable$1_contains)],
 jl_Thread$UncaughtExceptionHandler, 0, jl_Object, [], 1537, 0, 0, 0,
 jl_DefaultUncaughtExceptionHandler, 0, jl_Object, [jl_Thread$UncaughtExceptionHandler], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_DefaultUncaughtExceptionHandler__init_)],
 jur_AbstractCharClass$LazyJavaLetter$1, "AbstractCharClass$LazyJavaLetter$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_41", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaLetter$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaLetter$1_contains)],
@@ -27247,9 +28458,6 @@ ju_TemplateCollections$SingleElementSet, 0, ju_TemplateCollections$AbstractImmut
 ju_TemplateCollections$SingleElementSet$1, 0, jl_Object, [ju_Iterator], 0, 0, 0, ["$_init_136", $rt_wrapFunction1(ju_TemplateCollections$SingleElementSet$1__init_), "$hasNext", $rt_wrapFunction0(ju_TemplateCollections$SingleElementSet$1_hasNext), "$next", $rt_wrapFunction0(ju_TemplateCollections$SingleElementSet$1_next)],
 ju_TreeMap$TreeNode, "TreeMap$TreeNode", 2, ju_AbstractMap$SimpleEntry, [], 0, 0, 0, ["$_init_2", $rt_wrapFunction1(ju_TreeMap$TreeNode__init_), "$fix", $rt_wrapFunction0(ju_TreeMap$TreeNode_fix), "$forward", $rt_wrapFunction1(ju_TreeMap$TreeNode_forward), "$down", $rt_wrapFunction1(ju_TreeMap$TreeNode_down)],
 jusi_StreamOverSpliterator, 0, jusi_SimpleStreamImpl, [], 1, 0, 0, ["$toList", $rt_wrapFunction0(jus_Stream_toList), "$_init_51", $rt_wrapFunction1(jusi_StreamOverSpliterator__init_), "$next2", $rt_wrapFunction1(jusi_StreamOverSpliterator_next), "$estimateSize", $rt_wrapFunction0(jusi_StreamOverSpliterator_estimateSize)],
-juf_DoubleSupplier, 0, jl_Object, [], 1537, 0, 0, 0,
-oajw_JqapiBridge$trace$lambda$_9_0, "JqapiBridge$trace$lambda$_9_0", 14, jl_Object, [juf_DoubleSupplier], 1, 0, 0, ["$_init_147", $rt_wrapFunction1(oajw_JqapiBridge$trace$lambda$_9_0__init_), "$getAsDouble", $rt_wrapFunction0(oajw_JqapiBridge$trace$lambda$_9_0_getAsDouble)],
-oajw_JqapiBridge$trace$lambda$_9_1, 0, jl_Object, [oajqs_LocalSimulator$OperationListener], 1, 0, 0, ["$_init_148", function(var_1, var_2, var_3, var_4, var_5) { oajw_JqapiBridge$trace$lambda$_9_1__init_(this, var_1, var_2, var_3, var_4, var_5); }, "$onOperation", $rt_wrapFunction4(oajw_JqapiBridge$trace$lambda$_9_1_onOperation)],
 jur_EOISet, "EOISet", 3, jur_AbstractSet, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_EOISet__init_), "$matches", $rt_wrapFunction3(jur_EOISet_matches), "$hasConsumed", $rt_wrapFunction1(jur_EOISet_hasConsumed), "$getName", $rt_wrapFunction0(jur_EOISet_getName)],
 ju_Spliterator, 0, jl_Object, [], 1537, 0, 0, 0,
 jusi_SpliteratorOverCollection, 0, jl_Object, [ju_Spliterator], 1, 0, 0, ["$_init_50", $rt_wrapFunction1(jusi_SpliteratorOverCollection__init_), "$tryAdvance", $rt_wrapFunction1(jusi_SpliteratorOverCollection_tryAdvance), "$estimateSize0", $rt_wrapFunction0(jusi_SpliteratorOverCollection_estimateSize)],
@@ -27258,24 +28466,25 @@ ju_HashMap$KeyIterator, 0, ju_HashMap$AbstractMapIterator, [ju_Iterator], 0, 0, 
 ju_TreeMap$EntrySet, 0, ju_AbstractSet, [ju_SequencedSet], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_47", function(var_1, var_2, var_3, var_4, var_5, var_6, var_7, var_8) { ju_TreeMap$EntrySet__init_(this, var_1, var_2, var_3, var_4, var_5, var_6, var_7, var_8); }, "$iterator", $rt_wrapFunction0(ju_TreeMap$EntrySet_iterator)],
 otji_JSWrapper, 0, jl_Object, [], 17, 0, 0, 0,
 ju_TemplateCollections$TwoElementsSet$1, 0, jl_Object, [ju_Iterator], 0, 0, 0, ["$_init_122", $rt_wrapFunction1(ju_TemplateCollections$TwoElementsSet$1__init_), "$hasNext", $rt_wrapFunction0(ju_TemplateCollections$TwoElementsSet$1_hasNext), "$next", $rt_wrapFunction0(ju_TemplateCollections$TwoElementsSet$1_next)],
-ju_HashSet, "HashSet", 2, ju_AbstractSet, [jl_Cloneable, ji_Serializable], 1, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_0", $rt_wrapFunction0(ju_HashSet__init_2), "$_init_50", $rt_wrapFunction1(ju_HashSet__init_3), "$_init_28", $rt_wrapFunction1(ju_HashSet__init_), "$add", $rt_wrapFunction1(ju_HashSet_add), "$contains0", $rt_wrapFunction1(ju_HashSet_contains), "$iterator",
+ju_HashSet, "HashSet", 2, ju_AbstractSet, [jl_Cloneable, ji_Serializable], 1, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_0", $rt_wrapFunction0(ju_HashSet__init_2), "$_init_50", $rt_wrapFunction1(ju_HashSet__init_3), "$_init_28", $rt_wrapFunction1(ju_HashSet__init_0), "$add", $rt_wrapFunction1(ju_HashSet_add), "$contains0", $rt_wrapFunction1(ju_HashSet_contains), "$iterator",
 $rt_wrapFunction0(ju_HashSet_iterator), "$size", $rt_wrapFunction0(ju_HashSet_size)],
-oajqc_ClassicalRecord, "ClassicalRecord", 19, jl_Record, [], 17, 0, 0, ["$_init_4", $rt_wrapFunction1(oajqc_ClassicalRecord__init_), "$toString", $rt_wrapFunction0(oajqc_ClassicalRecord_toString), "$hashCode2", $rt_wrapFunction0(oajqc_ClassicalRecord_hashCode), "$equals", $rt_wrapFunction1(oajqc_ClassicalRecord_equals), "$bit", $rt_wrapFunction0(oajqc_ClassicalRecord_bit)],
+oajqc_ClassicalRecord, "ClassicalRecord", 20, jl_Record, [], 17, 0, 0, ["$_init_4", $rt_wrapFunction1(oajqc_ClassicalRecord__init_), "$toString", $rt_wrapFunction0(oajqc_ClassicalRecord_toString), "$hashCode2", $rt_wrapFunction0(oajqc_ClassicalRecord_hashCode), "$equals", $rt_wrapFunction1(oajqc_ClassicalRecord_equals), "$bit", $rt_wrapFunction0(oajqc_ClassicalRecord_bit)],
 jnc_BufferUnderflowException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jnc_BufferUnderflowException__init_)],
 jur_MultiLineSOLSet, "MultiLineSOLSet", 3, jur_AbstractSet, [], 0, 0, 0, ["$_init_94", $rt_wrapFunction1(jur_MultiLineSOLSet__init_), "$matches", $rt_wrapFunction3(jur_MultiLineSOLSet_matches), "$hasConsumed", $rt_wrapFunction1(jur_MultiLineSOLSet_hasConsumed), "$getName", $rt_wrapFunction0(jur_MultiLineSOLSet_getName)],
-oajvs_ComplexCell, "ComplexCell", 13, jl_Record, [], 17, 0, 0, ["$_init_17", $rt_wrapFunction2(oajvs_ComplexCell__init_), "$toString", $rt_wrapFunction0(oajvs_ComplexCell_toString), "$hashCode2", $rt_wrapFunction0(oajvs_ComplexCell_hashCode), "$equals", $rt_wrapFunction1(oajvs_ComplexCell_equals), "$re", $rt_wrapFunction0(oajvs_ComplexCell_re), "$im", $rt_wrapFunction0(oajvs_ComplexCell_im)],
+oajvs_ComplexCell, "ComplexCell", 14, jl_Record, [], 17, 0, 0, ["$_init_17", $rt_wrapFunction2(oajvs_ComplexCell__init_), "$toString", $rt_wrapFunction0(oajvs_ComplexCell_toString), "$hashCode2", $rt_wrapFunction0(oajvs_ComplexCell_hashCode), "$equals", $rt_wrapFunction1(oajvs_ComplexCell_equals), "$re", $rt_wrapFunction0(oajvs_ComplexCell_re), "$im", $rt_wrapFunction0(oajvs_ComplexCell_im)],
 jur_AbstractCharClass$LazyLower, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyLower__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyLower_computeValue)],
-ju_AbstractList$TListIteratorImpl, 0, jl_Object, [ju_ListIterator], 0, 0, 0, ["$_init_67", $rt_wrapFunction4(ju_AbstractList$TListIteratorImpl__init_), "$next", $rt_wrapFunction0(ju_AbstractList$TListIteratorImpl_next), "$nextIndex", $rt_wrapFunction0(ju_AbstractList$TListIteratorImpl_nextIndex)],
-oti_AsyncCallback, 0, jl_Object, [], 1537, 0, 0, 0,
+ju_AbstractList$TListIteratorImpl, 0, jl_Object, [ju_ListIterator], 0, 0, 0, ["$_init_67", $rt_wrapFunction4(ju_AbstractList$TListIteratorImpl__init_), "$next", $rt_wrapFunction0(ju_AbstractList$TListIteratorImpl_next), "$nextIndex", $rt_wrapFunction0(ju_AbstractList$TListIteratorImpl_nextIndex)]]);
+$rt_metadata([oti_AsyncCallback, 0, jl_Object, [], 1537, 0, 0, 0,
 ju_AbstractMap$SimpleImmutableEntry, 0, jl_Object, [ju_Map$Entry, ji_Serializable], 1, 0, 0, ["$_init_21", $rt_wrapFunction2(ju_AbstractMap$SimpleImmutableEntry__init_), "$_init_98", $rt_wrapFunction1(ju_AbstractMap$SimpleImmutableEntry__init_0), "$getValue", $rt_wrapFunction0(ju_AbstractMap$SimpleImmutableEntry_getValue), "$getKey", $rt_wrapFunction0(ju_AbstractMap$SimpleImmutableEntry_getKey), "$hashCode2", $rt_wrapFunction0(ju_AbstractMap$SimpleImmutableEntry_hashCode)],
 jur_AbstractCharClass$LazyJavaTitleCase, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaTitleCase__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaTitleCase_computeValue)],
 oajvo_OpenQasmSerializer, 0, jl_Object, [], 17, 0, 0, 0,
-oajvs_CircuitSpec$_init_$lambda$_0_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvs_CircuitSpec$_init_$lambda$_0_0__init_), "$apply1", $rt_wrapFunction1(oajvs_CircuitSpec$_init_$lambda$_0_0_apply0), "$apply3", $rt_wrapFunction1(oajvs_CircuitSpec$_init_$lambda$_0_0_apply)]]);
-$rt_metadata([oajvs_CircuitSpec$_init_$lambda$_0_1, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvs_CircuitSpec$_init_$lambda$_0_1__init_), "$test", $rt_wrapFunction1(oajvs_CircuitSpec$_init_$lambda$_0_1_test0), "$test4", $rt_wrapFunction1(oajvs_CircuitSpec$_init_$lambda$_0_1_test)],
+oajvs_CircuitSpec$_init_$lambda$_0_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvs_CircuitSpec$_init_$lambda$_0_0__init_), "$apply3", $rt_wrapFunction1(oajvs_CircuitSpec$_init_$lambda$_0_0_apply0), "$apply5", $rt_wrapFunction1(oajvs_CircuitSpec$_init_$lambda$_0_0_apply)],
+juf_DoubleSupplier, 0, jl_Object, [], 1537, 0, 0, 0,
+oajvs_CircuitSpec$_init_$lambda$_0_1, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvs_CircuitSpec$_init_$lambda$_0_1__init_), "$test", $rt_wrapFunction1(oajvs_CircuitSpec$_init_$lambda$_0_1_test0), "$test5", $rt_wrapFunction1(oajvs_CircuitSpec$_init_$lambda$_0_1_test)],
 jur_PreviousMatch, "PreviousMatch", 3, jur_AbstractSet, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_PreviousMatch__init_), "$matches", $rt_wrapFunction3(jur_PreviousMatch_matches), "$hasConsumed", $rt_wrapFunction1(jur_PreviousMatch_hasConsumed), "$getName", $rt_wrapFunction0(jur_PreviousMatch_getName)],
-oajm_Complex, "Complex", 20, jl_Object, [], 17, 0, () => oajm_Complex_$callClinit(), ["$_init_17", $rt_wrapFunction2(oajm_Complex__init_0), "$getReal", $rt_wrapFunction0(oajm_Complex_getReal), "$getImaginary", $rt_wrapFunction0(oajm_Complex_getImaginary), "$add7", $rt_wrapFunction1(oajm_Complex_add), "$multiply1", $rt_wrapFunction1(oajm_Complex_multiply0), "$multiply0", $rt_wrapFunction1(oajm_Complex_multiply), "$equals", $rt_wrapFunction1(oajm_Complex_equals), "$hashCode2", $rt_wrapFunction0(oajm_Complex_hashCode),
+oajm_Complex, "Complex", 21, jl_Object, [], 17, 0, () => oajm_Complex_$callClinit(), ["$_init_17", $rt_wrapFunction2(oajm_Complex__init_0), "$getReal", $rt_wrapFunction0(oajm_Complex_getReal), "$getImaginary", $rt_wrapFunction0(oajm_Complex_getImaginary), "$add7", $rt_wrapFunction1(oajm_Complex_add), "$multiply1", $rt_wrapFunction1(oajm_Complex_multiply0), "$multiply0", $rt_wrapFunction1(oajm_Complex_multiply), "$equals", $rt_wrapFunction1(oajm_Complex_equals), "$hashCode2", $rt_wrapFunction0(oajm_Complex_hashCode),
 "$conjugate", $rt_wrapFunction0(oajm_Complex_conjugate), "$toString", $rt_wrapFunction0(oajm_Complex_toString)],
-oajvs_GateKind, "GateKind", 13, jl_Enum, [], 65553, 0, () => oajvs_GateKind_$callClinit(), 0,
+oajvs_GateKind, "GateKind", 14, jl_Enum, [], 65553, 0, () => oajvs_GateKind_$callClinit(), 0,
 jur_NonCapFSet, "NonCapFSet", 3, jur_FSet, [], 0, 0, 0, ["$_init_4", $rt_wrapFunction1(jur_NonCapFSet__init_), "$matches", $rt_wrapFunction3(jur_NonCapFSet_matches), "$getName", $rt_wrapFunction0(jur_NonCapFSet_getName), "$hasConsumed", $rt_wrapFunction1(jur_NonCapFSet_hasConsumed)],
 jur_UCISupplCharSet, "UCISupplCharSet", 3, jur_LeafSet, [], 0, 0, 0, ["$_init_4", $rt_wrapFunction1(jur_UCISupplCharSet__init_), "$accepts", $rt_wrapFunction2(jur_UCISupplCharSet_accepts), "$getName", $rt_wrapFunction0(jur_UCISupplCharSet_getName)],
 jl_System, 0, jl_Object, [], 17, 0, 0, 0,
@@ -27284,11 +28493,12 @@ jur_AbstractCharClass$LazyRange, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 
 jur_AbstractCharClass$LazyXDigit, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyXDigit__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyXDigit_computeValue)],
 js_SecureRandom, "SecureRandom", 1, ju_Random, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(js_SecureRandom__init_0), "$next4", $rt_wrapFunction1(js_SecureRandom_next), "$nextBytes", $rt_wrapFunction1(js_SecureRandom_nextBytes), "$nextInt", $rt_wrapFunction0(js_SecureRandom_nextInt), "$nextDouble", $rt_wrapFunction0(js_SecureRandom_nextDouble)],
 jusi_DistinctStreamImpl$wrap$lambda$_1_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_128", $rt_wrapFunction2(jusi_DistinctStreamImpl$wrap$lambda$_1_0__init_), "$test", $rt_wrapFunction1(jusi_DistinctStreamImpl$wrap$lambda$_1_0_test)],
-jur_Matcher, 0, jl_Object, [jur_MatchResult], 17, 0, 0, ["$region", $rt_wrapFunction2(jur_Matcher_region), "$group", $rt_wrapFunction1(jur_Matcher_group), "$group0", $rt_wrapFunction0(jur_Matcher_group0), "$end", $rt_wrapFunction1(jur_Matcher_end0), "$matches1", $rt_wrapFunction0(jur_Matcher_matches), "$lookingAt0", $rt_wrapFunction0(jur_Matcher_lookingAt0), "$end0", $rt_wrapFunction0(jur_Matcher_end), "$_init_85", $rt_wrapFunction2(jur_Matcher__init_)],
+jur_Matcher, 0, jl_Object, [jur_MatchResult], 17, 0, 0, ["$region", $rt_wrapFunction2(jur_Matcher_region), "$group", $rt_wrapFunction1(jur_Matcher_group), "$group0", $rt_wrapFunction0(jur_Matcher_group0), "$find1", $rt_wrapFunction1(jur_Matcher_find), "$find0", $rt_wrapFunction0(jur_Matcher_find0), "$start", $rt_wrapFunction1(jur_Matcher_start0), "$end", $rt_wrapFunction1(jur_Matcher_end0), "$matches1", $rt_wrapFunction0(jur_Matcher_matches), "$lookingAt0", $rt_wrapFunction0(jur_Matcher_lookingAt0), "$start0",
+$rt_wrapFunction0(jur_Matcher_start), "$end0", $rt_wrapFunction0(jur_Matcher_end), "$hasTransparentBounds", $rt_wrapFunction0(jur_Matcher_hasTransparentBounds), "$_init_85", $rt_wrapFunction2(jur_Matcher__init_)],
 jur_DotAllSet, "DotAllSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_DotAllSet__init_), "$matches", $rt_wrapFunction3(jur_DotAllSet_matches), "$getName", $rt_wrapFunction0(jur_DotAllSet_getName), "$setNext", $rt_wrapFunction1(jur_DotAllSet_setNext), "$getType", $rt_wrapFunction0(jur_DotAllSet_getType), "$hasConsumed", $rt_wrapFunction1(jur_DotAllSet_hasConsumed)],
 jusi_SimpleStreamImpl$toArray$lambda$_21_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_13", $rt_wrapFunction1(jusi_SimpleStreamImpl$toArray$lambda$_21_0__init_), "$test", $rt_wrapFunction1(jusi_SimpleStreamImpl$toArray$lambda$_21_0_test)],
 jur_AbstractCharClass$LazyJavaLowerCase$1, "AbstractCharClass$LazyJavaLowerCase$1", 3, jur_AbstractCharClass, [], 0, 0, 0, ["$_init_123", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaLowerCase$1__init_), "$contains", $rt_wrapFunction1(jur_AbstractCharClass$LazyJavaLowerCase$1_contains)],
-oajvs_LevelSpec, "LevelSpec", 13, jl_Record, [], 17, 0, 0, ["$_init_13", $rt_wrapFunction1(oajvs_LevelSpec__init_), "$toString", $rt_wrapFunction0(oajvs_LevelSpec_toString), "$hashCode2", $rt_wrapFunction0(oajvs_LevelSpec_hashCode), "$equals", $rt_wrapFunction1(oajvs_LevelSpec_equals), "$gates", $rt_wrapFunction0(oajvs_LevelSpec_gates)],
+oajvs_LevelSpec, "LevelSpec", 14, jl_Record, [], 17, 0, 0, ["$_init_13", $rt_wrapFunction1(oajvs_LevelSpec__init_), "$toString", $rt_wrapFunction0(oajvs_LevelSpec_toString), "$hashCode2", $rt_wrapFunction0(oajvs_LevelSpec_hashCode), "$equals", $rt_wrapFunction1(oajvs_LevelSpec_equals), "$gates", $rt_wrapFunction0(oajvs_LevelSpec_gates)],
 jl_Object$monitorExit$lambda$_8_1, 0, jl_Object, [otp_PlatformRunnable], 1, 0, 0, ["$_init_2", $rt_wrapFunction1(jl_Object$monitorExit$lambda$_8_1__init_), "$run", $rt_wrapFunction0(jl_Object$monitorExit$lambda$_8_1_run)],
 jl_MatchException, 0, jl_RuntimeException, [], 17, 0, 0, ["$_init_15", $rt_wrapFunction2(jl_MatchException__init_)],
 jur_UCISupplRangeSet, "UCISupplRangeSet", 3, jur_SupplRangeSet, [], 0, 0, 0, ["$_init_96", $rt_wrapFunction1(jur_UCISupplRangeSet__init_), "$contains", $rt_wrapFunction1(jur_UCISupplRangeSet_contains), "$getName", $rt_wrapFunction0(jur_UCISupplRangeSet_getName)],
@@ -27296,61 +28506,65 @@ jur_AbstractCharClass$LazyJavaUpperCase, 0, jur_AbstractCharClass$LazyCharClass,
 jur_HangulDecomposedCharSet, "HangulDecomposedCharSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_89", $rt_wrapFunction2(jur_HangulDecomposedCharSet__init_), "$setNext", $rt_wrapFunction1(jur_HangulDecomposedCharSet_setNext), "$getName", $rt_wrapFunction0(jur_HangulDecomposedCharSet_getName), "$matches", $rt_wrapFunction3(jur_HangulDecomposedCharSet_matches), "$first", $rt_wrapFunction1(jur_HangulDecomposedCharSet_first), "$hasConsumed", $rt_wrapFunction1(jur_HangulDecomposedCharSet_hasConsumed)],
 jur_AbstractCharClass$LazyPunct, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyPunct__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyPunct_computeValue)],
 ju_TemplateCollections$TwoElementsList, 0, ju_TemplateCollections$AbstractImmutableList, [ju_RandomAccess], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$getFirst", $rt_wrapFunction0(ju_List_getFirst), "$_init_21", $rt_wrapFunction2(ju_TemplateCollections$TwoElementsList__init_), "$size", $rt_wrapFunction0(ju_TemplateCollections$TwoElementsList_size), "$get0", $rt_wrapFunction1(ju_TemplateCollections$TwoElementsList_get)],
-oajqg_ConditionalGate, "ConditionalGate", 17, oajqg_Gate, [], 17, 0, 0, ["$_init_119", $rt_wrapFunction2(oajqg_ConditionalGate__init_), "$condition", $rt_wrapFunction0(oajqg_ConditionalGate_condition)],
+oajqg_ConditionalGate, "ConditionalGate", 18, oajqg_Gate, [], 17, 0, 0, ["$_init_119", $rt_wrapFunction2(oajqg_ConditionalGate__init_), "$condition", $rt_wrapFunction0(oajqg_ConditionalGate_condition)],
 jusi_AnyMatchConsumer, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_76", $rt_wrapFunction1(jusi_AnyMatchConsumer__init_), "$test", $rt_wrapFunction1(jusi_AnyMatchConsumer_test)],
-ju_TemplateCollections$NElementSet, 0, ju_TemplateCollections$AbstractImmutableSet, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_63", $rt_wrapFunction1(ju_TemplateCollections$NElementSet__init_0), "$contains0", $rt_wrapFunction1(ju_TemplateCollections$NElementSet_contains)],
+ju_TemplateCollections$NElementSet, 0, ju_TemplateCollections$AbstractImmutableSet, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_63", $rt_wrapFunction1(ju_TemplateCollections$NElementSet__init_1), "$_init_50", $rt_wrapFunction1(ju_TemplateCollections$NElementSet__init_0), "$contains0", $rt_wrapFunction1(ju_TemplateCollections$NElementSet_contains)],
 ju_TemplateCollections$NEtriesMap$1, 0, ju_TemplateCollections$AbstractImmutableSet, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_133", $rt_wrapFunction1(ju_TemplateCollections$NEtriesMap$1__init_), "$size", $rt_wrapFunction0(ju_TemplateCollections$NEtriesMap$1_size), "$iterator", $rt_wrapFunction0(ju_TemplateCollections$NEtriesMap$1_iterator)],
 ju_AbstractList$SubAbstractList$SubAbstractListIterator, 0, jl_Object, [ju_ListIterator], 16, 0, 0, ["$_init_79", $rt_wrapFunction4(ju_AbstractList$SubAbstractList$SubAbstractListIterator__init_), "$hasNext", $rt_wrapFunction0(ju_AbstractList$SubAbstractList$SubAbstractListIterator_hasNext), "$next", $rt_wrapFunction0(ju_AbstractList$SubAbstractList$SubAbstractListIterator_next)],
 jm_Multiplication, 0, jl_Object, [], 0, 0, () => jm_Multiplication_$callClinit(), 0,
 ju_LinkedHashMapKeySet, 0, ju_AbstractSet, [ju_SequencedSet], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_30", $rt_wrapFunction2(ju_LinkedHashMapKeySet__init_), "$size", $rt_wrapFunction0(ju_LinkedHashMapKeySet_size), "$iterator", $rt_wrapFunction0(ju_LinkedHashMapKeySet_iterator), "$contains0", $rt_wrapFunction1(ju_LinkedHashMapKeySet_contains)],
 jur_WordBoundary, "WordBoundary", 3, jur_AbstractSet, [], 0, 0, 0, ["$_init_60", $rt_wrapFunction1(jur_WordBoundary__init_), "$matches", $rt_wrapFunction3(jur_WordBoundary_matches), "$hasConsumed", $rt_wrapFunction1(jur_WordBoundary_hasConsumed), "$getName", $rt_wrapFunction0(jur_WordBoundary_getName)],
 jur_AbstractCharClass$LazySpace, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazySpace__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazySpace_computeValue)],
-oajqg_Toffoli, "Toffoli", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_116", $rt_wrapFunction3(oajqg_Toffoli__init_)],
+oajqg_Toffoli, "Toffoli", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_116", $rt_wrapFunction3(oajqg_Toffoli__init_)],
 otrf_VirtualFileSystemProvider, 0, jl_Object, [], 17, 0, 0, 0,
 ju_HashMap$1, 0, ju_AbstractSet, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$_init_28", $rt_wrapFunction1(ju_HashMap$1__init_), "$contains0", $rt_wrapFunction1(ju_HashMap$1_contains), "$size", $rt_wrapFunction0(ju_HashMap$1_size), "$iterator", $rt_wrapFunction0(ju_HashMap$1_iterator)],
-oajqs_SamplingOptions$lambda$new$0$lambda$_14_0, "SamplingOptions$lambda$new$0$lambda$_14_0", 18, jl_Object, [juf_DoubleSupplier], 1, 0, 0, ["$_init_109", $rt_wrapFunction1(oajqs_SamplingOptions$lambda$new$0$lambda$_14_0__init_), "$getAsDouble", $rt_wrapFunction0(oajqs_SamplingOptions$lambda$new$0$lambda$_14_0_getAsDouble)],
+oajqs_SamplingOptions$lambda$new$0$lambda$_14_0, "SamplingOptions$lambda$new$0$lambda$_14_0", 19, jl_Object, [juf_DoubleSupplier], 1, 0, 0, ["$_init_109", $rt_wrapFunction1(oajqs_SamplingOptions$lambda$new$0$lambda$_14_0__init_), "$getAsDouble", $rt_wrapFunction0(oajqs_SamplingOptions$lambda$new$0$lambda$_14_0_getAsDouble)],
 jl_Double, "Double", 7, jl_Number, [jl_Comparable], 1, 0, () => jl_Double_$callClinit(), ["$_init_19", $rt_wrapFunction1(jl_Double__init_), "$doubleValue", $rt_wrapFunction0(jl_Double_doubleValue), "$toString", $rt_wrapFunction0(jl_Double_toString0), "$equals", $rt_wrapFunction1(jl_Double_equals0), "$hashCode2", $rt_wrapFunction0(jl_Double_hashCode0), "$compareTo5", $rt_wrapFunction1(jl_Double_compareTo0), "$compareTo1", $rt_wrapFunction1(jl_Double_compareTo)],
 jm_Elementary, 0, jl_Object, [], 0, 0, 0, 0,
 jur_IntHash, 0, jl_Object, [], 0, 0, 0, 0,
-jusi_SimpleStreamImpl$toArray$lambda$_20_0, 0, jl_Object, [juf_IntFunction], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jusi_SimpleStreamImpl$toArray$lambda$_20_0__init_), "$apply0", $rt_wrapFunction1(jusi_SimpleStreamImpl$toArray$lambda$_20_0_apply0), "$apply4", $rt_wrapFunction1(jusi_SimpleStreamImpl$toArray$lambda$_20_0_apply)],
+jusi_SimpleStreamImpl$toArray$lambda$_20_0, 0, jl_Object, [juf_IntFunction], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jusi_SimpleStreamImpl$toArray$lambda$_20_0__init_), "$apply2", $rt_wrapFunction1(jusi_SimpleStreamImpl$toArray$lambda$_20_0_apply0), "$apply6", $rt_wrapFunction1(jusi_SimpleStreamImpl$toArray$lambda$_20_0_apply)],
 oajw_JqapiBridge$InvalidObservableException, 0, jl_RuntimeException, [], 16, 0, 0, 0,
-oajvo_OpenQasmParser$Argument, "OpenQasmParser$Argument", 12, jl_Record, [], 16, 0, 0, ["$toString", $rt_wrapFunction0(oajvo_OpenQasmParser$Argument_toString), "$hashCode2", $rt_wrapFunction0(oajvo_OpenQasmParser$Argument_hashCode), "$equals", $rt_wrapFunction1(oajvo_OpenQasmParser$Argument_equals), "$indexes", $rt_wrapFunction0(oajvo_OpenQasmParser$Argument_indexes), "$wholeRegister", $rt_wrapFunction0(oajvo_OpenQasmParser$Argument_wholeRegister)],
-jusi_WrappingIntStreamImpl, 0, jusi_SimpleIntStreamImpl, [], 1025, 0, 0, ["$_init_14", $rt_wrapFunction1(jusi_WrappingIntStreamImpl__init_), "$next0", $rt_wrapFunction1(jusi_WrappingIntStreamImpl_next), "$estimateSize", $rt_wrapFunction0(jusi_WrappingIntStreamImpl_estimateSize)],
-jusi_SimpleStreamImpl$ArrayFillingConsumer, 0, jl_Object, [juf_Predicate], 0, 0, 0, ["$_init_63", $rt_wrapFunction1(jusi_SimpleStreamImpl$ArrayFillingConsumer__init_), "$test", $rt_wrapFunction1(jusi_SimpleStreamImpl$ArrayFillingConsumer_test)],
+oajvo_OpenQasmParser$Argument, "OpenQasmParser$Argument", 13, jl_Record, [], 16, 0, 0, ["$toString", $rt_wrapFunction0(oajvo_OpenQasmParser$Argument_toString), "$hashCode2", $rt_wrapFunction0(oajvo_OpenQasmParser$Argument_hashCode), "$equals", $rt_wrapFunction1(oajvo_OpenQasmParser$Argument_equals), "$indexes", $rt_wrapFunction0(oajvo_OpenQasmParser$Argument_indexes), "$wholeRegister", $rt_wrapFunction0(oajvo_OpenQasmParser$Argument_wholeRegister)],
+jusi_WrappingIntStreamImpl, 0, jusi_SimpleIntStreamImpl, [], 1025, 0, 0, ["$_init_14", $rt_wrapFunction1(jusi_WrappingIntStreamImpl__init_), "$next0", $rt_wrapFunction1(jusi_WrappingIntStreamImpl_next), "$estimateSize", $rt_wrapFunction0(jusi_WrappingIntStreamImpl_estimateSize)]]);
+$rt_metadata([jusi_SimpleStreamImpl$ArrayFillingConsumer, 0, jl_Object, [juf_Predicate], 0, 0, 0, ["$_init_63", $rt_wrapFunction1(jusi_SimpleStreamImpl$ArrayFillingConsumer__init_), "$test", $rt_wrapFunction1(jusi_SimpleStreamImpl$ArrayFillingConsumer_test)],
 jur_ReluctantAltQuantifierSet, "ReluctantAltQuantifierSet", 3, jur_AltQuantifierSet, [], 0, 0, 0, ["$_init_53", $rt_wrapFunction3(jur_ReluctantAltQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_ReluctantAltQuantifierSet_matches)],
 jl_NegativeArraySizeException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_NegativeArraySizeException__init_)],
-jusi_MappingStreamImpl$wrap$lambda$_1_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_160", $rt_wrapFunction2(jusi_MappingStreamImpl$wrap$lambda$_1_0__init_), "$test", $rt_wrapFunction1(jusi_MappingStreamImpl$wrap$lambda$_1_0_test)],
+jusi_MappingStreamImpl$wrap$lambda$_1_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_164", $rt_wrapFunction2(jusi_MappingStreamImpl$wrap$lambda$_1_0__init_), "$test", $rt_wrapFunction1(jusi_MappingStreamImpl$wrap$lambda$_1_0_test)],
 jur_AbstractCharClass$LazyJavaWhitespace, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaWhitespace__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaWhitespace_computeValue)],
-oajqg_Identity, "Identity", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_Identity__init_)]]);
-$rt_metadata([jl_NumberFormatException, 0, jl_IllegalArgumentException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_NumberFormatException__init_2), "$_init_", $rt_wrapFunction1(jl_NumberFormatException__init_0)],
-oajvo_OpenQasmSerializer$serialize$lambda$_2_1, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvo_OpenQasmSerializer$serialize$lambda$_2_1__init_), "$apply1", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_1_apply0), "$apply5", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_1_apply)],
-oajvo_OpenQasmSerializer$serialize$lambda$_2_2, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_139", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_2__init_), "$apply1", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_2_apply0), "$apply6", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_2_apply)],
+oajqg_Identity, "Identity", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_Identity__init_)],
+jl_NumberFormatException, 0, jl_IllegalArgumentException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_NumberFormatException__init_2), "$_init_", $rt_wrapFunction1(jl_NumberFormatException__init_0)],
+oajvo_OpenQasmSerializer$serialize$lambda$_2_1, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvo_OpenQasmSerializer$serialize$lambda$_2_1__init_), "$apply3", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_1_apply0), "$apply", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_1_apply)],
+oajvo_OpenQasmSerializer$serialize$lambda$_2_2, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_139", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_2__init_), "$apply3", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_2_apply0), "$apply7", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_2_apply)],
 jusi_BoxedIntStream, 0, jusi_SimpleStreamImpl, [], 1, 0, 0, ["$toList", $rt_wrapFunction0(jus_Stream_toList), "$_init_14", $rt_wrapFunction1(jusi_BoxedIntStream__init_), "$next2", $rt_wrapFunction1(jusi_BoxedIntStream_next)],
-oajvo_OpenQasmSerializer$serialize$lambda$_2_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvo_OpenQasmSerializer$serialize$lambda$_2_0__init_), "$apply1", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_0_apply0), "$apply7", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_0_apply)],
-oajqc_Condition, "Condition", 19, jl_Record, [], 17, 0, 0, ["$_init_10", $rt_wrapFunction2(oajqc_Condition__init_0), "$toString", $rt_wrapFunction0(oajqc_Condition_toString), "$hashCode2", $rt_wrapFunction0(oajqc_Condition_hashCode), "$equals", $rt_wrapFunction1(oajqc_Condition_equals), "$bitIndex", $rt_wrapFunction0(oajqc_Condition_bitIndex), "$expected", $rt_wrapFunction0(oajqc_Condition_expected)],
+oajvo_OpenQasmSerializer$serialize$lambda$_2_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajvo_OpenQasmSerializer$serialize$lambda$_2_0__init_), "$apply3", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_0_apply0), "$apply8", $rt_wrapFunction1(oajvo_OpenQasmSerializer$serialize$lambda$_2_0_apply)],
+oajqc_Condition, "Condition", 20, jl_Record, [], 17, 0, 0, ["$_init_10", $rt_wrapFunction2(oajqc_Condition__init_0), "$toString", $rt_wrapFunction0(oajqc_Condition_toString), "$hashCode2", $rt_wrapFunction0(oajqc_Condition_hashCode), "$equals", $rt_wrapFunction1(oajqc_Condition_equals), "$bitIndex", $rt_wrapFunction0(oajqc_Condition_bitIndex), "$expected", $rt_wrapFunction0(oajqc_Condition_expected)],
 oajw_JqapiBridge, 0, jl_Object, [], 17, 0, () => oajw_JqapiBridge_$callClinit(), 0,
 jur_IntArrHash, 0, jl_Object, [], 0, 0, 0, 0,
 oaje_UnsupportedSpecVersionException, 0, jl_IllegalArgumentException, [], 17, 0, 0, ["$_init_4", $rt_wrapFunction1(oaje_UnsupportedSpecVersionException__init_0)],
 jur_AbstractCharClass$LazyJavaMirrored, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaMirrored__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaMirrored_computeValue)],
 jusi_SimpleStreamIterator, 0, jl_Object, [ju_Iterator], 1, 0, 0, ["$_init_74", $rt_wrapFunction1(jusi_SimpleStreamIterator__init_), "$hasNext", $rt_wrapFunction0(jusi_SimpleStreamIterator_hasNext), "$next", $rt_wrapFunction0(jusi_SimpleStreamIterator_next)],
-oajq_QuantumRegister$_init_$lambda$_3_0, "QuantumRegister$<init>$lambda$_3_0", 16, jl_Object, [juf_DoubleSupplier], 1, 0, 0, ["$_init_109", $rt_wrapFunction1(oajq_QuantumRegister$_init_$lambda$_3_0__init_), "$getAsDouble", $rt_wrapFunction0(oajq_QuantumRegister$_init_$lambda$_3_0_getAsDouble)],
+oajvl_CircuitLinter, 0, jl_Object, [], 17, 0, 0, 0,
+oajq_QuantumRegister$_init_$lambda$_3_0, "QuantumRegister$<init>$lambda$_3_0", 17, jl_Object, [juf_DoubleSupplier], 1, 0, 0, ["$_init_109", $rt_wrapFunction1(oajq_QuantumRegister$_init_$lambda$_3_0__init_), "$getAsDouble", $rt_wrapFunction0(oajq_QuantumRegister$_init_$lambda$_3_0_getAsDouble)],
 jur_AbstractCharClass$LazyJavaISOControl, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaISOControl__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyJavaISOControl_computeValue)],
 jl_IllegalStateException, 0, jl_RuntimeException, [], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jl_IllegalStateException__init_2), "$_init_", $rt_wrapFunction1(jl_IllegalStateException__init_1)],
-oajqg_ControlledNot, "ControlledNot", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_115", $rt_wrapFunction2(oajqg_ControlledNot__init_)],
-jur_HighSurrogateCharSet, "HighSurrogateCharSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_90", $rt_wrapFunction1(jur_HighSurrogateCharSet__init_0), "$setNext", $rt_wrapFunction1(jur_HighSurrogateCharSet_setNext), "$matches", $rt_wrapFunction3(jur_HighSurrogateCharSet_matches), "$findBack", $rt_wrapFunction4(jur_HighSurrogateCharSet_findBack), "$getName", $rt_wrapFunction0(jur_HighSurrogateCharSet_getName), "$first", $rt_wrapFunction1(jur_HighSurrogateCharSet_first), "$hasConsumed", $rt_wrapFunction1(jur_HighSurrogateCharSet_hasConsumed)],
+oajqg_ControlledNot, "ControlledNot", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_115", $rt_wrapFunction2(oajqg_ControlledNot__init_)],
+jur_HighSurrogateCharSet, "HighSurrogateCharSet", 3, jur_JointSet, [], 0, 0, 0, ["$_init_90", $rt_wrapFunction1(jur_HighSurrogateCharSet__init_0), "$setNext", $rt_wrapFunction1(jur_HighSurrogateCharSet_setNext), "$matches", $rt_wrapFunction3(jur_HighSurrogateCharSet_matches), "$find", $rt_wrapFunction3(jur_HighSurrogateCharSet_find), "$findBack", $rt_wrapFunction4(jur_HighSurrogateCharSet_findBack), "$getName", $rt_wrapFunction0(jur_HighSurrogateCharSet_getName), "$first", $rt_wrapFunction1(jur_HighSurrogateCharSet_first),
+"$hasConsumed", $rt_wrapFunction1(jur_HighSurrogateCharSet_hasConsumed)],
 jur_ReluctantCompositeQuantifierSet, "ReluctantCompositeQuantifierSet", 3, jur_CompositeQuantifierSet, [], 0, 0, 0, ["$_init_93", $rt_wrapFunction4(jur_ReluctantCompositeQuantifierSet__init_), "$matches", $rt_wrapFunction3(jur_ReluctantCompositeQuantifierSet_matches)],
 jn_ByteBuffer, 0, jn_Buffer, [jl_Comparable], 1025, 0, 0, ["$_init_0", $rt_wrapFunction0(jn_ByteBuffer__init_), "$get11", $rt_wrapFunction3(jn_ByteBuffer_get), "$get7", $rt_wrapFunction1(jn_ByteBuffer_get0), "$put2", $rt_wrapFunction3(jn_ByteBuffer_put0), "$put0", $rt_wrapFunction1(jn_ByteBuffer_put), "$hasArray", $rt_wrapFunction0(jn_ByteBuffer_hasArray), "$array", $rt_wrapFunction0(jn_ByteBuffer_array), "$flip", $rt_wrapFunction0(jn_ByteBuffer_flip), "$position2", $rt_wrapFunction1(jn_ByteBuffer_position)],
 jur_SOLSet, "SOLSet", 3, jur_AbstractSet, [], 16, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_SOLSet__init_), "$matches", $rt_wrapFunction3(jur_SOLSet_matches), "$hasConsumed", $rt_wrapFunction1(jur_SOLSet_hasConsumed), "$getName", $rt_wrapFunction0(jur_SOLSet_getName)],
-otpp_AsyncCallbackWrapper, 0, jl_Object, [oti_AsyncCallback], 0, 0, 0, ["$_init_153", $rt_wrapFunction1(otpp_AsyncCallbackWrapper__init_), "$complete", $rt_wrapFunction1(otpp_AsyncCallbackWrapper_complete), "$error0", $rt_wrapFunction1(otpp_AsyncCallbackWrapper_error)],
-oajo_PauliSum, "PauliSum", 15, jl_Record, [], 17, 0, 0, ["$_init_13", $rt_wrapFunction1(oajo_PauliSum__init_), "$numQubits", $rt_wrapFunction0(oajo_PauliSum_numQubits), "$toString", $rt_wrapFunction0(oajo_PauliSum_toString), "$hashCode2", $rt_wrapFunction0(oajo_PauliSum_hashCode), "$equals", $rt_wrapFunction1(oajo_PauliSum_equals), "$terms", $rt_wrapFunction0(oajo_PauliSum_terms)],
+otpp_AsyncCallbackWrapper, 0, jl_Object, [oti_AsyncCallback], 0, 0, 0, ["$_init_155", $rt_wrapFunction1(otpp_AsyncCallbackWrapper__init_), "$complete", $rt_wrapFunction1(otpp_AsyncCallbackWrapper_complete), "$error0", $rt_wrapFunction1(otpp_AsyncCallbackWrapper_error)],
+oajw_JqapiBridge$trace$lambda$_13_0, "JqapiBridge$trace$lambda$_13_0", 15, jl_Object, [juf_DoubleSupplier], 1, 0, 0, ["$_init_147", $rt_wrapFunction1(oajw_JqapiBridge$trace$lambda$_13_0__init_), "$getAsDouble", $rt_wrapFunction0(oajw_JqapiBridge$trace$lambda$_13_0_getAsDouble)],
+oajw_JqapiBridge$trace$lambda$_13_1, 0, jl_Object, [oajqs_LocalSimulator$OperationListener], 1, 0, 0, ["$_init_148", function(var_1, var_2, var_3, var_4, var_5) { oajw_JqapiBridge$trace$lambda$_13_1__init_(this, var_1, var_2, var_3, var_4, var_5); }, "$onOperation", $rt_wrapFunction4(oajw_JqapiBridge$trace$lambda$_13_1_onOperation)],
+oajo_PauliSum, "PauliSum", 16, jl_Record, [], 17, 0, 0, ["$_init_13", $rt_wrapFunction1(oajo_PauliSum__init_), "$numQubits", $rt_wrapFunction0(oajo_PauliSum_numQubits), "$toString", $rt_wrapFunction0(oajo_PauliSum_toString), "$hashCode2", $rt_wrapFunction0(oajo_PauliSum_hashCode), "$equals", $rt_wrapFunction1(oajo_PauliSum_equals), "$terms", $rt_wrapFunction0(oajo_PauliSum_terms)],
 jusi_FindFirstConsumer, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(jusi_FindFirstConsumer__init_), "$test", $rt_wrapFunction1(jusi_FindFirstConsumer_test)],
 jm_RoundingMode, "RoundingMode", 6, jl_Enum, [], 65553, 0, () => jm_RoundingMode_$callClinit(), 0,
-oajq_Circuit, "Circuit", 16, jl_Object, [], 1, 0, 0, ["$_init_111", $rt_wrapFunction3(oajq_Circuit__init_0), "$getNumClassicalBits", $rt_wrapFunction0(oajq_Circuit_getNumClassicalBits), "$validateClassicalOperations", $rt_wrapFunction0(oajq_Circuit_validateClassicalOperations), "$getInputSize", $rt_wrapFunction0(oajq_Circuit_getInputSize), "$getConfig", $rt_wrapFunction0(oajq_Circuit_getConfig), "$getLevels", $rt_wrapFunction0(oajq_Circuit_getLevels), "$addLevel", $rt_wrapFunction1(oajq_Circuit_addLevel)],
-oajq_Circuit$initializeLevels$lambda$_14_2, 0, jl_Object, [juf_Consumer], 1, 0, 0, ["$_init_155", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_2__init_), "$accept0", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_2_accept0), "$accept", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_2_accept)],
-oajq_Circuit$initializeLevels$lambda$_14_1, 0, jl_Object, [juf_IntPredicate], 1, 0, 0, ["$_init_155", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_1__init_), "$test5", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_1_test)],
-oajqs_ExpectationSampler$execute$lambda$_3_1, "ExpectationSampler$execute$lambda$_3_1", 18, jl_Object, [juf_Supplier], 1, 0, 0, ["$_init_165", $rt_wrapFunction1(oajqs_ExpectationSampler$execute$lambda$_3_1__init_), "$get5", $rt_wrapFunction0(oajqs_ExpectationSampler$execute$lambda$_3_1_get0), "$get6", $rt_wrapFunction0(oajqs_ExpectationSampler$execute$lambda$_3_1_get)],
+oajq_Circuit, "Circuit", 17, jl_Object, [], 1, 0, 0, ["$_init_111", $rt_wrapFunction3(oajq_Circuit__init_0), "$getNumClassicalBits", $rt_wrapFunction0(oajq_Circuit_getNumClassicalBits), "$validateClassicalOperations", $rt_wrapFunction0(oajq_Circuit_validateClassicalOperations), "$getInputSize", $rt_wrapFunction0(oajq_Circuit_getInputSize), "$getConfig", $rt_wrapFunction0(oajq_Circuit_getConfig), "$getLevels", $rt_wrapFunction0(oajq_Circuit_getLevels), "$addLevel", $rt_wrapFunction1(oajq_Circuit_addLevel)],
+oajq_Circuit$initializeLevels$lambda$_14_2, 0, jl_Object, [juf_Consumer], 1, 0, 0, ["$_init_157", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_2__init_), "$accept0", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_2_accept0), "$accept", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_2_accept)],
+oajq_Circuit$initializeLevels$lambda$_14_1, 0, jl_Object, [juf_IntPredicate], 1, 0, 0, ["$_init_157", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_1__init_), "$test6", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_1_test)],
+oajqs_ExpectationSampler$execute$lambda$_3_1, "ExpectationSampler$execute$lambda$_3_1", 19, jl_Object, [juf_Supplier], 1, 0, 0, ["$_init_169", $rt_wrapFunction1(oajqs_ExpectationSampler$execute$lambda$_3_1__init_), "$get5", $rt_wrapFunction0(oajqs_ExpectationSampler$execute$lambda$_3_1_get0), "$get6", $rt_wrapFunction0(oajqs_ExpectationSampler$execute$lambda$_3_1_get)],
 oajq_Circuit$initializeLevels$lambda$_14_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_146", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_0__init_), "$test", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_0_test0), "$test1", $rt_wrapFunction1(oajq_Circuit$initializeLevels$lambda$_14_0_test)],
-oajqs_ExpectationSampler$execute$lambda$_3_0, "ExpectationSampler$execute$lambda$_3_0", 18, jl_Object, [juf_DoubleSupplier], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajqs_ExpectationSampler$execute$lambda$_3_0__init_), "$getAsDouble", $rt_wrapFunction0(oajqs_ExpectationSampler$execute$lambda$_3_0_getAsDouble)],
+oajqs_ExpectationSampler$execute$lambda$_3_0, "ExpectationSampler$execute$lambda$_3_0", 19, jl_Object, [juf_DoubleSupplier], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajqs_ExpectationSampler$execute$lambda$_3_0__init_), "$getAsDouble", $rt_wrapFunction0(oajqs_ExpectationSampler$execute$lambda$_3_0_getAsDouble)],
 ju_Optional, 0, jl_Object, [], 17, 0, 0, ["$orElseThrow", $rt_wrapFunction1(ju_Optional_orElseThrow)],
 ju_TemplateCollections$SingleElementList, "TemplateCollections$SingleElementList", 2, ju_TemplateCollections$AbstractImmutableList, [ju_RandomAccess], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$getFirst", $rt_wrapFunction0(ju_List_getFirst), "$_init_2", $rt_wrapFunction1(ju_TemplateCollections$SingleElementList__init_), "$size", $rt_wrapFunction0(ju_TemplateCollections$SingleElementList_size),
 "$get0", $rt_wrapFunction1(ju_TemplateCollections$SingleElementList_get)],
@@ -27362,38 +28576,38 @@ jusi_MappingStreamImpl, 0, jusi_WrappingStreamImpl, [], 1, 0, 0, ["$toList", $rt
 jur_UMultiLineEOLSet, "UMultiLineEOLSet", 3, jur_AbstractSet, [], 0, 0, 0, ["$_init_4", $rt_wrapFunction1(jur_UMultiLineEOLSet__init_), "$matches", $rt_wrapFunction3(jur_UMultiLineEOLSet_matches), "$hasConsumed", $rt_wrapFunction1(jur_UMultiLineEOLSet_hasConsumed), "$getName", $rt_wrapFunction0(jur_UMultiLineEOLSet_getName)],
 oajq_CircuitLevel$verify$lambda$_5_1, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_13", $rt_wrapFunction1(oajq_CircuitLevel$verify$lambda$_5_1__init_), "$test", $rt_wrapFunction1(oajq_CircuitLevel$verify$lambda$_5_1_test0), "$test0", $rt_wrapFunction1(oajq_CircuitLevel$verify$lambda$_5_1_test)],
 ju_LinkedHashMapIterator$KeyIterator, 0, ju_LinkedHashMapIterator, [ju_Iterator], 0, 0, 0, ["$_init_30", $rt_wrapFunction2(ju_LinkedHashMapIterator$KeyIterator__init_), "$next", $rt_wrapFunction0(ju_LinkedHashMapIterator$KeyIterator_next)],
-oajq_CircuitLevel$verify$lambda$_5_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajq_CircuitLevel$verify$lambda$_5_0__init_), "$apply1", $rt_wrapFunction1(oajq_CircuitLevel$verify$lambda$_5_0_apply0), "$apply8", $rt_wrapFunction1(oajq_CircuitLevel$verify$lambda$_5_0_apply)],
-ju_AbstractMap$Values, 0, ju_AbstractCollection, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$size", $rt_wrapFunction0(ju_AbstractMap$Values_size), "$iterator", $rt_wrapFunction0(ju_AbstractMap$Values_iterator)],
-jnc_CoderResult, 0, jl_Object, [], 1, 0, () => jnc_CoderResult_$callClinit(), ["$_init_162", $rt_wrapFunction2(jnc_CoderResult__init_0), "$isUnderflow", $rt_wrapFunction0(jnc_CoderResult_isUnderflow), "$isOverflow", $rt_wrapFunction0(jnc_CoderResult_isOverflow), "$isError", $rt_wrapFunction0(jnc_CoderResult_isError), "$isMalformed", $rt_wrapFunction0(jnc_CoderResult_isMalformed), "$isUnmappable", $rt_wrapFunction0(jnc_CoderResult_isUnmappable), "$length", $rt_wrapFunction0(jnc_CoderResult_length), "$throwException",
-$rt_wrapFunction0(jnc_CoderResult_throwException)],
-jn_ByteBufferJsImpl, 0, jn_ByteBuffer, [jn_ArrayBufferViewProvider], 0, 0, 0, ["$_init_152", function(var_1, var_2, var_3, var_4, var_5) { jn_ByteBufferJsImpl__init_(this, var_1, var_2, var_3, var_4, var_5); }, "$arrayImpl", $rt_wrapFunction0(jn_ByteBufferJsImpl_arrayImpl), "$hasArrayImpl", $rt_wrapFunction0(jn_ByteBufferJsImpl_hasArrayImpl), "$capacityImpl", $rt_wrapFunction0(jn_ByteBufferJsImpl_capacityImpl), "$getImpl0", $rt_wrapFunction4(jn_ByteBufferJsImpl_getImpl), "$putImpl1", $rt_wrapFunction4(jn_ByteBufferJsImpl_putImpl),
+oajq_CircuitLevel$verify$lambda$_5_0, 0, jl_Object, [juf_Function], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajq_CircuitLevel$verify$lambda$_5_0__init_), "$apply3", $rt_wrapFunction1(oajq_CircuitLevel$verify$lambda$_5_0_apply0), "$apply9", $rt_wrapFunction1(oajq_CircuitLevel$verify$lambda$_5_0_apply)],
+ju_AbstractMap$Values, 0, ju_AbstractCollection, [], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$size", $rt_wrapFunction0(ju_AbstractMap$Values_size), "$iterator", $rt_wrapFunction0(ju_AbstractMap$Values_iterator)]]);
+$rt_metadata([jnc_CoderResult, 0, jl_Object, [], 1, 0, () => jnc_CoderResult_$callClinit(), ["$_init_166", $rt_wrapFunction2(jnc_CoderResult__init_0), "$isUnderflow", $rt_wrapFunction0(jnc_CoderResult_isUnderflow), "$isOverflow", $rt_wrapFunction0(jnc_CoderResult_isOverflow), "$isError", $rt_wrapFunction0(jnc_CoderResult_isError), "$isMalformed", $rt_wrapFunction0(jnc_CoderResult_isMalformed), "$isUnmappable", $rt_wrapFunction0(jnc_CoderResult_isUnmappable), "$length", $rt_wrapFunction0(jnc_CoderResult_length),
+"$throwException", $rt_wrapFunction0(jnc_CoderResult_throwException)],
+jn_ByteBufferJsImpl, 0, jn_ByteBuffer, [jn_ArrayBufferViewProvider], 0, 0, 0, ["$_init_154", function(var_1, var_2, var_3, var_4, var_5) { jn_ByteBufferJsImpl__init_(this, var_1, var_2, var_3, var_4, var_5); }, "$arrayImpl", $rt_wrapFunction0(jn_ByteBufferJsImpl_arrayImpl), "$hasArrayImpl", $rt_wrapFunction0(jn_ByteBufferJsImpl_hasArrayImpl), "$capacityImpl", $rt_wrapFunction0(jn_ByteBufferJsImpl_capacityImpl), "$getImpl0", $rt_wrapFunction4(jn_ByteBufferJsImpl_getImpl), "$putImpl1", $rt_wrapFunction4(jn_ByteBufferJsImpl_putImpl),
 "$isReadOnly", $rt_wrapFunction0(jn_ByteBufferJsImpl_isReadOnly)],
 otcit_DoubleAnalyzer, 0, jl_Object, [], 17, 0, () => otcit_DoubleAnalyzer_$callClinit(), 0,
 jur_EOLSet, "EOLSet", 3, jur_AbstractSet, [], 16, 0, 0, ["$_init_4", $rt_wrapFunction1(jur_EOLSet__init_), "$matches", $rt_wrapFunction3(jur_EOLSet_matches), "$hasConsumed", $rt_wrapFunction1(jur_EOLSet_hasConsumed), "$getName", $rt_wrapFunction0(jur_EOLSet_getName)],
 otr_StringInfo, 0, otrr_ReflectionInfo, [], 17, 0, 0, 0,
 oajvo_OpenQasmGates, 0, jl_Object, [], 16, 0, () => oajvo_OpenQasmGates_$callClinit(), 0,
-oajqg_Swap, "Swap", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_115", $rt_wrapFunction2(oajqg_Swap__init_)],
+oajqg_Swap, "Swap", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_115", $rt_wrapFunction2(oajqg_Swap__init_)],
 jur_Lexer, 0, jl_Object, [], 0, 0, 0, ["$_init_43", $rt_wrapFunction2(jur_Lexer__init_), "$peek0", $rt_wrapFunction0(jur_Lexer_peek), "$setMode", $rt_wrapFunction1(jur_Lexer_setMode), "$restoreFlags", $rt_wrapFunction1(jur_Lexer_restoreFlags), "$peekSpecial", $rt_wrapFunction0(jur_Lexer_peekSpecial), "$isSpecial", $rt_wrapFunction0(jur_Lexer_isSpecial), "$isNextSpecial", $rt_wrapFunction0(jur_Lexer_isNextSpecial), "$next3", $rt_wrapFunction0(jur_Lexer_next), "$nextSpecial", $rt_wrapFunction0(jur_Lexer_nextSpecial),
 "$lookAhead", $rt_wrapFunction0(jur_Lexer_lookAhead), "$back", $rt_wrapFunction0(jur_Lexer_back), "$toString", $rt_wrapFunction0(jur_Lexer_toString), "$isEmpty", $rt_wrapFunction0(jur_Lexer_isEmpty), "$isLetter", $rt_wrapFunction0(jur_Lexer_isLetter0), "$isHighSurrogate0", $rt_wrapFunction0(jur_Lexer_isHighSurrogate0), "$isLowSurrogate0", $rt_wrapFunction0(jur_Lexer_isLowSurrogate0), "$getIndex", $rt_wrapFunction0(jur_Lexer_getIndex)],
-oajw_JqapiBridge$sampleExpectation$lambda$_14_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_0", $rt_wrapFunction0(oajw_JqapiBridge$sampleExpectation$lambda$_14_0__init_), "$test", $rt_wrapFunction1(oajw_JqapiBridge$sampleExpectation$lambda$_14_0_test0), "$test6", $rt_wrapFunction1(oajw_JqapiBridge$sampleExpectation$lambda$_14_0_test)]]);
-$rt_metadata([jur_AbstractCharClass$LazySpecialsBlock, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazySpecialsBlock__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazySpecialsBlock_computeValue)],
+jur_AbstractCharClass$LazySpecialsBlock, 0, jur_AbstractCharClass$LazyCharClass, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazySpecialsBlock__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazySpecialsBlock_computeValue)],
 jur_AbstractCharClass$LazyNonSpace, 0, jur_AbstractCharClass$LazySpace, [], 0, 0, 0, ["$_init_0", $rt_wrapFunction0(jur_AbstractCharClass$LazyNonSpace__init_), "$computeValue", $rt_wrapFunction0(jur_AbstractCharClass$LazyNonSpace_computeValue)],
 jusi_SimpleStreamIterator$fetchIfNeeded$lambda$_4_0, 0, jl_Object, [juf_Predicate], 1, 0, 0, ["$_init_150", $rt_wrapFunction1(jusi_SimpleStreamIterator$fetchIfNeeded$lambda$_4_0__init_), "$test", $rt_wrapFunction1(jusi_SimpleStreamIterator$fetchIfNeeded$lambda$_4_0_test)],
 jusi_RangeIntStream, 0, jusi_SimpleIntStreamImpl, [], 1, 0, 0, ["$_init_10", $rt_wrapFunction2(jusi_RangeIntStream__init_), "$next0", $rt_wrapFunction1(jusi_RangeIntStream_next)],
 oajqs_ExpectationSampler, 0, jl_Object, [], 17, 0, 0, 0,
-oajqg_PauliZ, "PauliZ", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_PauliZ__init_)],
-jusi_BoxedIntStream$next$lambda$_1_0, 0, jl_Object, [juf_IntPredicate], 1, 0, 0, ["$_init_76", $rt_wrapFunction1(jusi_BoxedIntStream$next$lambda$_1_0__init_), "$test5", $rt_wrapFunction1(jusi_BoxedIntStream$next$lambda$_1_0_test)],
-oajqg_PauliX, "PauliX", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_PauliX__init_)],
-oajqg_PauliY, "PauliY", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_PauliY__init_)],
-oajqg_PauliS, "PauliS", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_PauliS__init_)],
-oajqg_PauliT, "PauliT", 17, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_PauliT__init_)],
+oajqg_PauliZ, "PauliZ", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_PauliZ__init_)],
+jusi_BoxedIntStream$next$lambda$_1_0, 0, jl_Object, [juf_IntPredicate], 1, 0, 0, ["$_init_76", $rt_wrapFunction1(jusi_BoxedIntStream$next$lambda$_1_0__init_), "$test6", $rt_wrapFunction1(jusi_BoxedIntStream$next$lambda$_1_0_test)],
+oajqg_PauliX, "PauliX", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_PauliX__init_)],
+oajqg_PauliY, "PauliY", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_PauliY__init_)],
+oajqg_PauliS, "PauliS", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_PauliS__init_)],
+oajqg_PauliT, "PauliT", 18, oajqg_Gate, [], 1, 0, 0, ["$_init_112", $rt_wrapFunction1(oajqg_PauliT__init_)],
 oajq_QuantumRegister, 0, jl_Object, [], 1, 0, () => oajq_QuantumRegister_$callClinit(), ["$_init_126", $rt_wrapFunction2(oajq_QuantumRegister__init_0), "$_init_124", $rt_wrapFunction3(oajq_QuantumRegister__init_), "$_init_125", $rt_wrapFunction4(oajq_QuantumRegister__init_1), "$getRegisterState", $rt_wrapFunction0(oajq_QuantumRegister_getRegisterState), "$applyOperator", $rt_wrapFunction2(oajq_QuantumRegister_applyOperator), "$applyOperator0", $rt_wrapFunction3(oajq_QuantumRegister_applyOperator0), "$measure",
 $rt_wrapFunction0(oajq_QuantumRegister_measure), "$measureQubitAtIndexes", $rt_wrapFunction1(oajq_QuantumRegister_measureQubitAtIndexes), "$reset1", $rt_wrapFunction1(oajq_QuantumRegister_reset), "$resetQubitAtIndexes", $rt_wrapFunction1(oajq_QuantumRegister_resetQubitAtIndexes), "$getResult", $rt_wrapFunction0(oajq_QuantumRegister_getResult)],
 ju_Arrays$ArrayAsList, "Arrays$ArrayAsList", 2, ju_AbstractList, [ju_RandomAccess, ji_Serializable], 0, 0, 0, ["$forEach", $rt_wrapFunction1(jl_Iterable_forEach), "$spliterator", $rt_wrapFunction0(ju_Collection_spliterator), "$stream", $rt_wrapFunction0(ju_Collection_stream), "$getFirst", $rt_wrapFunction0(ju_List_getFirst), "$_init_63", $rt_wrapFunction1(ju_Arrays$ArrayAsList__init_), "$get0", $rt_wrapFunction1(ju_Arrays$ArrayAsList_get), "$size", $rt_wrapFunction0(ju_Arrays$ArrayAsList_size)],
 ju_Collections, 0, jl_Object, [], 17, 0, () => ju_Collections_$callClinit(), 0]);
 $rt_enumConstantsMetadata([
-    jus_Collector$Characteristics, () => [jus_Collector$Characteristics_CONCURRENT, jus_Collector$Characteristics_UNORDERED, jus_Collector$Characteristics_IDENTITY_FINISH], oajvs_GateKind, () => [oajvs_GateKind_H, oajvs_GateKind_X, oajvs_GateKind_Y, oajvs_GateKind_Z, oajvs_GateKind_S, oajvs_GateKind_T, oajvs_GateKind_CNOT, oajvs_GateKind_CZ, oajvs_GateKind_CY, oajvs_GateKind_SWAP, oajvs_GateKind_CSWAP, oajvs_GateKind_TOFFOLI, oajvs_GateKind_RX, oajvs_GateKind_RY, oajvs_GateKind_RZ, oajvs_GateKind_PHASE, oajvs_GateKind_U3,
-    oajvs_GateKind_MULTI_CONTROLLED, oajvs_GateKind_ORACLE, oajvs_GateKind_GENERIC, oajvs_GateKind_MEASUREMENT, oajvs_GateKind_RESET, oajvs_GateKind_IDENTITY], jm_RoundingMode, () => [jm_RoundingMode_UP, jm_RoundingMode_DOWN, jm_RoundingMode_CEILING, jm_RoundingMode_FLOOR, jm_RoundingMode_HALF_UP, jm_RoundingMode_HALF_DOWN, jm_RoundingMode_HALF_EVEN, jm_RoundingMode_UNNECESSARY], oajo_Pauli, () => [oajo_Pauli_I, oajo_Pauli_X, oajo_Pauli_Y, oajo_Pauli_Z]]);
+    jus_Collector$Characteristics, () => [jus_Collector$Characteristics_CONCURRENT, jus_Collector$Characteristics_UNORDERED, jus_Collector$Characteristics_IDENTITY_FINISH], oajvl_CircuitLinter$Severity, () => [oajvl_CircuitLinter$Severity_INFO, oajvl_CircuitLinter$Severity_WARNING], oajvs_GateKind, () => [oajvs_GateKind_H, oajvs_GateKind_X, oajvs_GateKind_Y, oajvs_GateKind_Z, oajvs_GateKind_S, oajvs_GateKind_T, oajvs_GateKind_CNOT, oajvs_GateKind_CZ, oajvs_GateKind_CY, oajvs_GateKind_SWAP, oajvs_GateKind_CSWAP,
+    oajvs_GateKind_TOFFOLI, oajvs_GateKind_RX, oajvs_GateKind_RY, oajvs_GateKind_RZ, oajvs_GateKind_PHASE, oajvs_GateKind_U3, oajvs_GateKind_MULTI_CONTROLLED, oajvs_GateKind_ORACLE, oajvs_GateKind_GENERIC, oajvs_GateKind_MEASUREMENT, oajvs_GateKind_RESET, oajvs_GateKind_IDENTITY], jm_RoundingMode, () => [jm_RoundingMode_UP, jm_RoundingMode_DOWN, jm_RoundingMode_CEILING, jm_RoundingMode_FLOOR, jm_RoundingMode_HALF_UP, jm_RoundingMode_HALF_DOWN, jm_RoundingMode_HALF_EVEN, jm_RoundingMode_UNNECESSARY], oajo_Pauli,
+    () => [oajo_Pauli_I, oajo_Pauli_X, oajo_Pauli_Y, oajo_Pauli_Z]]);
 let $rt_booleanArrayCls = $rt_arraycls($rt_booleancls),
 $rt_charArrayCls = $rt_arraycls($rt_charcls),
 $rt_byteArrayCls = $rt_arraycls($rt_bytecls),
@@ -27403,33 +28617,36 @@ $rt_longArrayCls = $rt_arraycls($rt_longcls),
 $rt_doubleArrayCls = $rt_arraycls($rt_doublecls);
 $rt_stringPool(["Can\'t enter monitor from another thread synchronously", "Creating gate that affects 2 or more qubits with the same index", "MC", "MultiControlled expects ", " indexes (", " controls + ", " targets), got ", "json", "config", "Observable JSON exceeds 1048576 characters", "observable", "numQubits", "terms", "too many observable terms (max 1024)", "term", "pauli", "Pauli label length must equal numQubits", "coeff", "numQubits out of range (1..", "): ", " must have exactly the fields ", "Rz", "String is null",
 "String is empty", "String contains invalid digits: ", "String contains digits out of radix ", ": ", "The value is too big for int type: ", "The value is too big for integer type", "Illegal radix: ", "Ry", "Rx", "JointSet", "Pauli masks must fit ", " qubits", "label", "Pauli label may contain only I, X, Y, Z", "Qubit index out of range: ", "Pauli string qubits must be in [1, 30]", "main", "CI sequence: ", "CI back reference: ", "UCI back reference: ", "BIG_ENDIAN", "LITTLE_ENDIAN", "<DotAllQuant>", "Generic Gate",
-"fSet", "BehindFSet", " ", "^ ", "range:", "<GroupQuant>", "Pauli coefficient must be finite", "Term[", "coeff=", ", pauli=", "]", "(this Map)", ", ", "null", "false", "true", "New position ", " is outside of range [0;", "numControls must be >= 1, was: ", "Base operator U must be square", "Base operator U dimension must be a power of two >= 2, was: ", "ComplexMatrix{", "", "Lower", "Upper", "ASCII", "Alpha", "Digit", "Alnum", "Punct", "Graph", "Print", "Blank", "Cntrl", "XDigit", "javaLowerCase", "javaUpperCase",
-"javaWhitespace", "javaMirrored", "javaDefined", "javaDigit", "javaIdentifierIgnorable", "javaISOControl", "javaJavaIdentifierPart", "javaJavaIdentifierStart", "javaLetter", "javaLetterOrDigit", "javaSpaceChar", "javaTitleCase", "javaUnicodeIdentifierPart", "javaUnicodeIdentifierStart", "Space", "w", "W", "s", "S", "d", "D", "BasicLatin", "Latin-1Supplement", "LatinExtended-A", "LatinExtended-B", "IPAExtensions", "SpacingModifierLetters", "CombiningDiacriticalMarks", "Greek", "Cyrillic", "CyrillicSupplement",
-"Armenian", "Hebrew", "Arabic", "Syriac", "ArabicSupplement", "Thaana", "Devanagari", "Bengali", "Gurmukhi", "Gujarati", "Oriya", "Tamil", "Telugu", "Kannada", "Malayalam", "Sinhala", "Thai", "Lao", "Tibetan", "Myanmar", "Georgian", "HangulJamo", "Ethiopic", "EthiopicSupplement", "Cherokee", "UnifiedCanadianAboriginalSyllabics", "Ogham", "Runic", "Tagalog", "Hanunoo", "Buhid", "Tagbanwa", "Khmer", "Mongolian", "Limbu", "TaiLe", "NewTaiLue", "KhmerSymbols", "Buginese", "PhoneticExtensions", "PhoneticExtensionsSupplement",
-"CombiningDiacriticalMarksSupplement", "LatinExtendedAdditional", "GreekExtended", "GeneralPunctuation", "SuperscriptsandSubscripts", "CurrencySymbols", "CombiningMarksforSymbols", "LetterlikeSymbols", "NumberForms", "Arrows", "MathematicalOperators", "MiscellaneousTechnical", "ControlPictures", "OpticalCharacterRecognition", "EnclosedAlphanumerics", "BoxDrawing", "BlockElements", "GeometricShapes", "MiscellaneousSymbols", "Dingbats", "MiscellaneousMathematicalSymbols-A", "SupplementalArrows-A", "BraillePatterns",
-"SupplementalArrows-B", "MiscellaneousMathematicalSymbols-B", "SupplementalMathematicalOperators", "MiscellaneousSymbolsandArrows", "Glagolitic", "Coptic", "GeorgianSupplement", "Tifinagh", "EthiopicExtended", "SupplementalPunctuation", "CJKRadicalsSupplement", "KangxiRadicals", "IdeographicDescriptionCharacters", "CJKSymbolsandPunctuation", "Hiragana", "Katakana", "Bopomofo", "HangulCompatibilityJamo", "Kanbun", "BopomofoExtended", "CJKStrokes", "KatakanaPhoneticExtensions", "EnclosedCJKLettersandMonths", "CJKCompatibility",
-"CJKUnifiedIdeographsExtensionA", "YijingHexagramSymbols", "CJKUnifiedIdeographs", "YiSyllables", "YiRadicals", "ModifierToneLetters", "SylotiNagri", "HangulSyllables", "HighSurrogates", "HighPrivateUseSurrogates", "LowSurrogates", "PrivateUseArea", "CJKCompatibilityIdeographs", "AlphabeticPresentationForms", "ArabicPresentationForms-A", "VariationSelectors", "VerticalForms", "CombiningHalfMarks", "CJKCompatibilityForms", "SmallFormVariants", "ArabicPresentationForms-B", "HalfwidthandFullwidthForms", "all",
-"Specials", "Cn", "IsL", "Lu", "Ll", "Lt", "Lm", "Lo", "IsM", "Mn", "Me", "Mc", "N", "Nd", "Nl", "No", "IsZ", "Zs", "Zl", "Zp", "IsC", "Cc", "Cf", "Co", "Cs", "IsP", "Pd", "Ps", "Pe", "Pc", "Po", "IsS", "Sm", "Sc", "Sk", "So", "Pi", "Pf", "{\"version\":", ",\"numQubits\":", ",\"levels\":[", ",\"numClassicalBits\":", "{\"gates\":[", "]}", "{\"kind\":\"", ",\"targets\":", ",\"controls\":", ",\"params\":", ",\"matrix\":", ",\"classicalTarget\":", ",\"condition\":{\"bitIndex\":", ",\"expected\":", "\\t", "\\n",
-"\\f", "\\r", "\\\"", "\\\\", "\\u00", "0123456789abcdef", "lone low surrogate cannot be serialized", "\\b", "lone high surrogate cannot be serialized", "{\"re\":", ",\"im\":", "JSON input too large: ", " characters", "root", "version", "measurementRecords", "conditions", "numClassicalBits", "Classical fields require v2", "levels", "too many levels (max 100000)", "level", "gates", "too many gates (max 100000)", "Classical register exceeds configured budget", "Unsupported prototype classical metadata; use v2 gate placements",
+"fSet", "BehindFSet", "Location[", "line=", ", column=", "]", " ", "^ ", "range:", "<GroupQuant>", "Pauli coefficient must be finite", "Term[", "coeff=", ", pauli=", "(this Map)", ", ", "null", "false", "true", "New position ", " is outside of range [0;", "numControls must be >= 1, was: ", "Base operator U must be square", "Base operator U dimension must be a power of two >= 2, was: ", "ComplexMatrix{", "", "Lower", "Upper", "ASCII", "Alpha", "Digit", "Alnum", "Punct", "Graph", "Print", "Blank", "Cntrl", "XDigit",
+"javaLowerCase", "javaUpperCase", "javaWhitespace", "javaMirrored", "javaDefined", "javaDigit", "javaIdentifierIgnorable", "javaISOControl", "javaJavaIdentifierPart", "javaJavaIdentifierStart", "javaLetter", "javaLetterOrDigit", "javaSpaceChar", "javaTitleCase", "javaUnicodeIdentifierPart", "javaUnicodeIdentifierStart", "Space", "w", "W", "s", "S", "d", "D", "BasicLatin", "Latin-1Supplement", "LatinExtended-A", "LatinExtended-B", "IPAExtensions", "SpacingModifierLetters", "CombiningDiacriticalMarks", "Greek",
+"Cyrillic", "CyrillicSupplement", "Armenian", "Hebrew", "Arabic", "Syriac", "ArabicSupplement", "Thaana", "Devanagari", "Bengali", "Gurmukhi", "Gujarati", "Oriya", "Tamil", "Telugu", "Kannada", "Malayalam", "Sinhala", "Thai", "Lao", "Tibetan", "Myanmar", "Georgian", "HangulJamo", "Ethiopic", "EthiopicSupplement", "Cherokee", "UnifiedCanadianAboriginalSyllabics", "Ogham", "Runic", "Tagalog", "Hanunoo", "Buhid", "Tagbanwa", "Khmer", "Mongolian", "Limbu", "TaiLe", "NewTaiLue", "KhmerSymbols", "Buginese", "PhoneticExtensions",
+"PhoneticExtensionsSupplement", "CombiningDiacriticalMarksSupplement", "LatinExtendedAdditional", "GreekExtended", "GeneralPunctuation", "SuperscriptsandSubscripts", "CurrencySymbols", "CombiningMarksforSymbols", "LetterlikeSymbols", "NumberForms", "Arrows", "MathematicalOperators", "MiscellaneousTechnical", "ControlPictures", "OpticalCharacterRecognition", "EnclosedAlphanumerics", "BoxDrawing", "BlockElements", "GeometricShapes", "MiscellaneousSymbols", "Dingbats", "MiscellaneousMathematicalSymbols-A", "SupplementalArrows-A",
+"BraillePatterns", "SupplementalArrows-B", "MiscellaneousMathematicalSymbols-B", "SupplementalMathematicalOperators", "MiscellaneousSymbolsandArrows", "Glagolitic", "Coptic", "GeorgianSupplement", "Tifinagh", "EthiopicExtended", "SupplementalPunctuation", "CJKRadicalsSupplement", "KangxiRadicals", "IdeographicDescriptionCharacters", "CJKSymbolsandPunctuation", "Hiragana", "Katakana", "Bopomofo", "HangulCompatibilityJamo", "Kanbun", "BopomofoExtended", "CJKStrokes", "KatakanaPhoneticExtensions", "EnclosedCJKLettersandMonths",
+"CJKCompatibility", "CJKUnifiedIdeographsExtensionA", "YijingHexagramSymbols", "CJKUnifiedIdeographs", "YiSyllables", "YiRadicals", "ModifierToneLetters", "SylotiNagri", "HangulSyllables", "HighSurrogates", "HighPrivateUseSurrogates", "LowSurrogates", "PrivateUseArea", "CJKCompatibilityIdeographs", "AlphabeticPresentationForms", "ArabicPresentationForms-A", "VariationSelectors", "VerticalForms", "CombiningHalfMarks", "CJKCompatibilityForms", "SmallFormVariants", "ArabicPresentationForms-B", "HalfwidthandFullwidthForms",
+"all", "Specials", "Cn", "IsL", "Lu", "Ll", "Lt", "Lm", "Lo", "IsM", "Mn", "Me", "Mc", "N", "Nd", "Nl", "No", "IsZ", "Zs", "Zl", "Zp", "IsC", "Cc", "Cf", "Co", "Cs", "IsP", "Pd", "Ps", "Pe", "Pc", "Po", "IsS", "Sm", "Sc", "Sk", "So", "Pi", "Pf", "{\"version\":", ",\"numQubits\":", ",\"levels\":[", ",\"numClassicalBits\":", "{\"gates\":[", "]}", "{\"kind\":\"", ",\"targets\":", ",\"controls\":", ",\"params\":", ",\"matrix\":", ",\"classicalTarget\":", ",\"condition\":{\"bitIndex\":", ",\"expected\":", "\\t",
+"\\n", "\\f", "\\r", "\\\"", "\\\\", "\\u00", "0123456789abcdef", "lone low surrogate cannot be serialized", "\\b", "lone high surrogate cannot be serialized", "{\"re\":", ",\"im\":", "JSON input too large: ", " characters", "root", "version", "measurementRecords", "conditions", "numClassicalBits", "Classical fields require v2", "levels", "too many levels (max 100000)", "level", "gates", "too many gates (max 100000)", "Classical register exceeds configured budget", "Unsupported prototype classical metadata; use v2 gate placements",
 "gate", "kind", "unknown gate kind: ", "targets", "controls", "params", "matrix", "classicalTarget", "condition", "Classical gate fields require v2", "bitIndex", "expected", "control and target overlap on qubit ", " element", "duplicate ", " index: ", " index out of range [0,", "param ", "matrix gate acts on too many qubits: ", "matrix must be ", "x", ", got ", " rows", "matrix row", "matrix row must have ", " columns, got ", "matrix cell", "re", "im", "non-finite number cannot be serialized: ", "decomposed char:",
-"AheadFSet", "Can\'t compare ", " to ", "Class does not represent enum", "Enum ", " does not have the ", " constant", "CONCURRENT", "UNORDERED", "IDENTITY_FINISH", "NonCapJointSet", "PosLookaheadJointSet", "NegLookaheadJointSet", "state", "State dimension must equal 2^", "Expectation value exceeds the double range", "Expectation work budget must be positive", "Expectation exceeds the amplitude-visit work budget", "State must be finite and normalized", "(this Collection)", "0", "<Quant>", "Should never been thrown",
-"PosBehindJointSet", "Replacement preconditions do not hold", "Action must be non-null", "sequence: ", "US-ASCII", "UCI range:", "IGNORE", "REPLACE", "REPORT", "NegBehindJointSet", "U3", "back reference: ", "<DotQuant>", "interface ", "class ", "[L", "[", "CSwap", "Scale out of range.", "Rounding necessary", ".", "CI ", "CY", "CZ", "Oracle", "UTF-16", "UTF-16BE", "UTF-16LE", "Mapping[", "name=", ", kind=", ", controls=", ", targets=", ", parameters=", "<EOL>", "UCI ", "ISO-8859-1", "AtomicFSet", "[]", "TermEstimate[",
-", shots=", ", mean=", ", variance=", "posFSet", "UTF-8", "<MultiLine $>", " must be an object", " must be an array", " must be a string", " must be a number", " must be finite", " must be an integer", "trailing characters", "unexpected end of input", "nesting too deep", "expected \',\' or \'}\'", "expected \',\' or \']\'", "unterminated string", "unescaped control character", "lone low surrogate character", "unterminated escape", "invalid escape \'\\", "\'", "lone high surrogate character", "lone low surrogate escape",
-"high surrogate escape not followed by a low surrogate", "lone high surrogate escape", "truncated unicode escape", "invalid unicode escape", "invalid number", "expected digit", "invalid literal", " \t\r\n", "expected \'", "Invalid JSON at position ", "Patter is null", "\\Q", "\\E", "\\\\E\\Q", "Classical operations require CircuitSpec v2", "Classical target outside register", "Repeated classical write within one level", "Condition outside classical register", "Same-level classical read/write dependency", "Classical register size must be in [0, 30]",
-"CircuitSpec[", "version=", ", numQubits=", ", levels=", ", numClassicalBits=", "Register[", "offset=", ", size=", "Sampling work budget must be positive", "randomFactory", "Shots must be in [1, 10000]", "indexes", "random source", "Measured qubit indexes must be distinct and in range", "Measured qubits must be nonempty and fit the register", "/", "theta", "phi", "lambda", " gate requires a matrix, but none was provided", "H", "X", "Y", "Z", "T", "I", "M", "RST", "CNot", "Swap", "TOFF", "P", "Classical destination requires a single-qubit measurement and index in [0, 30)",
-"Conditions require a unitary gate", "GateSpec[", "kind=", ", params=", ", matrix=", ", classicalTarget=", ", condition=", "The value is too big for long type: ", "The value is too big for long type", "Zero length BigInteger", "Radix out of range", "Negative bit address", "Negative exponent", "BigInteger divide by zero", "Measurement indexes must be in [0, 30)", "Adding gate that affects a qubit already involved in this circuit level", "UCI sequence: ", "CompositeRangeSet:  <nonsurrogate> ", " <surrogate> ",
-"FinalSet", "initialState", "circuit", "options", "Sampling exceeds the amplitude-visit work budget", "Sampling histogram budget exceeded", "<Empty set>", "dimension mismatch: ", " vs ", "ComplexVector{", "Missing input", "Browser resource budget exceeded", "maxQubits must be positive, was: ", "maxQubits must be at most 30, was: ", "maxSearchQubits must be positive, was: ", "maxSearchQubits must be at most 30, was: ", "parallelThreshold must be positive, was: ", "jqapi.parallel.enabled", "jqapi.parallel.threshold",
-"EOI", "Classical bit must be 0 or 1", "ClassicalRecord[", "bit=", "^", "ComplexCell[", "re=", ", im=", "spec", "OPENQASM 2.0;\ninclude \"qelib1.inc\";\n", "qreg q[", "];\n", "creg c", "[1];\n", "Overlapping gate operands within a level", "OpenQASM operation limit exceeded", "if(c", "==", ") ", ",", " -> c", "[0]", ";\n", "OpenQASM output exceeds character limit", "Circuit exceeds configured bit budget or has no qubits", "q[", "PreviousMatch", "(", ")", "CNOT", "SWAP", "CSWAP", "TOFFOLI", "RX", "RY", "RZ", "PHASE",
-"MULTI_CONTROLLED", "ORACLE", "GENERIC", "MEASUREMENT", "RESET", "IDENTITY", "NonCapFSet", "Either src or dest is null", "java.version", "21", "os.name", "TeaVM", "file.separator", "\\", "path.separator", ":", ";", "line.separator", "java.io.tmpdir", "java.vm.version", "user.home", "/tmp", "\n", "DotAll", "LevelSpec[", "gates=", "decomposed Hangul syllable:", "Conditions require a non-nested unitary gate", "power of ten too big", "WordBoundary", "Infinity", "NaN", "Argument[", "indexes=", ", wholeRegister=",
-"Expected bit must be 0 or 1", "Classical bit index must be in [0, 30)", "Condition[", "bitIndex=", ", expected=", "{\"maxQubits\":8,\"maxLevels\":256,\"maxGates\":1024,\"maxMatrixCells\":4096,\"maxInputChars\":1000000,\"maxResultBytes\":8388608,\"maxTraceAmplitudes\":65536,\"maxObservableTerms\":64,\"maxWork\":20000000,\"maxElapsedMs\":5000,\"maxShots\":10000}", "{\"ok\":true,\"spec\":", "}", "INPUT_LIMIT_EXCEEDED", "{\"ok\":true,\"source\":", "{\"ok\":false,\"error\":{\"code\":\"INVALID_QASM\",\"detail\":",
-"}}", "\"", "\\u", "0000", "{\"ok\":true,\"amplitudes\":", ",\"classicalRecords\":[", "SIMULATION_FAILED", "UNSUPPORTED_SPEC_VERSION", "INVALID_CIRCUIT_SPEC", "{\"ok\":true,\"frames\":[", "{\"level\":", ",\"gateIndex\":", ",\"applied\":", ",\"gate\":", "\",\"targets\":", ",\"amplitudes\":", "{\"ok\":true,\"shots\":", ",\"counts\":[", ",\"classicalCounts\":[", "INVALID_SHOT_COUNT", "NON_UNITARY_CIRCUIT", "{\"ok\":true,\"value\":", ",\"terms\":[", "{\"coeff\":", ",\"pauli\":\"", "\",\"value\":", ",\"standardError\":",
-",\"totalShots\":", "\",\"shots\":", ",\"mean\":", ",\"variance\":", "INVALID_OBSERVABLE", "{\"ok\":false,\"error\":{\"code\":\"", "\"}}", "Unsupported spec version: ", "Capacity is negative: ", "<SOL>", "Pauli sum must have at least one term", "Pauli sum terms must act on the same qubits", "PauliSum[", "terms=", "UP", "DOWN", "CEILING", "FLOOR", "HALF_UP", "HALF_DOWN", "HALF_EVEN", "UNNECESSARY", "Classical register exceeds configured qubit budget", "Stored measurement needs one qubit", "Classical bit is outside register",
-"Circuit size must be positive, was: ", "Circuit size ", " exceeds maximum allowed qubits (", "Adding gate that affect more qubits than circuit size or qubits out of register indexes", "source", "OpenQASM source exceeds character limit", "OPENQASM", "2.0", "At least one quantum register is required", "opaque", "barrier", "if", "creg", "qreg", "include", "\"qelib1.inc\"", "Custom gate definitions are not supported", "Duplicate qelib1.inc include", "Register size exceeds configured budget or is not positive: ",
-"Reserved or duplicate register name: ", "Unknown classical register: ", "Only one-bit classical registers are supported in if; split the register", "A one-bit if condition must compare to 0 or 1", "U", "CX", "measure", "reset", "Gate ", " requires include \"qelib1.inc\"", "Conditional measurement/reset is not supported by CircuitSpec", "At most three gate parameters are supported", "Wrong operand count for ", "->", "Measurement operands must be matching bits or equal-sized registers", "Gate operands must be distinct",
-"Register operands must have equal sizes", "Too many operands", "Unknown register: ", "Index outside register ", "OpenQASM expression nesting limit exceeded", "-", "pi", "sin", "cos", "tan", "exp", "ln", "sqrt", "Expected a numeric parameter expression", "Invalid numeric parameter", "*", "+", "Parameter expression must evaluate to a finite number", "[a-z][a-zA-Z0-9_]*", "Expected a register identifier", "0|[1-9][0-9]*", "Expected a non-negative integer", "Integer exceeds supported range", "Expected \'", "\', found \'",
-"//", "Unexpected character \'", "OpenQASM token length limit exceeded", "OpenQASM line ", ", column ", "(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?|[a-zA-Z][a-zA-Z0-9_]*|\"[^\"\\r\\n]*\"|->|==|[;(),\\[\\]+*/^=-]", "<Unix MultiLine $>", "u2", "sdg", "tdg", "cx", "u1", "u3", " requires ", " parameters", "Invalid controls/targets for ", "Gate parameters must be finite", "OpenQASM export requires an explicit classical measurement destination", "Invalid or repeated qubit index: ", "Unexpected matrix or missing/extra parameters for ",
-"Cannot export unsupported gate: ", "Unsupported OpenQASM gate: ", "h", "y", "z", "t", "id", "cy", "cz", "swap", "cswap", "ccx", "rx", "ry", "rz", "Name capturing group should start with letter", "Is", "In", "Observable must act on the circuit\'s ", "Sampled expectation needs at least 2 shots per term", "Sampled expectation exceeds the double range", "Sampled expectation exceeds the amplitude-visit work budget", "random", "Initial state dimension must equal 2^size", "amplitude", "Initial state must be finite and normalized",
-"Random source must return a finite value in [0, 1)", "Register size must be positive, was: ", "Register size ", "operator", "targetQubits", "Gate has more targets than register qubits", "Gate matrix of dimension ", " cannot be applied to ", " qubit(s)", "target qubit", "Duplicate target qubit: ", "Target qubit index out of range [0,", "Reset index ", " out of range [0, ", "Qubit ", " collapsed to a zero-probability branch", "Measurement index "]);
+"AheadFSet", "Can\'t compare ", " to ", "Class does not represent enum", "Enum ", " does not have the ", " constant", "CONCURRENT", "UNORDERED", "IDENTITY_FINISH", "NonCapJointSet", "PosLookaheadJointSet", "NegLookaheadJointSet", "state", "State dimension must equal 2^", "Expectation value exceeds the double range", "Expectation work budget must be positive", "Expectation exceeds the amplitude-visit work budget", "State must be finite and normalized", "(this Collection)", "0", "<Quant>", "Barrier[", "beforeLevel=",
+", qubits=", ", location=", "Should never been thrown", "PosBehindJointSet", "Replacement preconditions do not hold", "Action must be non-null", "sequence: ", "US-ASCII", "UCI range:", "IGNORE", "REPLACE", "REPORT", "NegBehindJointSet", "U3", "back reference: ", "<DotQuant>", "interface ", "class ", "[L", "[", "CSwap", "Diagnostic[", "rule=", ", severity=", ", levels=", ", locations=", ", message=", ", suggestion=", "Scale out of range.", "Rounding necessary", ".", "CI ", "CY", "CZ", "Oracle", "UTF-16", "UTF-16BE",
+"UTF-16LE", "Mapping[", "name=", ", kind=", ", controls=", ", targets=", ", parameters=", "<EOL>", "UCI ", "ISO-8859-1", "AtomicFSet", "[]", "TermEstimate[", ", shots=", ", mean=", ", variance=", "posFSet", "UTF-8", "<MultiLine $>", "INFO", "WARNING", " must be an object", " must be an array", " must be a string", " must be a number", " must be finite", " must be an integer", "trailing characters", "unexpected end of input", "nesting too deep", "expected \',\' or \'}\'", "expected \',\' or \']\'", "unterminated string",
+"unescaped control character", "lone low surrogate character", "unterminated escape", "invalid escape \'\\", "\'", "lone high surrogate character", "lone low surrogate escape", "high surrogate escape not followed by a low surrogate", "lone high surrogate escape", "truncated unicode escape", "invalid unicode escape", "invalid number", "expected digit", "invalid literal", " \t\r\n", "expected \'", "Invalid JSON at position ", "Patter is null", "\\Q", "\\E", "\\\\E\\Q", "Classical operations require CircuitSpec v2",
+"Classical target outside register", "Repeated classical write within one level", "Condition outside classical register", "Same-level classical read/write dependency", "Classical register size must be in [0, 30]", "CircuitSpec[", "version=", ", numQubits=", ", numClassicalBits=", "Register[", "offset=", ", size=", "Sampling work budget must be positive", "randomFactory", "Shots must be in [1, 10000]", "indexes", "random source", "Measured qubit indexes must be distinct and in range", "Measured qubits must be nonempty and fit the register",
+"/", "theta", "phi", "lambda", " gate requires a matrix, but none was provided", "H", "X", "Y", "Z", "T", "I", "M", "RST", "CNot", "Swap", "TOFF", "P", "Classical destination requires a single-qubit measurement and index in [0, 30)", "Conditions require a unitary gate", "GateSpec[", "kind=", ", params=", ", matrix=", ", classicalTarget=", ", condition=", "The value is too big for long type: ", "The value is too big for long type", "Zero length BigInteger", "Radix out of range", "Negative bit address", "Negative exponent",
+"BigInteger divide by zero", "Measurement indexes must be in [0, 30)", "Adding gate that affects a qubit already involved in this circuit level", "UCI sequence: ", "CompositeRangeSet:  <nonsurrogate> ", " <surrogate> ", "FinalSet", "initialState", "circuit", "options", "Sampling exceeds the amplitude-visit work budget", "Sampling histogram budget exceeded", "<Empty set>", "dimension mismatch: ", " vs ", "ComplexVector{", "Missing input", "Browser resource budget exceeded", "maxQubits must be positive, was: ",
+"maxQubits must be at most 30, was: ", "maxSearchQubits must be positive, was: ", "maxSearchQubits must be at most 30, was: ", "parallelThreshold must be positive, was: ", "jqapi.parallel.enabled", "jqapi.parallel.threshold", "EOI", "Classical bit must be 0 or 1", "ClassicalRecord[", "bit=", "^", "ComplexCell[", "re=", ", im=", "spec", "OPENQASM 2.0;\ninclude \"qelib1.inc\";\n", "qreg q[", "];\n", "creg c", "[1];\n", "Overlapping gate operands within a level", "OpenQASM operation limit exceeded", "if(c", "==",
+") ", ",", " -> c", "[0]", ";\n", "OpenQASM output exceeds character limit", "Circuit exceeds configured bit budget or has no qubits", "q[", "PreviousMatch", "(", ")", "CNOT", "SWAP", "CSWAP", "TOFFOLI", "RX", "RY", "RZ", "PHASE", "MULTI_CONTROLLED", "ORACLE", "GENERIC", "MEASUREMENT", "RESET", "IDENTITY", "NonCapFSet", "Either src or dest is null", "java.version", "21", "os.name", "TeaVM", "file.separator", "\\", "path.separator", ":", ";", "line.separator", "java.io.tmpdir", "java.vm.version", "user.home",
+"/tmp", "\n", "DotAll", "LevelSpec[", "gates=", "decomposed Hangul syllable:", "Conditions require a non-nested unitary gate", "power of ten too big", "WordBoundary", "Infinity", "NaN", "Argument[", "indexes=", ", wholeRegister=", "Expected bit must be 0 or 1", "Classical bit index must be in [0, 30)", "Condition[", "bitIndex=", ", expected=", "{\"maxQubits\":8,\"maxLevels\":256,\"maxGates\":1024,\"maxMatrixCells\":4096,\"maxInputChars\":1000000,\"maxResultBytes\":8388608,\"maxTraceAmplitudes\":65536,\"maxObservableTerms\":64,\"maxWork\":20000000,\"maxElapsedMs\":5000,\"maxShots\":10000}",
+"{\"ok\":true,\"spec\":", "}", "INPUT_LIMIT_EXCEEDED", "{\"ok\":true,\"source\":", "{\"ok\":true,\"diagnostics\":", ",\"qubitNames\":", ",\"spec\":", "{\"rule\":\"", "\",\"severity\":\"", "\",\"levels\":", ",\"qubits\":", ",\"locations\":[", "{\"line\":", ",\"column\":", "{\"ok\":false,\"error\":{\"code\":\"INVALID_QASM\",\"detail\":", "}}", "\"", "\\u", "0000", "{\"ok\":true,\"amplitudes\":", ",\"classicalRecords\":[", "SIMULATION_FAILED", "UNSUPPORTED_SPEC_VERSION", "INVALID_CIRCUIT_SPEC", "{\"ok\":true,\"frames\":[",
+"{\"level\":", ",\"gateIndex\":", ",\"applied\":", ",\"gate\":", "\",\"targets\":", ",\"amplitudes\":", "{\"ok\":true,\"shots\":", ",\"counts\":[", ",\"classicalCounts\":[", "INVALID_SHOT_COUNT", "NON_UNITARY_CIRCUIT", "{\"ok\":true,\"value\":", ",\"terms\":[", "{\"coeff\":", ",\"pauli\":\"", "\",\"value\":", ",\"standardError\":", ",\"totalShots\":", "\",\"shots\":", ",\"mean\":", ",\"variance\":", "INVALID_OBSERVABLE", "{\"ok\":false,\"error\":{\"code\":\"", "\"}}", "Unsupported spec version: ", "Two H gates on ",
+" cancel out (H·H = I) with no operation on that qubit in between.", "If unintended, remove the H on ", " at both positions, keeping any other qubit those gates act on. The identity holds for the ideal circuit; under a noise model, removing gates can change the noisy results.", "QED001", " is measured before this quantum operation. Check whether collapsing its state here is intentional: measurement removes superposition and entanglement.", "QED002", "If you wanted coherence preserved, move the measurement later. Re-preparing a measured qubit is valid (reset makes the intent explicit); disable QED002 if intended.",
+" of ", " declared qubits are never used: ", ". The ideal state vector stores ", " amplitudes versus ", " for ", " qubits: a ", "x storage difference, not a guaranteed speedup.", "QED003", "Shrink the register only deliberately: it renumbers qubits and changes the output bitstring width.", "Capacity is negative: ", "<SOL>", "Pauli sum must have at least one term", "Pauli sum terms must act on the same qubits", "PauliSum[", "terms=", "UP", "DOWN", "CEILING", "FLOOR", "HALF_UP", "HALF_DOWN", "HALF_EVEN", "UNNECESSARY",
+"Classical register exceeds configured qubit budget", "Stored measurement needs one qubit", "Classical bit is outside register", "Circuit size must be positive, was: ", "Circuit size ", " exceeds maximum allowed qubits (", "Adding gate that affect more qubits than circuit size or qubits out of register indexes", "source", "OpenQASM source exceeds character limit", "OPENQASM", "2.0", "At least one quantum register is required", "opaque", "barrier", "if", "creg", "qreg", "include", "\"qelib1.inc\"", "Custom gate definitions are not supported",
+"Duplicate qelib1.inc include", "Register size exceeds configured budget or is not positive: ", "Reserved or duplicate register name: ", "Unknown classical register: ", "Only one-bit classical registers are supported in if; split the register", "A one-bit if condition must compare to 0 or 1", "U", "CX", "measure", "reset", "Gate ", " requires include \"qelib1.inc\"", "Conditional measurement/reset is not supported by CircuitSpec", "At most three gate parameters are supported", "Wrong operand count for ", "->",
+"Measurement operands must be matching bits or equal-sized registers", "Gate operands must be distinct", "Register operands must have equal sizes", "Too many operands", "Unknown register: ", "Index outside register ", "OpenQASM expression nesting limit exceeded", "-", "pi", "sin", "cos", "tan", "exp", "ln", "sqrt", "Expected a numeric parameter expression", "Invalid numeric parameter", "*", "+", "Parameter expression must evaluate to a finite number", "[a-z][a-zA-Z0-9_]*", "Expected a register identifier", "0|[1-9][0-9]*",
+"Expected a non-negative integer", "Integer exceeds supported range", "Expected \'", "\', found \'", "//", "Unexpected character \'", "OpenQASM token length limit exceeded", "OpenQASM line ", ", column ", "(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?|[a-zA-Z][a-zA-Z0-9_]*|\"[^\"\\r\\n]*\"|->|==|[;(),\\[\\]+*/^=-]", "<Unix MultiLine $>", "u2", "sdg", "tdg", "cx", "u1", "u3", " requires ", " parameters", "Invalid controls/targets for ", "Gate parameters must be finite", "OpenQASM export requires an explicit classical measurement destination",
+"Invalid or repeated qubit index: ", "Unexpected matrix or missing/extra parameters for ", "Cannot export unsupported gate: ", "Unsupported OpenQASM gate: ", "h", "y", "z", "t", "id", "cy", "cz", "swap", "cswap", "ccx", "rx", "ry", "rz", "Name capturing group should start with letter", "Is", "In", "Observable must act on the circuit\'s ", "Sampled expectation needs at least 2 shots per term", "Sampled expectation exceeds the double range", "Sampled expectation exceeds the amplitude-visit work budget", "random",
+"Initial state dimension must equal 2^size", "amplitude", "Initial state must be finite and normalized", "Random source must return a finite value in [0, 1)", "Register size must be positive, was: ", "Register size ", "operator", "targetQubits", "Gate has more targets than register qubits", "Gate matrix of dimension ", " cannot be applied to ", " qubit(s)", "target qubit", "Duplicate target qubit: ", "Target qubit index out of range [0,", "Reset index ", " out of range [0, ", "Qubit ", " collapsed to a zero-probability branch",
+"Measurement index "]);
 jl_String.prototype.toString = function() {
     return $rt_ustr(this);
 };
@@ -27446,4 +28663,5 @@ let $rt_jso_marker = Symbol('jsoClass');
 (() => {
     let c;
 })();
-export { $rt_export_main as main, oajw_JqapiBridge_capabilities$exported$0 as capabilities, oajw_JqapiBridge_importQasm$exported$1 as importQasm, oajw_JqapiBridge_exportQasm$exported$2 as exportQasm, oajw_JqapiBridge_run$exported$3 as run, oajw_JqapiBridge_trace$exported$4 as trace, oajw_JqapiBridge_sample$exported$5 as sample, oajw_JqapiBridge_expectation$exported$6 as expectation, oajw_JqapiBridge_sampleExpectation$exported$7 as sampleExpectation };
+export { $rt_export_main as main, oajw_JqapiBridge_capabilities$exported$0 as capabilities, oajw_JqapiBridge_importQasm$exported$1 as importQasm, oajw_JqapiBridge_exportQasm$exported$2 as exportQasm, oajw_JqapiBridge_lint$exported$3 as lint, oajw_JqapiBridge_lintQasm$exported$4 as lintQasm, oajw_JqapiBridge_run$exported$5 as run, oajw_JqapiBridge_trace$exported$6 as trace, oajw_JqapiBridge_sample$exported$7 as sample, oajw_JqapiBridge_expectation$exported$8 as expectation, oajw_JqapiBridge_sampleExpectation$exported$9 as sampleExpectation
+};

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { expectation, run, sample, sampleExpectation } from './bridge';
+import { expectation, lint, lintQasm, run, sample, sampleExpectation } from './bridge';
 import type { CircuitSpec, Observable } from './types';
 import { CircuitModel } from '../model/circuit';
 
@@ -257,5 +257,31 @@ describe('classical v2 execution', () => {
     expect(sample({ ...spec, version: 99 }, 1)).toEqual({ ok: false, error: { code: 'UNSUPPORTED_SPEC_VERSION' } });
     expect(run({ ...spec, version: 1 })).toEqual({ ok: false, error: { code: 'INVALID_CIRCUIT_SPEC' } });
     expect(run({ ...spec, numClassicalBits: 0 })).toEqual({ ok: false, error: { code: 'INVALID_CIRCUIT_SPEC' } });
+  });
+
+  it('lints without simulating: redundant H pair, unused wire, and a clean Bell circuit', () => {
+    const h = { kind: 'H', targets: [0], controls: [], params: {} };
+    expect(lint({ version: 1, numQubits: 2, levels: [{ gates: [h] }, { gates: [h] }] })).toEqual({ ok: true, diagnostics: [
+      { rule: 'QED001', severity: 'WARNING', levels: [0, 1], qubits: [0], locations: [] },
+      { rule: 'QED003', severity: 'WARNING', levels: [], qubits: [1], locations: [] },
+    ] });
+    expect(lint(bell)).toEqual({ ok: true, diagnostics: [] });
+    expect(lint({ version: 1, numQubits: 9, levels: [] })).toEqual({ ok: false, error: { code: 'INPUT_LIMIT_EXCEEDED' } });
+    // 202 H gates give 101 QED001 pairs, filling the 100-diagnostic cap before QED003.
+    const hs = { version: 1, numQubits: 2, levels: Array.from({ length: 202 }, () => ({ gates: [h] })) };
+    const capped = lint(hs);
+    expect(capped.ok && capped.diagnostics.map((d) => d.rule)).toEqual(Array(100).fill('QED001'));
+    expect(lint(hs, ['QED001'])).toEqual({ ok: true, diagnostics: [{ rule: 'QED003', severity: 'WARNING', levels: [], qubits: [1], locations: [] }] });
+  });
+
+  it('lints QASM source with line locations and register names, and reports syntax errors separately', () => {
+    const result = lintQasm('OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg r[1];\ncreg c[1];\nmeasure r[0] -> c[0];\nx r[0];');
+    expect(result).toMatchObject({ ok: true, qubitNames: ['r[0]'], diagnostics: [
+      { rule: 'QED002', severity: 'INFO', levels: [0, 1], qubits: [0], locations: [{ line: 5, column: 1 }, { line: 6, column: 1 }] },
+    ] });
+    expect(lintQasm('OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nh q[0];\nbarrier q;\nh q[0];')).toMatchObject({ ok: true, qubitNames: ['q[0]'], diagnostics: [] });
+    const invalid = lintQasm('OPENQASM 2.0; qreg q[1]; custom q[0];');
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) expect(invalid.error.code).toBe('INVALID_QASM');
   });
 });

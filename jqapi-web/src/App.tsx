@@ -3,10 +3,10 @@ import { CircuitModel, isCircuitSpec, isUnsupportedCircuitSpec, PAULI_X_MATRIX, 
 import { probabilities } from './model/results';
 import { parseObservable } from './model/observable';
 import { shotBudgets } from './model/budget';
-import { startJob } from './wasm/client';
+import { startJob, type Job } from './wasm/client';
 import { BROWSER_BUDGET } from './wasm/policy';
 import { editableQasmSpec } from './model/qasm';
-import type { CircuitSpec, ComplexMatrix, TraceFrame, EngineErrorCode } from './wasm/types';
+import type { CircuitSpec, ComplexMatrix, TraceFrame, EngineErrorCode, LintDiagnostic, LintResult, LintRule, QasmLintResult } from './wasm/types';
 import type { Preset } from './model/presets';
 import { GatePalette, type Tool } from './components/GatePalette';
 import { QubitSelector } from './components/QubitSelector';
@@ -16,6 +16,8 @@ import { Timeline } from './components/Timeline';
 import { TeleportationGuide } from './components/TeleportationGuide';
 import { ResultsPanel } from './components/ResultsPanel';
 import { ObservablePanel, type ObservableOutcome } from './components/ObservablePanel';
+import { LintPanel } from './components/LintPanel';
+import { QasmEditor } from './components/QasmEditor';
 import { initialLanguage, LANGUAGE_STORAGE_KEY, messages, type Language } from './i18n';
 import './App.css';
 
@@ -100,6 +102,18 @@ export default function App() {
   const [error, setErrorState] = useState<{ message: string; detail?: string } | null>(null);
   const setError = (message: string | null, detail?: string) => setErrorState(message === null ? null : { message, detail });
   const [isRunning, setIsRunning] = useState(false);
+  const [lint, setLint] = useState<{ diagnostics: LintDiagnostic[]; columns: number[]; version: number; spec: CircuitSpec } | null>(null);
+  /** Last imported QASM and the circuit it produced; its barriers apply while the circuit is unchanged. */
+  const importedQasm = useRef<{ source: string; spec: string } | null>(null);
+  const [dismissedHints, setDismissedHints] = useState<ReadonlySet<string>>(new Set());
+  const [disabledRules, setDisabledRules] = useState<ReadonlySet<LintRule>>(new Set());
+  const [qasmText, setQasmText] = useState('');
+  const lintControls = {
+    disabledRules, dismissed: dismissedHints,
+    onToggleRule: (rule: LintRule) => setDisabledRules((rules) => { const next = new Set(rules); if (!next.delete(rule)) next.add(rule); return next; }),
+    onDismiss: (key: string) => setDismissedHints((keys) => new Set(keys).add(key)),
+  };
+  const [highlight, setHighlight] = useState<{ cells: { qubit: number; step: number }[]; version: number } | null>(null);
   const [language, setLanguage] = useState<Language>(initialLanguage);
   const [now, setNow] = useState(() => new Date());
   const text = messages[language];
@@ -196,6 +210,21 @@ export default function App() {
     return () => { window.clearTimeout(timer); traceJob.current?.cancel(); };
   }, [version, seed]);
 
+  useEffect(() => {
+    // Each edit lints its own snapshot; cleanup drops results that arrive after the next edit.
+    let current = true;
+    const spec = modelRef.current.toSpec();
+    const columns = [...modelRef.current.serializedColumns];
+    const disabled = [...disabledRules];
+    // Imported levels map 1:1 to editor levels, so source-only facts (barriers) stay valid until an edit.
+    const source = importedQasm.current?.spec === JSON.stringify(spec) ? importedQasm.current.source : null;
+    const job: Job<LintResult | QasmLintResult> = source === null
+      ? startJob({ kind: 'lint', spec, disabledRules: disabled })
+      : startJob({ kind: 'lintQasm', source, disabledRules: disabled });
+    void job.result.then((result) => { if (current) setLint(result.ok ? { diagnostics: result.diagnostics, columns, version, spec } : null); });
+    return () => { current = false; job.cancel(); };
+  }, [version, disabledRules]);
+
   useEffect(() => () => {
     countsJob.current?.cancel();
     transferJob.current?.cancel();
@@ -286,7 +315,7 @@ export default function App() {
     link.click();
     URL.revokeObjectURL(url);
   };
-  const saveQasm = async () => {
+  const exportQasmTo = async (deliver: (source: string) => void) => {
     transferJob.current?.cancel();
     const id = ++transferRevision.current;
     setIsTransferring(true);
@@ -297,20 +326,23 @@ export default function App() {
     if (id !== transferRevision.current) return;
     setIsTransferring(false);
     if (!result.ok) { setError(text.errors[result.error.code], result.error.detail); return; }
-    download(result.source, 'jqapi-circuit.qasm', 'text/plain');
+    deliver(result.source);
   };
+  const saveQasm = () => exportQasmTo((source) => download(source, 'jqapi-circuit.qasm', 'text/plain'));
   const save = () => download(JSON.stringify(modelRef.current.toSpec(), null, 2), 'jqapi-circuit.json', 'application/json');
-  const loadFile = async (file: File, qasm = false) => {
+  /** Loads a file, or QASM text from the source editor. */
+  const loadFile = async (file: File | string, qasm = false) => {
     transferJob.current?.cancel();
     const id = ++transferRevision.current;
     setIsTransferring(true);
     setError(null);
     try {
-      if (file.size > BROWSER_BUDGET.maxInputChars) throw new Error(text.errors.INPUT_LIMIT_EXCEEDED);
-      const source = await file.text();
+      if ((typeof file === 'string' ? file.length : file.size) > BROWSER_BUDGET.maxInputChars) throw new Error(text.errors.INPUT_LIMIT_EXCEEDED);
+      const source = typeof file === 'string' ? file : await file.text();
       if (id !== transferRevision.current) return;
       let spec: CircuitSpec;
       if (qasm) {
+        setQasmText(source);
         const job = startJob({ kind: 'importQasm', source });
         transferJob.current = job;
         const result = await job.result;
@@ -325,6 +357,7 @@ export default function App() {
         spec = parsed;
       }
       loadSpec(spec);
+      importedQasm.current = qasm ? { source, spec: JSON.stringify(modelRef.current.toSpec()) } : null;
     } catch (cause) {
       if (id === transferRevision.current) setError(cause instanceof Error ? cause.message : text.errors.INVALID_CIRCUIT_SPEC);
     } finally {
@@ -343,7 +376,7 @@ export default function App() {
         </aside>
         <main className="workspace">
           {error && <div className="error" role="alert"><div><span>⚠️ {error.message}</span>{error.detail && <details><summary>{text.technicalDetails}</summary><p lang="en">{error.detail}</p></details>}</div><button type="button" onClick={() => setError(null)}>{text.dismiss}</button></div>}
-          <CircuitCanvas activeColumn={!pending && frame && live ? live.columns[frame.level] : undefined} messages={text} model={modelRef.current} onDropCell={place} onMoveCell={move} onRemoveGate={(qubit, step) => mutate((model) => model.removeGate(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} isRunning={isRunning} />
+          <CircuitCanvas highlights={highlight?.version === version ? highlight.cells : undefined} activeColumn={!pending && frame && live ? live.columns[frame.level] : undefined} messages={text} model={modelRef.current} onDropCell={place} onMoveCell={move} onRemoveGate={(qubit, step) => mutate((model) => model.removeGate(qubit, step))} version={version} zoom={zoom} onZoom={setZoom} isRunning={isRunning} />
           <div className="circuit-actions" role="toolbar" aria-label={text.circuitActions}>
             <label className="shots-input">{text.shots}<input type="number" aria-describedby="shot-budget" aria-invalid={shots > shotBudget.counts} min="1" max={BROWSER_BUDGET.maxShots} step="1" value={shots} onChange={(event) => setShots(Math.max(1, Math.min(BROWSER_BUDGET.maxShots, Math.trunc(Number(event.target.value) || 1))))} disabled={isRunning} /></label>
             <button className={`run${isRunning ? ' running' : ''}`} type="button" onClick={onRun} disabled={isRunning}>▶ {text.runSimulation}</button>
@@ -364,6 +397,9 @@ export default function App() {
             {shots > shotBudget.counts ? <p className="budget-warning">{text.countsBudgetExceeded}</p>
               : shotBudget.observable !== null && shots >= 2 && shots > shotBudget.observable && <p className="budget-warning">{text.observableBudgetExceeded}</p>}
           </div>
+          {lint?.version === version && <LintPanel title={text.lint.title} messages={text} names={Array.from({ length: numQubits }, (_, q) => `q${q}`)} diagnostics={lint.diagnostics} {...lintControls} spec={lint.spec}
+            onShow={(d) => setHighlight({ version, cells: d.levels.flatMap((level) => d.qubits.map((qubit) => ({ qubit, step: lint.columns[level] }))) })} />}
+          <QasmEditor messages={text} value={qasmText} onChange={setQasmText} busy={isTransferring} onApply={() => void loadFile(qasmText, true)} onFromCircuit={() => void exportQasmTo(setQasmText)} {...lintControls} />
           <details className="resource-policy"><summary>{text.resourceLimits}</summary><p>{text.resourcePolicy(BROWSER_BUDGET)}</p><p>{text.qasmCapabilities}</p></details>
           <section className="live-state" aria-label={text.live.title} aria-busy={pending}>
             <div className="live-toolbar"><h2>{text.live.title}</h2><button type="button" onClick={rerun} disabled={pending}>{text.live.rerun}</button><span>{text.live.seed}: {seed}</span></div>

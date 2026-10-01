@@ -987,6 +987,18 @@
 .resource-policy { margin-top: 1rem; padding: 0.75rem; border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-muted); font-size: 0.8rem; line-height: 1.5; }
 .resource-policy summary { cursor: pointer; color: var(--text-main); font-weight: 600; }
 .resource-policy p { margin: 0.75rem 0 0; }
+.lint-panel { margin-top: 1rem; padding: 0.75rem; border: 1px solid #fbbf24; border-radius: 8px; font-size: 0.85rem; line-height: 1.5; }
+.lint-panel h2 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+.lint-panel ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.5rem; }
+.lint-panel li { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.lint-panel li span { flex: 1 1 20rem; }
+.lint-rules { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin: 0 0 0.5rem; padding: 0; border: 0; }
+.lint-rules legend { float: left; margin-right: 0.5rem; font-weight: 600; }
+.lint-stale { opacity: 0.55; }
+.qasm-editor { margin-top: 1rem; padding: 0.75rem; border: 1px solid var(--border-subtle); border-radius: 8px; }
+.qasm-editor summary { cursor: pointer; font-weight: 600; }
+.qasm-editor fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.qasm-editor textarea { display: block; box-sizing: border-box; width: 100%; margin: 0.75rem 0 0.5rem; font: 0.85rem/1.5 ui-monospace, monospace; resize: vertical; }
 .live-state { margin-top: 1rem; }
 .live-toolbar, .timeline-controls, .guide-angles { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
 .live-toolbar h2 { margin-right: auto; }

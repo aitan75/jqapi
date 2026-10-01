@@ -29,4 +29,15 @@ describe('translations', () => {
       }
     }
   });
+
+  it('explains every lint rule in both languages with the storage ratio', () => {
+    for (const language of Object.values(messages)) {
+      for (const rule of ['QED001', 'QED002', 'QED003'] as const) {
+        expect(language.lint.rules[rule](['b[1]'], 6)).toContain('b[1]');
+        expect(language.lint.ruleNames[rule]).not.toBe('');
+      }
+      expect(language.lint.rules.QED003(['q3', 'q4', 'q5'], 6)).toMatch(/64.*8.*8×/);
+      expect(language.lint.goTo(4, 2)).toContain('4:2');
+    }
+  });
 });

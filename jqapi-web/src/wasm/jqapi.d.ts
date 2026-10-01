@@ -7,3 +7,5 @@ export function trace(json: string, seed: number): string;
 export function capabilities(): string;
 export function importQasm(source: string): string;
 export function exportQasm(json: string): string;
+export function lint(json: string, disabledRules: string): string;
+export function lintQasm(source: string, disabledRules: string): string;

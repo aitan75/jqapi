@@ -1,5 +1,5 @@
 import type { BROWSER_BUDGET } from './wasm/policy';
-import type { EngineErrorCode } from './wasm/types';
+import type { EngineErrorCode, LintRule } from './wasm/types';
 import type { ObservableParseErrorCode } from './model/observable';
 
 export const LANGUAGE_STORAGE_KEY = 'jqapi-language';
@@ -82,6 +82,13 @@ export type Messages = {
   qasmCapabilities: string;
   qasmUnsupported: string;
   clearCircuit: string;
+  /** Rule IDs stay stable across locales; texts get (qubit names, numQubits). */
+  lint: {
+    title: string; show: string; rulesLegend: string; goTo: (line: number, column: number) => string;
+    severity: Record<'INFO' | 'WARNING', string>; ruleNames: Record<LintRule, string>;
+    rules: Record<LintRule, (names: string[], numQubits: number) => string>;
+  };
+  qasmEditor: { title: string; source: string; fromCircuit: string; apply: string; hints: string; updating: string };
   systemTime: string;
   gatePalette: string;
   gate: string;
@@ -115,6 +122,10 @@ export type Messages = {
   tools: Record<GateTool, string>;
 };
 
+const wires = (names: string[]) => names.join(', ');
+/** Ideal state-vector sizes with and without the unused qubits. */
+const storage = (unused: number, numQubits: number) => [2 ** numQubits, 2 ** (numQubits - unused), 2 ** unused] as const;
+
 const sharedTools = {
   H: 'H', X: 'X', Y: 'Y', Z: 'Z', S: 'S (π/2)', T: 'T (π/4)', RX: 'Rx(θ)', RY: 'Ry(θ)', RZ: 'Rz(θ)', U3: 'U3', SWAP: 'SWAP',
 } as const;
@@ -135,6 +146,17 @@ export const messages: Record<Language, Messages> = {
     live: {"title": "Live state", "pending": "Updating state…", "rerun": "Re-run trajectory", "bloch": "Reduced Bloch sphere", "qubit": "Selected qubit", "mixed": "Mixed reduced state", "pure": "Pure state", "purity": "Purity", "heatmap": "Probability and phase", "legend": "Brightness: probability · hue: phase (−π to π)", "phaseNote": "Probability alone does not describe the state. Phase is undefined at zero amplitude.", "timeline": "Execution timeline", "previous": "Previous", "next": "Next", "play": "Play", "pause": "Pause", "reset": "Initial state", "initial": "Initial state", "pre": "Pre-measurement", "post": "Post-measurement", "outcome": "Outcome", "skipped": "Condition not met: skipped", "condition": "Classical condition", "unconditional": "Always", "guide": "Guided teleportation", "input": "Input state", "bob": "Bob’s state (q2)", "fidelity": "Fidelity with input", "communication": "Alice sends two classical bits to Bob. His X/Z corrections recover the input; this requires classical communication. Alice’s original qubit has collapsed, so no copy remains.", "seed": "Trajectory seed", "guideSteps": ["Prepare the input state on q0.", "Create a superposition on Alice’s q1.", "Entangle q1 with Bob’s q2.", "Couple the input q0 to q1.", "Rotate q0 into the measurement basis.", "Measure q0 and store c0.", "Measure q1 and store c1.", "Bob applies X when c1 = 1.", "Bob applies Z when c0 = 1."]},
     language: 'Language', languages: { en: 'English', it: 'Italiano' }, appName: 'jqapi studio', logo: 'jqapi logo', appSubtitle: 'Quantum Circuit Simulator', wasmEngine: '● WASM Engine', qubitCount: (count) => `${count} Qubits`, qubits: 'Qubits:',
     gates: 'Gates', algorithms: 'Algorithms', groups: { single: 'Single qubit', two: 'Two qubits', three: 'Three qubits', multi: 'Multi-qubit', other: 'Other' }, circuitActions: 'Circuit actions', runSimulation: 'Run simulation', shots: 'Shots', observedOutcomes: (shots) => `Observed outcomes (${shots} shots)`, count: 'Count', undo: 'Undo', redo: 'Redo', saveJson: 'Save JSON', loadJson: 'Load JSON', clearCircuit: 'Clear circuit', systemTime: 'System time',
+    lint: {
+      title: 'Circuit hints', show: 'Show in circuit', rulesLegend: 'Rules', goTo: (line, column) => `Go to line ${line}:${column}`,
+      severity: { INFO: 'Note', WARNING: 'Warning' },
+      ruleNames: { QED001: 'Redundant H pair', QED002: 'Use after measurement', QED003: 'Unused qubits' },
+      rules: {
+        QED001: (q) => `Two H gates on ${wires(q)} cancel out (H·H = I) with nothing on that qubit in between. If unintended, remove the H on ${wires(q)} at both positions, keeping any other qubit those gates act on; the identity holds for the ideal circuit, and removing gates can change noisy results.`,
+        QED002: (q) => `${wires(q)} is measured before this quantum operation. Check whether collapsing its state here is intentional: measurement removes superposition and entanglement. Re-preparing a measured qubit is valid; Reset makes the intent explicit.`,
+        QED003: (q, n) => { const [all, used, ratio] = storage(q.length, n); return `${wires(q)} ${q.length === 1 ? 'is' : 'are'} never used. The ideal state vector stores ${all} amplitudes versus ${used}: a ${ratio}× storage difference, not a guaranteed speedup. Removing qubits renumbers wires and changes the output bitstring width.`; },
+      },
+    },
+    qasmEditor: { title: 'QASM source', source: 'OpenQASM 2 source', fromCircuit: 'Copy from circuit', apply: 'Apply to circuit', hints: 'QASM hints', updating: 'Checking the edited source…' },
     gatePalette: 'Quantum gates palette', gate: 'gate', rotationAngle: 'Rotation angle (θ):', radians: 'rad', presetCircuits: 'Preset circuits', clearCircuitTitle: 'Clear all gates from the circuit', presetDescription: 'Choose a quantum state or a well-known algorithm to load and run instantly.', canvasHint: 'Click to place, drag gates to move, and drag the background to pan.', stateAmplitudesAndProbabilities: 'State Amplitudes & Probabilities', runToSeeResults: 'The state updates automatically when you edit the circuit.', stateVectorAndOutcomeProbabilities: 'State Vector & Outcome Probabilities', basisStates: (count, qubits) => `${count} basis states (2^${qubits})`, stateProbability: (state, percentage) => `State ${state}: ${percentage}%`, complexAmplitude: 'Complex amplitude (re + im·i)',
     observable: 'Observable ⟨H⟩', observableHelp: 'One term per line: an optional coefficient and one Pauli letter (I, X, Y, Z) per qubit, q0 first — e.g. "0.5 ZZ". Leave empty to skip.', exactExpectation: 'Exact ⟨H⟩', sampledExpectation: 'Sampled ⟨H⟩ ± SE', totalShots: 'Total shots', coefficient: 'Coefficient', pauliString: 'Pauli string', exactValue: 'Exact', sampledMean: 'Sampled mean', shotsUsed: 'Shots', sampledNeedsTwoShots: 'The sampled estimate needs at least 2 shots.',
     observableErrors: { EMPTY: () => 'Enter at least one Pauli term.', BAD_LINE: (line) => `Line ${line}: use "coefficient LABEL" or "LABEL".`, BAD_LABEL: (line) => `Line ${line}: labels may contain only I, X, Y and Z.`, WRONG_LENGTH: (line, qubits) => `Line ${line}: the label must have ${qubits} letters, one per qubit.`, BAD_COEFF: (line) => `Line ${line}: the coefficient must be a finite number.`, TOO_MANY_TERMS: (line) => `Line ${line}: at most 64 terms are supported.` },
@@ -160,6 +182,17 @@ export const messages: Record<Language, Messages> = {
     live: {"title": "Stato live", "pending": "Aggiornamento dello stato…", "rerun": "Rigenera traiettoria", "bloch": "Sfera di Bloch ridotta", "qubit": "Qubit selezionato", "mixed": "Stato ridotto misto", "pure": "Stato puro", "purity": "Purezza", "heatmap": "Probabilità e fase", "legend": "Luminosità: probabilità · colore: fase (−π a π)", "phaseNote": "La sola probabilità non descrive lo stato. La fase non è definita per ampiezza nulla.", "timeline": "Sequenza di esecuzione", "previous": "Precedente", "next": "Successivo", "play": "Riproduci", "pause": "Pausa", "reset": "Stato iniziale", "initial": "Stato iniziale", "pre": "Prima della misura", "post": "Dopo la misura", "outcome": "Esito", "skipped": "Condizione non soddisfatta: saltata", "condition": "Condizione classica", "unconditional": "Sempre", "guide": "Teletrasporto guidato", "input": "Stato iniziale", "bob": "Stato di Bob (q2)", "fidelity": "Fedeltà rispetto allo stato iniziale", "communication": "Alice invia due bit classici a Bob. Le correzioni X/Z recuperano lo stato iniziale e richiedono comunicazione classica. Il qubit originale di Alice è collassato: non rimane una copia.", "seed": "Seed della traiettoria", "guideSteps": ["Prepara lo stato iniziale su q0.", "Crea una sovrapposizione sul qubit q1 di Alice.", "Entangle q1 con il qubit q2 di Bob.", "Collega q0 a q1.", "Ruota q0 nella base di misura.", "Misura q0 e memorizza c0.", "Misura q1 e memorizza c1.", "Bob applica X quando c1 = 1.", "Bob applica Z quando c0 = 1."]},
     language: 'Lingua', languages: { en: 'English', it: 'Italiano' }, appName: 'jqapi studio', logo: 'logo jqapi', appSubtitle: 'Simulatore di circuiti quantistici', wasmEngine: '● Motore WASM', qubitCount: (count) => `${count} qubit`, qubits: 'Qubit:',
     gates: 'Porte', algorithms: 'Algoritmi', groups: { single: 'Un qubit', two: 'Due qubit', three: 'Tre qubit', multi: 'Multi-qubit', other: 'Altro' }, circuitActions: 'Azioni circuito', runSimulation: 'Esegui simulazione', shots: 'Ripetizioni', observedOutcomes: (shots) => `Esiti osservati (${shots} ripetizioni)`, count: 'Conteggio', undo: 'Annulla', redo: 'Ripristina', saveJson: 'Salva JSON', loadJson: 'Carica JSON', clearCircuit: 'Svuota circuito', systemTime: 'Ora di sistema',
+    lint: {
+      title: 'Suggerimenti sul circuito', show: 'Mostra nel circuito', rulesLegend: 'Regole', goTo: (line, column) => `Vai alla riga ${line}:${column}`,
+      severity: { INFO: 'Nota', WARNING: 'Avviso' },
+      ruleNames: { QED001: 'Coppia H ridondante', QED002: 'Uso dopo la misura', QED003: 'Qubit inutilizzati' },
+      rules: {
+        QED001: (q) => `Due porte H su ${wires(q)} si annullano (H·H = I) senza altre operazioni su quel qubit in mezzo. Se non è voluto, rimuovi la H su ${wires(q)} in entrambe le posizioni, mantenendo gli altri qubit su cui agiscono quelle porte; l’identità vale per il circuito ideale e rimuovere porte può cambiare i risultati con rumore.`,
+        QED002: (q) => `${wires(q)} viene misurato prima di questa operazione quantistica. Verifica che il collasso dello stato qui sia voluto: la misura elimina sovrapposizione ed entanglement. Ripreparare un qubit misurato è lecito; Reset rende esplicita l’intenzione.`,
+        QED003: (q, n) => { const [all, used, ratio] = storage(q.length, n); return `${wires(q)} ${q.length === 1 ? 'non è mai usato' : 'non sono mai usati'}. Il vettore di stato ideale contiene ${all} ampiezze invece di ${used}: ${ratio}× di memoria in più, non un’accelerazione garantita. Rimuovere qubit rinumera i fili e cambia la lunghezza delle stringhe di bit in uscita.`; },
+      },
+    },
+    qasmEditor: { title: 'Sorgente QASM', source: 'Sorgente OpenQASM 2', fromCircuit: 'Copia dal circuito', apply: 'Applica al circuito', hints: 'Suggerimenti QASM', updating: 'Verifica del sorgente modificato…' },
     gatePalette: 'Palette delle porte quantistiche', gate: 'porta', rotationAngle: 'Angolo di rotazione (θ):', radians: 'rad', presetCircuits: 'Circuiti predefiniti', clearCircuitTitle: 'Rimuovi tutte le porte dal circuito', presetDescription: 'Scegli uno stato quantistico o un algoritmo noto da caricare ed eseguire subito.', canvasHint: 'Fai clic per inserire, trascina le porte per spostarle e lo sfondo per panoramica.', stateAmplitudesAndProbabilities: 'Ampiezze di stato e probabilità', runToSeeResults: 'Lo stato si aggiorna automaticamente quando modifichi il circuito.', stateVectorAndOutcomeProbabilities: 'Vettore di stato e probabilità degli esiti', basisStates: (count, qubits) => `${count} stati base (2^${qubits})`, stateProbability: (state, percentage) => `Stato ${state}: ${percentage}%`, complexAmplitude: 'Ampiezza complessa (re + im·i)',
     observable: 'Osservabile ⟨H⟩', observableHelp: 'Un termine per riga: un coefficiente facoltativo e una lettera di Pauli (I, X, Y, Z) per qubit, prima q0 — es. "0.5 ZZ". Lascia vuoto per non calcolarlo.', exactExpectation: '⟨H⟩ esatto', sampledExpectation: '⟨H⟩ campionato ± SE', totalShots: 'Ripetizioni totali', coefficient: 'Coefficiente', pauliString: 'Stringa di Pauli', exactValue: 'Esatto', sampledMean: 'Media campionata', shotsUsed: 'Ripetizioni', sampledNeedsTwoShots: 'La stima campionata richiede almeno 2 ripetizioni.',
     observableErrors: { EMPTY: () => 'Inserisci almeno un termine di Pauli.', BAD_LINE: (line) => `Riga ${line}: usa "coefficiente ETICHETTA" oppure "ETICHETTA".`, BAD_LABEL: (line) => `Riga ${line}: le etichette possono contenere solo I, X, Y e Z.`, WRONG_LENGTH: (line, qubits) => `Riga ${line}: l'etichetta deve avere ${qubits} lettere, una per qubit.`, BAD_COEFF: (line) => `Riga ${line}: il coefficiente deve essere un numero finito.`, TOO_MANY_TERMS: (line) => `Riga ${line}: sono supportati al massimo 64 termini.` },
