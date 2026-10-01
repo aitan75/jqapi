@@ -33,12 +33,33 @@ public final class OpenQasmParser {
     private final Map<String, Register> quantum = new HashMap<>();
     private final Map<String, Register> classical = new HashMap<>();
     private final List<LevelSpec> levels = new ArrayList<>();
+    private final List<Location> levelLocations = new ArrayList<>();
+    private final List<Barrier> barriers = new ArrayList<>();
+    private final List<String> qubitNames = new ArrayList<>();
+    private int scanned;
+    private int scannedLine = 1;
+    private int scannedColumn = 1;
     private int qubits;
     private int bits;
     private int cursor;
     private int tokenStart;
     private String token;
     private boolean qelib;
+
+    /** 1-based source position of a statement's first token. */
+    public record Location(int line, int column) { }
+    /** A validated barrier that {@link CircuitSpec} cannot carry, placed before level {@code beforeLevel}. */
+    public record Barrier(int beforeLevel, List<Integer> qubits, Location location) {
+        public Barrier { qubits = List.copyOf(qubits); }
+    }
+    /** A parsed circuit plus its sidecar source map: one location per level, barriers and {@code reg[i]} qubit names. */
+    public record Program(CircuitSpec spec, List<Location> levelLocations, List<Barrier> barriers, List<String> qubitNames) {
+        public Program {
+            levelLocations = List.copyOf(levelLocations);
+            barriers = List.copyOf(barriers);
+            qubitNames = List.copyOf(qubitNames);
+        }
+    }
 
     private record Register(int offset, int size) { }
     private record Argument(List<Integer> indexes, boolean wholeRegister) { }
@@ -56,14 +77,20 @@ public final class OpenQasmParser {
 
     /** Parses without allocating a state vector, using the supplied quantum/classical bit budget. */
     public static CircuitSpec parse(String source, JQAPIConfig config) {
+        return parseProgram(source, config).spec();
+    }
+
+    /** Like {@link #parse(String, JQAPIConfig)}, keeping the source map used by {@code CircuitLinter}. */
+    public static Program parseProgram(String source, JQAPIConfig config) {
         return new OpenQasmParser(source, config).program();
     }
 
-    private CircuitSpec program() {
+    private Program program() {
         expect("OPENQASM");
         expect("2.0");
         expect(";");
         while (!token.isEmpty()) {
+            Location at = location(tokenStart);
             switch (token) {
                 case "include" -> {
                     next();
@@ -75,17 +102,20 @@ public final class OpenQasmParser {
                 case "qreg", "creg" -> declaration();
                 case "barrier" -> {
                     next();
-                    arguments(quantum);
+                    var qubitsInBarrier = new ArrayList<Integer>();
+                    for (Argument argument : arguments(quantum)) qubitsInBarrier.addAll(argument.indexes());
                     expect(";");
                     // Operations retain source order; no optimizer crosses this boundary.
+                    barriers.add(new Barrier(levels.size(), qubitsInBarrier, at));
                 }
                 case "if" -> conditional();
                 case "gate", "opaque" -> throw error("Custom gate definitions are not supported");
                 default -> operation(null);
             }
+            while (levelLocations.size() < levels.size()) levelLocations.add(at);
         }
         if (qubits == 0) throw error("At least one quantum register is required");
-        return CircuitSpec.of(qubits, levels, bits);
+        return new Program(CircuitSpec.of(qubits, levels, bits), levelLocations, barriers, qubitNames);
     }
 
     private void declaration() {
@@ -104,8 +134,10 @@ public final class OpenQasmParser {
             throw new JQApiLimitException("Register size exceeds configured budget or is not positive: " + size);
         }
         (isQuantum ? quantum : classical).put(name, new Register(offset, size));
-        if (isQuantum) qubits += size;
-        else bits += size;
+        if (isQuantum) {
+            for (int i = 0; i < size; i++) qubitNames.add(name + "[" + i + "]");
+            qubits += size;
+        } else bits += size;
     }
 
     private void conditional() {
@@ -313,6 +345,15 @@ public final class OpenQasmParser {
         if (matcher.end() - cursor > MAX_TOKEN_LENGTH) throw new JQApiLimitException("OpenQASM token length limit exceeded");
         token = matcher.group();
         cursor = matcher.end();
+    }
+
+    /** Offsets only grow, so line/column tracking stays linear in the source length. */
+    private Location location(int offset) {
+        for (; scanned < offset; scanned++) {
+            if (source.charAt(scanned) == '\n') { scannedLine++; scannedColumn = 1; }
+            else scannedColumn++;
+        }
+        return new Location(scannedLine, scannedColumn);
     }
 
     private IllegalArgumentException error(String message) {
