@@ -38,6 +38,7 @@ signatures below:
 |-----------|---------|-----------|
 | Quantum core (qubits, register, circuit) | `org.aitan.jqapi.quantum` | [quantum.md](quantum.md) |
 | Reusable parameterized circuits | `org.aitan.jqapi.quantum` | [109-param-circuit.md](109-param-circuit.md) |
+| Hamiltonian evolution (Trotter–Suzuki) | `org.aitan.jqapi.quantum` | [TrotterEvolution](quantum.md#trotterevolution) |
 | Gates | `org.aitan.jqapi.quantum.gates` | [gates.md](gates.md) |
 | Simulator | `org.aitan.jqapi.quantum.simulator` | [simulator.md](simulator.md) |
 | Linear algebra | `org.aitan.jqapi.math` | [math.md](math.md) |
