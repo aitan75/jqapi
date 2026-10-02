@@ -17,6 +17,7 @@ structure that gates are organized into.
 - [CircuitLevel](#circuitlevel)
 - [Qft](#qft)
 - [UnitaryOperation](#unitaryoperation)
+- [TrotterEvolution](#trotterevolution)
 
 > **Conventions.** Qubit `0` is the most significant bit of a state index; a
 > register of `n` qubits holds a `2^n` amplitude vector. See the
@@ -409,3 +410,69 @@ UnitaryOperation qftDagger = UnitaryOperation.fromCircuit(Qft.forward(2)).adjoin
 For phase estimation, start the simulator from a normalized complex or
 entangled target state with `new LocalSimulator(circuit, initialState, random)`;
 it rejects vectors whose dimension is not `2^n` or whose norm is not 1.
+
+---
+
+## `TrotterEvolution`
+
+Builds `UnitaryOperation` approximations to `exp(-i H t)` from the shared
+[`PauliSum`](observables.md#paulisum) representation. No runtime dependency or
+full-register operator matrix is needed. Qubit 0 remains the most significant
+bit; active factors may be non-adjacent, and the returned operation can also be
+remapped with `on(...)` or `appendTo(circuit, targets...)`.
+
+| Method | Description |
+|--------|-------------|
+| `pauliExponential(PauliString p, double angle)` | Exact `exp(-i angle P)` using basis changes, parity CNOTs, `Rz(2 angle)` and uncomputation. Signed angles are allowed. |
+| `firstOrder(PauliSum h, double time, int steps)` | Apply each term in stored order with angle `c_j time / steps`, then repeat the slice `steps` times. |
+| `secondOrder(PauliSum h, double time, int steps)` | Apply terms in stored order and then reverse order, each with angle `c_j time / (2 steps)`, and repeat. |
+| `firstOrder(h, time, steps, long maxGates)` / `secondOrder(h, time, steps, long maxGates)` | Same builders with an explicit total gate budget. |
+
+### Ordering and phase
+
+Stored order is **application order**: for terms A then B a first-order slice
+is `exp(-i B dt) exp(-i A dt)` as a matrix acting on a column vector. Second
+order applies A/2, B/2, B/2, A/2; neighboring equal terms are not merged.
+For fixed Hamiltonian and time the global product-formula error is generally
+`O(1/steps)` and `O(1/steps²)`, respectively. Commuting terms and single-term
+Hamiltonians are exact up to floating-point error.
+
+Every builder preserves **operator phase**, not just physical state up to a
+global phase. An identity word contributes `exp(-i angle) I` through a scalar
+2×2 gate on local qubit 0, regardless of the word's width. Consequently
+`controlled()` and `controlledPower(k)` retain an identity energy shift as a
+relative phase on the control's `|1>` branch. Use `adjoint()` for inverse
+(negative-time) evolution.
+
+### Validation, budgets and cost
+
+- `NullPointerException`: null Pauli word or Hamiltonian.
+- `IllegalArgumentException`: non-finite or negative time, non-positive slice
+  count, negative gate budget, or a term angle/doubled angle outside finite
+  `double` range. `PauliSum.Term` already rejects non-finite coefficients.
+- `JQApiLimitException`: the estimated total gate count exceeds
+  `min(maxGates, UnitaryOperation.DEFAULT_MAX_STEPS)`, or term visits per slice
+  exceed `DEFAULT_MAX_STEPS` (2²⁰). Second order visits every term twice.
+  All angles and the total repeated gate count are checked before gates are
+  allocated. The input-work cap also applies to zero coefficients and zero time.
+- Zero angles emit no gates. For a nonzero angle, an identity word costs one
+  gate. A word with `k` active factors, `x` X factors and `y` Y factors costs
+  `2x + 4y + 2(k−1) + 1` gates. Multiply the sum by the slice count, and by two
+  for second order. Budgets count these gates, not just Trotter slices.
+- Width is bounded by `PauliString`/`UnitaryOperation` to 1–30 qubits; adding a
+  control also counts toward that limit. The destination circuit and simulator
+  additionally enforce `JQAPIConfig.maxQubits()` (24 by default).
+- Construction is linear in visited Pauli factors and emitted steps; each
+  uncontrolled gate touches at most two qubits. Execution remains
+  `O(gates × 2^n)` work with an `O(2^n)` state vector. A gate budget does not
+  make large state vectors cheap.
+
+The regression tests compare all basis columns for every Pauli word up to
+three qubits with `cos(angle) I − i sin(angle) P`. For fixed one- and two-qubit
+noncommuting Hamiltonians they compare against the independent closed form
+for anticommuting Paulis at 2, 4, 8 and 16 slices. The metric is maximum column
+L2 error **without phase alignment**; doubling the slices approximately halves
+first-order error and quarters second-order error. These are empirical checks,
+not a rigorous error bound for arbitrary Hamiltonians.
+
+See the [worked example](../manual/examples.md#13-hamiltonian-time-evolution).

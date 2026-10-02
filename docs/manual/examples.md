@@ -20,6 +20,7 @@ current source.
 10. [Classical feed-forward](#10-classical-feed-forward)
 11. [Expectation values of a Hamiltonian](#11-expectation-values-of-a-hamiltonian)
 12. [Phase estimation with composable unitaries](#12-phase-estimation-with-composable-unitaries)
+13. [Hamiltonian time evolution](#13-hamiltonian-time-evolution)
 
 Common imports for the snippets below:
 
@@ -525,3 +526,62 @@ power; `power(k, maxSteps)` makes that budget explicit and throws
 `JQApiLimitException` before building anything too large. Measurement, reset
 and conditional gates are rejected. See the
 [API reference](../api/quantum.md#unitaryoperation).
+
+## 13. Hamiltonian time evolution
+
+A Hamiltonian describes how a quantum state changes over time. Write it as a
+weighted sum of Pauli words and approximate `U(t) = exp(-i H t)` with small
+rotation slices. This example evolves `|0>` under `H = 0.6 X - 0.8 Z + 0.2 I`:
+
+```java
+import org.aitan.jqapi.math.ComplexVector;
+import org.aitan.jqapi.observable.PauliString;
+import org.aitan.jqapi.observable.PauliSum;
+import org.aitan.jqapi.quantum.Circuit;
+import org.aitan.jqapi.quantum.TrotterEvolution;
+import org.aitan.jqapi.quantum.UnitaryOperation;
+import org.aitan.jqapi.quantum.simulator.LocalSimulator;
+
+public class HamiltonianEvolutionExample {
+    public static void main(String[] args) {
+        PauliSum h = PauliSum.of(
+                new PauliSum.Term(0.6, PauliString.fromLabel("X")),
+                new PauliSum.Term(-0.8, PauliString.fromLabel("Z")),
+                new PauliSum.Term(0.2, PauliString.fromLabel("I")));
+        double time = 0.7;
+        int slices = 16;
+        UnitaryOperation evolution = TrotterEvolution.secondOrder(h, time, slices, 1_000);
+        Circuit circuit = new Circuit(1);
+        evolution.appendTo(circuit);
+        LocalSimulator simulator = new LocalSimulator(circuit);
+        simulator.execute();
+        ComplexVector state = simulator.getQuantumRegister().getRegisterState();
+        System.out.println(state.getEntry(0));
+        System.out.println(state.getEntry(1));
+    }
+}
+```
+
+For this Hamiltonian, `(0.6 X - 0.8 Z)² = I`, so the exact state is
+`exp(-i 0.2 t) [(cos(t) + i 0.8 sin(t)) |0> - i 0.6 sin(t) |1>]`.
+Increasing the slice count reduces the approximation error; second order
+usually converges faster but emits twice as many gates per slice. The example
+uses 160 gates, within its explicit budget of 1,000. `firstOrder(h, time, slices)`
+is available for comparison. The budget counts all emitted gates, including
+basis changes and parity CNOTs, rather than just slices.
+
+For multi-qubit models each label has one letter per qubit, qubit 0 first:
+`"XIZ"` acts on qubits 0 and 2 and leaves qubit 1 unchanged. The same `PauliSum`
+can be used with expectation-value calculations and variational algorithms.
+
+To use the evolution in a phase-estimation circuit, call
+`evolution.controlledPower(k).appendTo(circuit, control, targets...)` as in
+[example 12](#12-phase-estimation-with-composable-unitaries). The identity term
+must be retained: its otherwise global phase becomes a measurable relative
+phase under control. For energy E, the eigenphase is `-E t / (2π)` modulo 1;
+recovering an unambiguous energy requires a suitable time and known energy
+range. Controlled powers repeat the approximate evolution and have their own
+`UnitaryOperation` gate budget.
+
+See [TrotterEvolution](../api/quantum.md#trotterevolution) for ordering,
+validation, resource limits and the convergence-test convention.
